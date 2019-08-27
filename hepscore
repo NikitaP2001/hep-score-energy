@@ -265,7 +265,7 @@ def parse_conf():
                 try:
                     val = int(confobj['hepscore_benchmark']['repetitions'])
                 except ValueError:
-                    print("Error: 'repititions' configuration parameter must"
+                    print("Error: 'repititions' configuration parameter must "
                           "be an integer\n")
     except KeyError:
         print "\nError: invalid HEP benchmark YAML configuration\n"
