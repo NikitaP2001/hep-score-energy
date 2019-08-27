@@ -1,7 +1,7 @@
 #!/usr/bin/python
 ###################################################################################
 #
-# hepscore.py - HEPScore benchmark execution
+# hepscore.py - HEPscore benchmark execution
 # Chris Hollowell <hollowec@bnl.gov>
 #
 #
@@ -10,27 +10,29 @@ import sys, getopt, string, os, subprocess, time, json, glob, yaml
 
 NAME = "HEPscore"
 
-CONF = """container_benchmark_suite:
-  name: HEPScore19
+CONF = """
+hepscore_benchmark:
+  name: HEPscore19
   version: 0.21
   repetitions: 1  #number of repetitions of the same benchmark
-  reference_scores: {} #to be retrieved from a DB? 
+  reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
   method: geometric_mean #or any other algorithm
   registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   benchmarks:
     atlas-sim-bmk:
       version: v0.18
       scorekey: CPU_score
-      normalization: 100.0
     cms-reco-bmk: 
       version: v0.11
       scorekey: throughput_score
     lhcb-gen-sim:
       version: v0.5
+      refscore: 
       scorekey: througput_score
       debug: false
       events:
       threads:
+      normalization:
 """
 
 
@@ -120,7 +122,8 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
     commands = { 'docker': "docker run --network=host -v " + output + ":/results ",
                  'singularity': "singularity run -B " + output + ":/results docker://" }
 
-    normalization = 1.0
+    score_modifiers = { 'normalization': 1.0, 'refscore': 1.0 } 
+
     req_options = ['version', 'scorekey']
     bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e' }
     options_string = ""
@@ -128,14 +131,15 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
     runs = int(conf['repetitions'])
     log = output + "/" + conf['name'] + ".log"
 
-    if 'normalization' in conf['benchmarks'][benchmark]:
-        if conf['benchmarks'][benchmark]['normalization'] != None:
-            try:
-                normalization = float(conf['benchmarks'][benchmark]['normalization'])
-            except Key:
-                print "\nError: configuration error, non-float value for normalization"
-                sys.exit(2)
-
+    for modifier in score_modifiers.keys():
+        if modifier in conf['benchmarks'][benchmark]:
+            if conf['benchmarks'][benchmark][modifier] != None:
+                try:
+                    score_modifiers[modifier] = float(conf['benchmarks'][benchmark][modifier])
+                except Key:
+                    print "\nError: configuration error, non-float value for " + modifier
+                    sys.exit(2)
+    
     for key in req_options:
         if key not in conf['benchmarks'][benchmark]:
             print "\nError: configuration error, missing required benchmark option -" + key
@@ -194,7 +198,8 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
 
     print
 
-    return( normalization * proc_results(benchmark, scorekey, subkey, output, runs, verbose) )
+    result =  proc_results(benchmark, scorekey, subkey, output, runs, verbose) ) / score_modifiers['refscore']
+    return( result * score_modifiers['normalization'] )
 
 
 def read_conf(cfile):
@@ -213,7 +218,7 @@ def read_conf(cfile):
 
 def parse_conf():
     
-    base_keys = ['reference_scores', 'repetitions', 'method', 'benchmarks', 'name', 'registry']
+    base_keys = ['reference_machine', 'repetitions', 'method', 'benchmarks', 'name', 'registry']
     
     try:
         dat = yaml.safe_load(CONF)
@@ -225,21 +230,21 @@ def parse_conf():
 
     try:
         for k in base_keys:
-            val = dat['container_benchmark_suite'][k]
+            val = dat['hepscore_benchmark'][k]
             if k == 'method':
                 if val!='geometric_mean':
                     print "Configuration error: only 'geometric_mean' method is currently supported\n"
                     sys.exit(1)
             if k == 'repeititions':
                 try:
-                    val = int(confobj['container_benchmark_suite']['repetitions'])
+                    val = int(confobj['hepscore_benchmark']['repetitions'])
                 except ValueError:
                     print "Error: 'repititions' configuration parameter must be an integer\n"
     except KeyError:
         print "\nError: invalid HEP benchmark YAML configuration\n"
         sys.exit(1)
 
-    return(dat['container_benchmark_suite'])
+    return(dat['hepscore_benchmark'])
 
 
 def geometric_mean(results):
