@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = hepscore
+omit = hepscore/tests/*
+
+[report]
+ignore_errors = True
+exclude_lines =
+    if __name__ == .__main__.:

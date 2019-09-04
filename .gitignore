@@ -1,0 +1,31 @@
+*.py[cod]
+
+# Packages
+*.egg*
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+# Unit test / coverage reports
+.coverage
+.coverage.*
+cover/
+.tox
+.stestr/
+.venv
+
+# Editors
+*~
+.*.swp
+.*sw?
+
+# Desktop Service Store
+*.DS_Store
+
+
