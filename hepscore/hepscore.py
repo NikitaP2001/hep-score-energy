@@ -21,10 +21,10 @@ NAME = "HEPscore"
 CONF = """
 hepscore_benchmark:
   name: HEPscore19
-  version: 0.21
-  repetitions: 1  #number of repetitions of the same benchmark
+  version: 0.3
+  repetitions: 3  # number of repetitions of the same benchmark
   reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
-  method: geometric_mean #or any other algorithm
+  method: geometric_mean # or any other algorithm
   registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   benchmarks:
     atlas-sim-bmk:
@@ -55,7 +55,7 @@ def help():
     print NAME + " Benchmark Execution"
     print namel + " {-s|-d} [-v] [-f CONFIGFILE] OUTPUTDIR"
     print namel + " -h"
-    print namel + " -c"
+    print namel + " -p"
     print "Option overview:"
     print "-h           Print help information and exit"
     print("-v           Display verbose output, including all component "
@@ -64,7 +64,7 @@ def help():
     print "-s           Run benchmark containers in Singularity"
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
-    print "-c           Dump default (built-in) YAML configuration"
+    print "-p           Print default (built-in) YAML configuration"
     print "\nExamples"
     print "--------"
     print "Run the benchmark using Docker, dispaying all component scores:"
@@ -112,7 +112,7 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
             sys.exit(2)
 
         if verbose:
-            print str(score)
+            print " " + str(score)
         try:
             float(score)
         except ValueError:
@@ -124,10 +124,12 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
         print "\nError: missing json score file for one or more runs"
         sys.exit(2)
 
-    else:
-        average_score = sum(results) / len(results)
+    final_result = median(results)
 
-    return(average_score)
+    if len(results) > 1 and verbose:
+        print " Median: " + str(final_result)
+
+    return(final_result)
 
 
 def run_benchmark(benchmark, cm, output, verbose, conf):
@@ -274,6 +276,19 @@ def parse_conf():
     return(dat['hepscore_benchmark'])
 
 
+def median(vals):
+
+    if len(vals) == 1:
+        return(vals[0])
+
+    vals.sort()
+    med_ind = len(vals) / 2
+    if len(vals) % 2 == 1:
+        return(vals[med_ind])
+    else:
+        return((vals[med_ind] + vals[med_ind - 1]) / 2.0)
+
+
 def geometric_mean(results):
 
     product = 1
@@ -291,7 +306,7 @@ def main():
     cms = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hcvdsf:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsf:')
     except getopt.GetoptError as err:
         print "\nError: " + str(err) + "\n"
         help()
@@ -301,9 +316,9 @@ def main():
         if opt == '-h':
             help()
             sys.exit(0)
-        if opt == '-c':
+        if opt == '-p':
             if len(opts) != 1:
-                print "\nError: -c must be used without other options\n"
+                print "\nError: -p must be used without other options\n"
                 help()
                 sys.exit(1)
             print yaml.dump(yaml.load(CONF))
