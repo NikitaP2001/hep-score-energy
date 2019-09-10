@@ -306,7 +306,7 @@ def main():
                 print "\nError: -c must be used without other options\n"
                 help()
                 sys.exit(1)
-            print yaml.dump(yaml.load(CONF))
+            print yaml.dump(yaml.load(CONF,Loader=yaml.FullLoader))
             sys.exit(0)
         elif opt == '-v':
             verbose = True
