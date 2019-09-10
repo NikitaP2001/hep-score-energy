@@ -15,8 +15,8 @@ job_build_image_tox:
     name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
     entrypoint: [""]
   only:
-    #refs:
-    #- qa
+    refs:
+    - qa
     changes:
     - docker-images/tox/*
   script:
@@ -27,3 +27,35 @@ job_build_image_tox:
     # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
     - /kaniko/executor --context $CI_PROJECT_DIR/docker-images/tox --dockerfile $CI_PROJECT_DIR/docker-images/tox/Dockerfile --destination $CI_REGISTRY_IMAGE/tox:latest
 
+pep8:
+  stage: test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  except:
+    - tags
+  script:
+    - yum install openldap-devel krb5-devel -y
+    - cd $CI_PROJECT_DIR
+    - scl enable rh-python35 'tox -epep8'
+
+python27:
+  stage: test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  except:
+    - tags
+  script:
+    - yum install openldap-devel krb5-devel mysql-devel -y
+    - cd $CI_PROJECT_DIR
+    - tox -epy27
+
+coverage:
+  stage: test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  except:
+    - tags
+  script:
+    - yum install openldap-devel krb5-devel mysql-devel -y
+    - cd $CI_PROJECT_DIR
+    - scl enable rh-python35 'tox -ecover'
+  artifacts:
+    paths:
+      - cover
