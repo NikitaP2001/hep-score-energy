@@ -1,12 +1,8 @@
-import os
-import sys
-import unittest
-
-from parameterized import parameterized
 from hepscore import hepscore
-
 import numpy as np
 from scipy import stats
+import sys
+import unittest
 
 # Import mock compatible with Python2 and Python3
 try:
@@ -35,6 +31,6 @@ class TestHepScore(unittest.TestCase):
     def test_geometric_mean(self):
 
         vinput = [1, 2, 3]
-        gm = np.round(hepscore.geometric_mean(vinput),3)
+        gm = np.round(hepscore.geometric_mean(vinput), 3)
         self.assertEqual(gm,
-                         np.round(stats.mstats.gmean(vinput),3))
+                         np.round(stats.mstats.gmean(vinput), 3))

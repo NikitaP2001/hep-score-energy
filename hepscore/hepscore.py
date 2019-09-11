@@ -79,7 +79,6 @@ def help():
 
 def proc_results(benchmark, key, subkey, rpath, runs, verbose):
 
-    average_score = 0
     results = []
 
     if benchmark == "kv-bmk":
@@ -203,7 +202,7 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
         try:
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, shell=True)
-        except:
+        except Exception:
             print("\nError: failure to execute: " + command)
             sys.exit(2)
 
@@ -238,7 +237,7 @@ def read_conf(cfile):
     try:
         yfile = open(cfile, mode='r')
         CONF = string.join((yfile.readlines()), '\n')
-    except:
+    except Exception:
         print("\nError: cannot open/read from " + cfile + "\n")
         sys.exit(1)
 
@@ -253,8 +252,6 @@ def parse_conf():
     except Exception:
         print("\nError: problem parsing YAML configuration\n")
         sys.exit(1)
-
-    rkeys = dat.keys()
 
     try:
         for k in base_keys:
