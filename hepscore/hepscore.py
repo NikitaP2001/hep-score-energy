@@ -192,7 +192,8 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
         sys.stdout.write('s')
     sys.stdout.write(" of " + benchmark)
 
-    command = commands[cm] + benchmark_complete
+    command_string = commands[cm] + benchmark_complete
+    command = command_string.split(' ')
 
     for i in range(runs):
         if verbose:
@@ -201,9 +202,9 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
 
         try:
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT, shell=True)
+                                    stderr=subprocess.STDOUT)
         except Exception:
-            print("\nError: failure to execute: " + command)
+            print("\nError: failure to execute: " + command_string)
             sys.exit(2)
 
         line = cmdf.stdout.readline()
@@ -319,7 +320,7 @@ def main():
                 print("\nError: -p must be used without other options\n")
                 help()
                 sys.exit(1)
-            print(yaml.dump(yaml.load(CONF, Loader=yaml.FullLoader)))
+            print(yaml.dump(yaml.safe_load(CONF)))
             sys.exit(0)
         elif opt == '-v':
             verbose = True
