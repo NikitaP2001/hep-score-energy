@@ -6,14 +6,14 @@
 #
 #
 
-import sys
 import getopt
-import string
-import os
-import subprocess
-import time
-import json
 import glob
+import json
+import os
+import string
+import subprocess
+import sys
+import time
 import yaml
 
 NAME = "HEPscore"
@@ -21,10 +21,10 @@ NAME = "HEPscore"
 CONF = """
 hepscore_benchmark:
   name: HEPscore19
-  version: 0.21
-  repetitions: 1  #number of repetitions of the same benchmark
+  version: 0.3
+  repetitions: 3  # number of repetitions of the same benchmark
   reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
-  method: geometric_mean #or any other algorithm
+  method: geometric_mean # or any other algorithm
   registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   benchmarks:
     atlas-sim-bmk:
@@ -50,30 +50,31 @@ def help():
 
     global NAME
 
-    namel = NAME.lower()
+    namel = NAME.lower() + ".py"
 
-    print NAME + " Benchmark Execution"
-    print namel + " {-s|-d} [-v] [-f CONFIGFILE] OUTPUTDIR"
-    print namel + " -h"
-    print namel + " -c"
-    print "Option overview:"
-    print "-h           Print help information and exit"
+    print(NAME + " Benchmark Execution")
+    print(namel + " {-s|-d} [-v] [-f CONFIGFILE] OUTPUTDIR")
+    print(namel + " -h")
+    print(namel + " -p")
+    print("Option overview:")
+    print("-h           Print help information and exit")
     print("-v           Display verbose output, including all component "
           "benchmark scores")
-    print "-d           Run benchmark containers in Docker"
-    print "-s           Run benchmark containers in Singularity"
+    print("-d           Run benchmark containers in Docker")
+    print("-s           Run benchmark containers in Singularity")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
-    print "-c           Dump default (built-in) YAML configuration"
-    print "\nExamples"
-    print "--------"
-    print "Run the benchmark using Docker, dispaying all component scores:"
-    print namel + " -dv /tmp/hs19"
-    print "Run with Singularity, using a non-standard benchmark configuration:"
-    print namel + " -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore\n"
+    print("-p           Print default (built-in) YAML configuration")
+    print("\nExamples")
+    print("--------")
+    print("Run the benchmark using Docker, dispaying all component scores:")
+    print(namel + " -dv /tmp/hs19")
+    print("Run with Singularity, using a non-standard benchmark "
+          "configuration:")
+    print(namel + " -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore\n")
     print("Additional information: https://gitlab.cern.ch/hep-benchmarks/hep-"
           "score")
-    print "Questions/comments: benchmark-suite-wg-devel@cern.ch"
+    print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
 
 
 def proc_results(benchmark, key, subkey, rpath, runs, verbose):
@@ -86,8 +87,8 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
     else:
         try:
             benchmark_glob = benchmark.split('-')[:-1]
-        except:
-            print "\nError: expect at least 1 '-' character in benchmark name"
+        except KeyError:
+            print("\nError: expect at least 1 '-' character in benchmark name")
             sys.exit(2)
 
         benchmark_glob = '-'.join(benchmark_glob)
@@ -105,29 +106,31 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
             if subkey is None:
                 score = float(jscore[key]['score'])
             else:
-                print subkey
+                print(subkey)
                 score = float(jscore[key][subkey]['score'])
         except (KeyError, ValueError):
-            print "\nError: score not reported"
+            print("\nError: score not reported")
             sys.exit(2)
 
         if verbose:
-            print str(score)
+            print(" " + str(score))
         try:
             float(score)
         except ValueError:
-            print "\nError: invalid score for one or more runs"
+            print("\nError: invalid score for one or more runs")
             sys.exit(2)
         results.append(score)
 
     if len(results) != runs:
-        print "\nError: missing json score file for one or more runs"
+        print("\nError: missing json score file for one or more runs")
         sys.exit(2)
 
-    else:
-        average_score = sum(results) / len(results)
+    final_result = median(results)
 
-    return(average_score)
+    if len(results) > 1 and verbose:
+        print(" Median: " + str(final_result))
+
+    return(final_result)
 
 
 def run_benchmark(benchmark, cm, output, verbose, conf):
@@ -152,15 +155,15 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
                 try:
                     score_modifiers[modifier] = \
                         float(conf['benchmarks'][benchmark][modifier])
-                except Key:
-                    print("\nError: configuration error, non-float value for "
-                          + modifier)
+                except ValueError:
+                    print("\nError: configuration error, non-float value "
+                          "for " + modifier)
                     sys.exit(2)
 
     for key in req_options:
         if key not in conf['benchmarks'][benchmark]:
-            print("\nError: configuration error, missing required benchmark "
-                  "option -" + key)
+            print(("\nError: configuration error, missing required benchmark "
+                  "option -" + key))
             sys.exit(2)
 
     scorekey = conf['benchmarks'][benchmark]['scorekey']
@@ -179,8 +182,8 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
                     str(conf['benchmarks'][benchmark][option])
     try:
         lfile = open(log, mode='a')
-    except:
-        print "\nError: failure to open " + log
+    except Exception:
+        print("\nError: failure to open " + log)
 
     benchmark_complete = conf['registry'] + '/' + benchmark + \
         ':' + conf['benchmarks'][benchmark]['version'] + options_string
@@ -201,7 +204,7 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, shell=True)
         except:
-            print "\nError: failure to execute: " + command
+            print("\nError: failure to execute: " + command)
             sys.exit(2)
 
         line = cmdf.stdout.readline()
@@ -213,13 +216,13 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
         cmdf.wait()
 
         if cmdf.returncode != 0:
-            print("\nError: running " + benchmark + " failed.  Exit status " +
-                  str(cmdf.returncode) + "\n")
+            print(("\nError: running " + benchmark + " failed.  Exit status " +
+                  str(cmdf.returncode) + "\n"))
             sys.exit(2)
 
     lfile.close()
 
-    print
+    print("")
 
     result = proc_results(benchmark, scorekey, subkey, output,
                           runs, verbose) / score_modifiers['refscore']
@@ -230,13 +233,13 @@ def read_conf(cfile):
 
     global CONF
 
-    print "Using custom configuration: " + cfile
+    print("Using custom configuration: " + cfile)
 
     try:
         yfile = open(cfile, mode='r')
         CONF = string.join((yfile.readlines()), '\n')
     except:
-        print "\nError: cannot open/read from " + cfile + "\n"
+        print("\nError: cannot open/read from " + cfile + "\n")
         sys.exit(1)
 
 
@@ -247,8 +250,8 @@ def parse_conf():
 
     try:
         dat = yaml.safe_load(CONF)
-    except:
-        print "\nError: problem parsing YAML configuration\n"
+    except Exception:
+        print("\nError: problem parsing YAML configuration\n")
         sys.exit(1)
 
     rkeys = dat.keys()
@@ -263,15 +266,28 @@ def parse_conf():
                     sys.exit(1)
             if k == 'repeititions':
                 try:
-                    val = int(confobj['hepscore_benchmark']['repetitions'])
+                    val = int(dat['hepscore_benchmark']['repetitions'])
                 except ValueError:
                     print("Error: 'repititions' configuration parameter must "
                           "be an integer\n")
     except KeyError:
-        print "\nError: invalid HEP benchmark YAML configuration\n"
+        print("\nError: invalid HEP benchmark YAML configuration\n")
         sys.exit(1)
 
     return(dat['hepscore_benchmark'])
+
+
+def median(vals):
+
+    if len(vals) == 1:
+        return(vals[0])
+
+    vals.sort()
+    med_ind = len(vals) / 2
+    if len(vals) % 2 == 1:
+        return(vals[med_ind])
+    else:
+        return((vals[med_ind] + vals[med_ind - 1]) / 2.0)
 
 
 def geometric_mean(results):
@@ -291,9 +307,9 @@ def main():
     cms = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hcvdsf:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsf:')
     except getopt.GetoptError as err:
-        print "\nError: " + str(err) + "\n"
+        print("\nError: " + str(err) + "\n")
         help()
         sys.exit(1)
 
@@ -301,12 +317,12 @@ def main():
         if opt == '-h':
             help()
             sys.exit(0)
-        if opt == '-c':
+        if opt == '-p':
             if len(opts) != 1:
-                print "\nError: -c must be used without other options\n"
+                print("\nError: -p must be used without other options\n")
                 help()
                 sys.exit(1)
-            print yaml.dump(yaml.load(CONF,Loader=yaml.FullLoader))
+            print(yaml.dump(yaml.load(CONF, Loader=yaml.FullLoader)))
             sys.exit(0)
         elif opt == '-v':
             verbose = True
@@ -314,7 +330,7 @@ def main():
             read_conf(arg)
         elif opt == '-s' or opt == '-d':
             if cms != '':
-                print "\nError: -s and -d are exclusive\n"
+                print("\nError: -s and -d are exclusive\n")
                 sys.exit(1)
             if opt == '-s':
                 cms = "singularity"
@@ -322,7 +338,7 @@ def main():
                 cms = "docker"
 
     if cms == "":
-        print "\nError: must specify run type (Docker or Singularity)\n"
+        print("\nError: must specify run type (Docker or Singularity)\n")
         help()
         sys.exit(1)
 
@@ -332,26 +348,25 @@ def main():
     else:
         output = args[0]
         if not os.path.isdir(output):
-            print "\nError: output directory must exist"
+            print("\nError: output directory must exist")
             sys.exit(1)
 
     output = output + '/' + NAME + '_' + time.strftime("%d%b%Y_%H%M%S")
     try:
         os.mkdir(output)
-    except:
-        print "\nError: failed to create " + output
+    except Exception:
+        print("\nError: failed to create " + output)
         sys.exit(2)
 
     confobj = parse_conf()
 
-    print confobj['name'] + " Benchmark"
-    print "Version: " + str(confobj['version'])
-    print "System: " + ' '.join(os.uname())
-    print "Container Execution: " + cms
-    print "Registry: " + confobj['registry']
-    print "Output: " + output
-    print "Date: " + time.asctime()
-    print
+    print(confobj['name'] + " Benchmark")
+    print("Version: " + str(confobj['version']))
+    print("System: " + ' '.join(os.uname()))
+    print("Container Execution: " + cms)
+    print("Registry: " + confobj['registry'])
+    print("Output: " + output)
+    print("Date: " + time.asctime() + "\n")
 
     results = []
     for benchmark in confobj['benchmarks']:
@@ -359,7 +374,7 @@ def main():
 
     method_string = str(confobj['method']) + '(results)'
 
-    print "\nFinal result: " + str(eval(method_string))
+    print("\nFinal result: " + str(eval(method_string)))
 
 
 if __name__ == '__main__':
