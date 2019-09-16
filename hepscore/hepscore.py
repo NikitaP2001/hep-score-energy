@@ -53,7 +53,8 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution")
-    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o JSONFILE] [-f CONFIGFILE] OUTPUTDIR")
+    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o JSONFILE] [-f CONFIGFILE] "
+          "OUTPUTDIR")
     print(namel + " -h")
     print(namel + " -p")
     print("Option overview:")
@@ -236,6 +237,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, js, conf):
 
     result = proc_results(benchmark, scorekey, subkey, output,
                           runs, js, verbose) / score_modifiers['refscore']
+    js[benchmark]['refscore']=score_modifiers['refscore']
     return(result * score_modifiers['normalization'])
 
 
