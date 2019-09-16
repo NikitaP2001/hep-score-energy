@@ -237,7 +237,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, js, conf):
 
     result = proc_results(benchmark, scorekey, subkey, output,
                           runs, js, verbose) / score_modifiers['refscore']
-    js[benchmark]['refscore']=score_modifiers['refscore']
+    js[benchmark]['refscore'] = score_modifiers['refscore']
     return(result * score_modifiers['normalization'])
 
 
@@ -384,7 +384,7 @@ def main():
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
 
-    confj = ['name', 'version', 'registry']
+    confj = ['name', 'version', 'registry', 'reference_machine']
     for cf in confj:
         jsd[cf] = confobj[cf]
     jsd['container_exec'] = cec
