@@ -53,7 +53,7 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution")
-    print(namel + " {-s|-d} [-v] [-f CONFIGFILE] OUTPUTDIR")
+    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o JSONFILE] [-f CONFIGFILE] OUTPUTDIR")
     print(namel + " -h")
     print(namel + " -p")
     print("Option overview:")
@@ -62,8 +62,11 @@ def help():
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
+    print("-c           Set the sub-benchmark NCOPIES parameter (default: "
+          "autodetect)")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
+    print("-o           Specify an alternate JSON output file")
     print("-p           Print default (built-in) YAML configuration")
     print("\nExamples")
     print("--------")
@@ -77,7 +80,7 @@ def help():
     print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
 
 
-def proc_results(benchmark, key, subkey, rpath, runs, verbose):
+def proc_results(benchmark, key, subkey, rpath, runs, js, verbose):
 
     results = []
 
@@ -94,13 +97,15 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
 
     gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/*summary.json")
 
+    i = 0
+    js[benchmark] = {}
     for gpath in gpaths:
         jfile = open(gpath, mode='r')
         line = jfile.readline()
         jfile.close()
 
         jscore = json.loads(line)
-
+        js[benchmark]['run' + str(i)] = jscore
         try:
             if subkey is None:
                 score = float(jscore[key]['score'])
@@ -119,6 +124,7 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
             print("\nError: invalid score for one or more runs")
             sys.exit(2)
         results.append(score)
+        i = i + 1
 
     if len(results) != runs:
         print("\nError: missing json score file for one or more runs")
@@ -132,7 +138,7 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose):
     return(final_result)
 
 
-def run_benchmark(benchmark, cm, output, verbose, conf):
+def run_benchmark(benchmark, cm, output, verbose, copies, js, conf):
 
     commands = {'docker': "docker run --network=host -v " + output +
                 ":/results ",
@@ -143,7 +149,11 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
 
     req_options = ['version', 'scorekey']
     bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e'}
-    options_string = ""
+
+    if copies != 0:
+        options_string = " -c " + str(copies)
+    else:
+        options_string = ""
 
     runs = int(conf['repetitions'])
     log = output + "/" + conf['name'] + ".log"
@@ -225,7 +235,7 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
     print("")
 
     result = proc_results(benchmark, scorekey, subkey, output,
-                          runs, verbose) / score_modifiers['refscore']
+                          runs, js, verbose) / score_modifiers['refscore']
     return(result * score_modifiers['normalization'])
 
 
@@ -237,7 +247,7 @@ def read_conf(cfile):
 
     try:
         yfile = open(cfile, mode='r')
-        CONF = string.join((yfile.readlines()), '\n')
+        CONF = string.join(yfile.readlines(), '\n')
     except Exception:
         print("\nError: cannot open/read from " + cfile + "\n")
         sys.exit(1)
@@ -300,12 +310,15 @@ def geometric_mean(results):
 def main():
 
     global CONF, NAME
+    jsd = {}
+    outjson = ""
 
     verbose = False
-    cms = ""
+    cec = ""
+    copies = 0
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsf:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsf:c:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
@@ -326,16 +339,24 @@ def main():
             verbose = True
         elif opt == '-f':
             read_conf(arg)
+        elif opt == '-c':
+            try:
+                copies = int(arg)
+            except ValueError:
+                print("\nError: argument to -c must be an integer\n")
+                sys.exit(1)
+        elif opt == '-o':
+            outjson = arg
         elif opt == '-s' or opt == '-d':
-            if cms != '':
+            if cec:
                 print("\nError: -s and -d are exclusive\n")
                 sys.exit(1)
             if opt == '-s':
-                cms = "singularity"
+                cec = "singularity"
             else:
-                cms = "docker"
+                cec = "docker"
 
-    if cms == "":
+    if not cec:
         print("\nError: must specify run type (Docker or Singularity)\n")
         help()
         sys.exit(1)
@@ -358,21 +379,47 @@ def main():
 
     confobj = parse_conf()
 
+    sysname = ' '.join(os.uname())
+    curtime = time.asctime()
+
+    confj = ['name', 'version', 'registry']
+    for cf in confj:
+        jsd[cf] = confobj[cf]
+    jsd['container_exec'] = cec
+    jsd['date'] = curtime
+    jsd['system'] = sysname
+
     print(confobj['name'] + " Benchmark")
     print("Version: " + str(confobj['version']))
-    print("System: " + ' '.join(os.uname()))
-    print("Container Execution: " + cms)
+    if copies > 0:
+        print("Sub-benchmark NCOPIES: " + str(copies))
+        jsd['ncopies'] = copies
+    print("System: " + sysname)
+    print("Container Execution: " + cec)
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
-    print("Date: " + time.asctime() + "\n")
+    print("Date: " + curtime + "\n")
 
     results = []
     for benchmark in confobj['benchmarks']:
-        results.append(run_benchmark(benchmark, cms, output, verbose, confobj))
-
+        results.append(run_benchmark(benchmark, cec, output, verbose,
+                       copies, jsd, confobj))
     method_string = str(confobj['method']) + '(results)'
 
-    print("\nFinal result: " + str(eval(method_string)))
+    fres = eval(method_string)
+    print("\nFinal result: " + str(fres))
+
+    jsd['final_result'] = fres
+    if not outjson:
+        outjson = output + '/' + confobj['name'] + '.json'
+
+    try:
+        jfile = open(outjson, mode='w')
+        jfile.write(json.dumps(jsd))
+        jfile.close()
+    except Exception:
+        print("\nError: Failed to create output JSON " + outjson + "\n")
+        sys.exit(2)
 
 
 if __name__ == '__main__':
