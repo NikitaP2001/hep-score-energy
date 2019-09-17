@@ -384,7 +384,7 @@ def main():
     curtime = time.asctime()
 
     confobj['environment'] = {'system': sysname, 'date': curtime,
-                             'container_exec': cec, 'ncopies': copies}
+                              'container_exec': cec, 'ncopies': copies}
 
     print(confobj['name'] + " Benchmark")
     print("Version: " + str(confobj['version']))
