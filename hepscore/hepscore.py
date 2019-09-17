@@ -383,7 +383,7 @@ def main():
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
 
-    confobj['evironment'] = {'system': sysname, 'date': curtime,
+    confobj['environment'] = {'system': sysname, 'date': curtime,
                              'container_exec': cec, 'ncopies': copies}
 
     print(confobj['name'] + " Benchmark")
