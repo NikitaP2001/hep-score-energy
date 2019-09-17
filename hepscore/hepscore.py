@@ -35,12 +35,12 @@ hepscore_benchmark:
       version: v0.11
       scorekey: throughput_score
       refscore: 0.1625
-      normalization: 10.0
     lhcb-gen-sim:
       version: v0.5
       refscore: 7.1811
       scorekey: througput_score
       debug: false
+      scale: 20
       events:
       threads:
 """
@@ -53,7 +53,7 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution")
-    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o JSONFILE] [-f CONFIGFILE] "
+    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o OUTFILE] [-f CONFIGFILE] "
           "OUTPUTDIR")
     print(namel + " -h")
     print(namel + " -p")
@@ -67,7 +67,7 @@ def help():
           "autodetect)")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
-    print("-o           Specify an alternate JSON output file")
+    print("-o           Specify an alternate YAML output file location")
     print("-p           Print default (built-in) YAML configuration")
     print("\nExamples")
     print("--------")
@@ -81,7 +81,7 @@ def help():
     print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
 
 
-def proc_results(benchmark, key, subkey, rpath, runs, js, verbose):
+def proc_results(benchmark, key, subkey, rpath, runs, verbose, conf):
 
     results = []
 
@@ -99,14 +99,14 @@ def proc_results(benchmark, key, subkey, rpath, runs, js, verbose):
     gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/*summary.json")
 
     i = 0
-    js[benchmark] = {}
+    conf['benchmarks'][benchmark]['report'] = {}
     for gpath in gpaths:
         jfile = open(gpath, mode='r')
         line = jfile.readline()
         jfile.close()
 
         jscore = json.loads(line)
-        js[benchmark]['run' + str(i)] = jscore
+        conf['benchmarks'][benchmark]['report']['run' + str(i)] = jscore
         try:
             if subkey is None:
                 score = float(jscore[key]['score'])
@@ -139,14 +139,14 @@ def proc_results(benchmark, key, subkey, rpath, runs, js, verbose):
     return(final_result)
 
 
-def run_benchmark(benchmark, cm, output, verbose, copies, js, conf):
+def run_benchmark(benchmark, cm, output, verbose, copies, conf):
 
     commands = {'docker': "docker run --network=host -v " + output +
                 ":/results ",
                 'singularity': "singularity run -B " + output +
                 ":/results docker://"}
 
-    score_modifiers = {'normalization': 1.0, 'refscore': 1.0}
+    score_modifiers = {'refscore': 1.0}
 
     req_options = ['version', 'scorekey']
     bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e'}
@@ -236,9 +236,8 @@ def run_benchmark(benchmark, cm, output, verbose, copies, js, conf):
     print("")
 
     result = proc_results(benchmark, scorekey, subkey, output,
-                          runs, js, verbose) / score_modifiers['refscore']
-    js[benchmark]['refscore'] = score_modifiers['refscore']
-    return(result * score_modifiers['normalization'])
+                          runs, verbose, conf) / score_modifiers['refscore']
+    return(result)
 
 
 def read_conf(cfile):
@@ -312,11 +311,11 @@ def geometric_mean(results):
 def main():
 
     global CONF, NAME
-    jsd = {}
-    outjson = ""
+    outyaml = ""
 
     verbose = False
     cec = ""
+    outobj = {}
     copies = 0
 
     try:
@@ -335,7 +334,7 @@ def main():
                 print("\nError: -p must be used without other options\n")
                 help()
                 sys.exit(1)
-            print(yaml.dump(yaml.safe_load(CONF)))
+            print(yaml.safe_dump(yaml.safe_load(CONF)))
             sys.exit(0)
         elif opt == '-v':
             verbose = True
@@ -348,7 +347,7 @@ def main():
                 print("\nError: argument to -c must be an integer\n")
                 sys.exit(1)
         elif opt == '-o':
-            outjson = arg
+            outyaml = arg
         elif opt == '-s' or opt == '-d':
             if cec:
                 print("\nError: -s and -d are exclusive\n")
@@ -384,18 +383,13 @@ def main():
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
 
-    confj = ['name', 'version', 'registry', 'reference_machine']
-    for cf in confj:
-        jsd[cf] = confobj[cf]
-    jsd['container_exec'] = cec
-    jsd['date'] = curtime
-    jsd['system'] = sysname
+    confobj['evironment'] = {'system': sysname, 'date': curtime,
+                             'container_exec': cec, 'ncopies': copies}
 
     print(confobj['name'] + " Benchmark")
     print("Version: " + str(confobj['version']))
     if copies > 0:
         print("Sub-benchmark NCOPIES: " + str(copies))
-        jsd['ncopies'] = copies
     print("System: " + sysname)
     print("Container Execution: " + cec)
     print("Registry: " + confobj['registry'])
@@ -405,22 +399,23 @@ def main():
     results = []
     for benchmark in confobj['benchmarks']:
         results.append(run_benchmark(benchmark, cec, output, verbose,
-                       copies, jsd, confobj))
+                       copies, confobj))
     method_string = str(confobj['method']) + '(results)'
 
-    fres = eval(method_string)
+    fres = eval(method_string) * confobj['scaling']
     print("\nFinal result: " + str(fres))
 
-    jsd['final_result'] = fres
-    if not outjson:
-        outjson = output + '/' + confobj['name'] + '.json'
-
+    confobj['final_result'] = fres
+    if not outyaml:
+        outyaml = output + '/' + confobj['name'] + '.yaml'
+    outobj['hepscore_benchmark'] = confobj
     try:
-        jfile = open(outjson, mode='w')
-        jfile.write(json.dumps(jsd))
+        jfile = open(outyaml, mode='w')
+        jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
+                    allow_unicode=True))
         jfile.close()
     except Exception:
-        print("\nError: Failed to create output JSON " + outjson + "\n")
+        print("\nError: Failed to create output YAML " + outyaml + "\n")
         sys.exit(2)
 
 
