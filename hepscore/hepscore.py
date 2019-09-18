@@ -17,6 +17,7 @@ import time
 import yaml
 
 NAME = "HEPscore"
+VER = "0.5"
 
 CONF = """
 hepscore_benchmark:
@@ -52,7 +53,7 @@ def help():
 
     namel = NAME.lower() + ".py"
 
-    print(NAME + " Benchmark Execution")
+    print(NAME + " Benchmark Execution - Version " + VER)
     print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o OUTFILE] [-f CONFIGFILE] "
           "OUTPUTDIR")
     print(namel + " -h")
@@ -70,8 +71,7 @@ def help():
     print("-o           Specify an alternate output file location")
     print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print default (built-in) YAML configuration")
-    print("\nExamples")
-    print("--------")
+    print("\nExamples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
     print("Run with Singularity, using a non-standard benchmark "
@@ -82,9 +82,11 @@ def help():
     print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
 
 
-def proc_results(benchmark, key, subkey, rpath, runs, verbose, conf):
+def proc_results(benchmark, rpath, runs, verbose, conf):
 
     results = []
+    bench_conf = conf['benchmarks'][benchmark]
+    key = bench_conf['scorekey']
 
     if benchmark == "kv-bmk":
         benchmark_glob = "test_"
@@ -100,20 +102,30 @@ def proc_results(benchmark, key, subkey, rpath, runs, verbose, conf):
     gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/*summary.json")
 
     i = 0
-    conf['benchmarks'][benchmark]['report'] = {}
+    bench_conf['report'] = {}
     for gpath in gpaths:
         jfile = open(gpath, mode='r')
         line = jfile.readline()
         jfile.close()
 
         jscore = json.loads(line)
-        conf['benchmarks'][benchmark]['report']['run' + str(i)] = jscore
+        bench_conf['report']['run' + str(i)] = jscore
+
         try:
-            if subkey is None:
-                score = float(jscore[key]['score'])
+            if 'ref_scores' not in bench_conf.keys():
+                if 'subkey' in bench_conf.keys():
+                    subkey = bench_conf['subkey']
+                    score = float(jscore[key][subkey]['score'])
+                else:
+                    score = float(jscore[key]['score'])
             else:
-                print(subkey)
-                score = float(jscore[key][subkey]['score'])
+                sub_results = []
+                for sub_bmk in bench_conf['ref_scores'].keys():
+                    sub_score = float(jscore[key][sub_bmk])
+                    sub_score = sub_score / bench_conf['ref_scores'][sub_bmk]
+                    sub_results.append(sub_score)
+                score = geometric_mean(sub_results)
+
         except (KeyError, ValueError):
             print("\nError: score not reported")
             sys.exit(2)
@@ -147,7 +159,14 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
                 'singularity': "singularity run -B " + output +
                 ":/results docker://"}
 
-    score_modifiers = {'refscore': 1.0}
+    bench_conf = conf['benchmarks'][benchmark]
+    overall_refscore = 1.0
+
+    bmark_keys = bench_conf.keys()
+
+    if set(['refscore', 'ref_scores']).issubset(set(bmark_keys)):
+        print("\nError: ref_score and ref_scores cannot both be specified\n")
+        sys.exit(2)
 
     req_options = ['version', 'scorekey']
     bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e'}
@@ -160,44 +179,39 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     runs = int(conf['repetitions'])
     log = output + "/" + conf['name'] + ".log"
 
-    for modifier in score_modifiers.keys():
-        if modifier in conf['benchmarks'][benchmark]:
-            if conf['benchmarks'][benchmark][modifier] is not None:
-                try:
-                    score_modifiers[modifier] = \
-                        float(conf['benchmarks'][benchmark][modifier])
-                except ValueError:
-                    print("\nError: configuration error, non-float value "
-                          "for " + modifier)
-                    sys.exit(2)
+    if 'ref_score' in bmark_keys:
+        if bench_conf['refscore'] is None:
+            overall_refscore = 1.0
+        else:
+            try:
+                overall_refscore = \
+                    float(bench_conf['ref_score'])
+            except ValueError:
+                print("\nError: configuration error, non-float value "
+                      "for ref_score")
+                sys.exit(2)
 
     for key in req_options:
-        if key not in conf['benchmarks'][benchmark]:
+        if key not in bmark_keys:
             print(("\nError: configuration error, missing required benchmark "
                   "option -" + key))
             sys.exit(2)
 
-    scorekey = conf['benchmarks'][benchmark]['scorekey']
-    try:
-        subkey = conf['benchmarks'][benchmark]['subkey']
-    except KeyError:
-        subkey = None
-
     for option in bmk_options.keys():
-        if option in conf['benchmarks'][benchmark].keys() and \
-                str(conf['benchmarks'][benchmark][option]) \
+        if option in bmark_keys and \
+                str(bench_conf[option]) \
                 not in ['None', 'False']:
             options_string = options_string + ' ' + bmk_options[option]
             if option != 'debug':
                 options_string = options_string + ' ' + \
-                    str(conf['benchmarks'][benchmark][option])
+                    str(bench_conf[option])
     try:
         lfile = open(log, mode='a')
     except Exception:
         print("\nError: failure to open " + log)
 
     benchmark_complete = conf['registry'] + '/' + benchmark + \
-        ':' + conf['benchmarks'][benchmark]['version'] + options_string
+        ':' + bench_conf['version'] + options_string
 
     sys.stdout.write("Executing " + str(runs) + " run")
     if runs > 1:
@@ -236,8 +250,8 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
 
     print("")
 
-    result = proc_results(benchmark, scorekey, subkey, output,
-                          runs, verbose, conf) / score_modifiers['refscore']
+    result = proc_results(benchmark, output, runs, verbose, conf) \
+        / overall_refscore
     return(result)
 
 
@@ -281,7 +295,7 @@ def parse_conf():
                     print("Error: 'repititions' configuration parameter must "
                           "be an integer\n")
     except KeyError:
-        print("\nError: invalid HEP benchmark YAML configuration\n")
+        print("\nError: " + k + " parameter must be specified")
         sys.exit(1)
 
     return(dat['hepscore_benchmark'])
