@@ -67,7 +67,8 @@ def help():
           "autodetect)")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
-    print("-o           Specify an alternate YAML output file location")
+    print("-o           Specify an alternate output file location")
+    print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print default (built-in) YAML configuration")
     print("\nExamples")
     print("--------")
@@ -311,15 +312,16 @@ def geometric_mean(results):
 def main():
 
     global CONF, NAME
-    outyaml = ""
+    outfile = ""
 
     verbose = False
     cec = ""
     outobj = {}
     copies = 0
+    opost = "json"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsf:c:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsyf:c:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
@@ -340,6 +342,8 @@ def main():
             verbose = True
         elif opt == '-f':
             read_conf(arg)
+        elif opt == '-y':
+            opost = 'yaml'
         elif opt == '-c':
             try:
                 copies = int(arg)
@@ -347,7 +351,7 @@ def main():
                 print("\nError: argument to -c must be an integer\n")
                 sys.exit(1)
         elif opt == '-o':
-            outyaml = arg
+            outfile = arg
         elif opt == '-s' or opt == '-d':
             if cec:
                 print("\nError: -s and -d are exclusive\n")
@@ -406,16 +410,20 @@ def main():
     print("\nFinal result: " + str(fres))
 
     confobj['final_result'] = fres
-    if not outyaml:
-        outyaml = output + '/' + confobj['name'] + '.yaml'
-    outobj['hepscore_benchmark'] = confobj
+    if not outfile:
+        outfile = output + '/' + confobj['name'] + '.' + opost
+    if opost == 'yaml':
+        outobj['hepscore_benchmark'] = confobj
     try:
-        jfile = open(outyaml, mode='w')
-        jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                    allow_unicode=True))
+        jfile = open(outfile, mode='w')
+        if opost == 'yaml':
+            jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
+                        allow_unicode=True))
+        else:
+            jfile.write(json.dumps(confobj))
         jfile.close()
     except Exception:
-        print("\nError: Failed to create output YAML " + outyaml + "\n")
+        print("\nError: Failed to create output YAML " + outfile + "\n")
         sys.exit(2)
 
 
