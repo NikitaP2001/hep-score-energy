@@ -165,7 +165,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     bmark_keys = bench_conf.keys()
 
     if set(['refscore', 'ref_scores']).issubset(set(bmark_keys)):
-        print("\nError: ref_score and ref_scores cannot both be specified\n")
+        print("\nError: refscore and ref_scores cannot both be specified\n")
         sys.exit(2)
 
     req_options = ['version', 'scorekey']
@@ -179,16 +179,16 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     runs = int(conf['repetitions'])
     log = output + "/" + conf['name'] + ".log"
 
-    if 'ref_score' in bmark_keys:
+    if 'refscore' in bmark_keys:
         if bench_conf['refscore'] is None:
             overall_refscore = 1.0
         else:
             try:
                 overall_refscore = \
-                    float(bench_conf['ref_score'])
+                    float(bench_conf['refscore'])
             except ValueError:
                 print("\nError: configuration error, non-float value "
-                      "for ref_score")
+                      "for refscore")
                 sys.exit(2)
 
     for key in req_options:
