@@ -213,6 +213,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
                                     stderr=subprocess.STDOUT)
         except Exception:
             print("\nError: failure to execute: " + command_string)
+            proc_results(benchmark, output, verbose, conf)
             return(-1)
 
         line = cmdf.stdout.readline()
@@ -226,6 +227,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
         if cmdf.returncode != 0:
             print(("\nError: running " + benchmark + " failed.  Exit status " +
                   str(cmdf.returncode) + "\n"))
+            proc_results(benchmark, output, verbose, conf)
             return(-1)
 
     lfile.close()
