@@ -137,7 +137,8 @@ def proc_results(benchmark, rpath, verbose, conf):
                 score = geometric_mean(sub_results)
         except (KeyError, ValueError):
             if not fail:
-                print("\nError: score not reported for one or more runs. The retrieved json report contains\n%s" % jscore)
+                print("\nError: score not reported for one or more runs. 
+                              The retrieved json report contains\n%s" % jscore)
                 fail = True
 
         i = i + 1
@@ -308,12 +309,14 @@ def parse_conf():
         bcount = bcount + 1
 
         if benchmark[0] == ".":
-            print("\nINFO: the config has a commented entry " + benchmark + " : Skipping this benchmark!!!!\n")
+            print("\nINFO: the config has a commented entry " + benchmark + 
+                  " : Skipping this benchmark!!!!\n")
             dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
             continue
 
         if not benchmark[0].isalpha() or benchmark.find(' ') != -1:
-            print("\nConfiguration error: illegal character in " + benchmark + "\n")
+            print("\nConfiguration error: illegal character in " + 
+                  benchmark + "\n")
             sys.exit(1) 
 
         if benchmark.find('-') == -1:
@@ -354,7 +357,8 @@ def parse_conf():
         print("\nConfiguration error: no benchmarks specified")
         sys.exit(1)
 
-    print("The parsed config is %s" % yaml.safe_dump(dat['hepscore_benchmark']))
+    print("The parsed config is %s" % 
+          yaml.safe_dump(dat['hepscore_benchmark']))
     return(dat['hepscore_benchmark'])
 
 
@@ -433,7 +437,7 @@ def main():
             else:
                 cec = "docker"
 
-    if print_conf_and_exit :
+    if print_conf_and_exit:
         print(yaml.safe_dump(yaml.safe_load(CONF)))
         sys.exit(0)
 
