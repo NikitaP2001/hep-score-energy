@@ -137,8 +137,8 @@ def proc_results(benchmark, rpath, verbose, conf):
                 score = geometric_mean(sub_results)
         except (KeyError, ValueError):
             if not fail:
-                print("\nError: score not reported for one or more runs. 
-                              The retrieved json report contains\n%s" % jscore)
+                print("\nError: score not reported for one or more runs." +
+                      "The retrieved json report contains\n%s" % jscore)
                 fail = True
 
         i = i + 1
@@ -196,7 +196,7 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
         print("\nError: failure to open " + log)
         return(-1)
 
-    benchmark_complete = conf['registry'] + '/' + benchmark + \
+    benchmark_complete = conf['registry'] + '/' + benchmark +\
         ':' + bench_conf['version'] + options_string
 
     sys.stdout.write("Executing " + str(runs) + " run")
@@ -309,15 +309,15 @@ def parse_conf():
         bcount = bcount + 1
 
         if benchmark[0] == ".":
-            print("\nINFO: the config has a commented entry " + benchmark + 
+            print("\nINFO: the config has a commented entry " + benchmark +
                   " : Skipping this benchmark!!!!\n")
             dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
             continue
 
         if not benchmark[0].isalpha() or benchmark.find(' ') != -1:
-            print("\nConfiguration error: illegal character in " + 
+            print("\nConfiguration error: illegal character in " +
                   benchmark + "\n")
-            sys.exit(1) 
+            sys.exit(1)
 
         if benchmark.find('-') == -1:
             print("\nConfiguration error: expect at least 1 '-' character in "
@@ -357,7 +357,7 @@ def parse_conf():
         print("\nConfiguration error: no benchmarks specified")
         sys.exit(1)
 
-    print("The parsed config is %s" % 
+    print("The parsed config is %s" %
           yaml.safe_dump(dat['hepscore_benchmark']))
     return(dat['hepscore_benchmark'])
 
@@ -409,10 +409,6 @@ def main():
             help()
             sys.exit(0)
         if opt == '-p':
-            #if len(opts) != 1:
-            #    print("\nError: -p must be used without other options\n")
-            #    help()
-            #    sys.exit(1)
             print_conf_and_exit = True
         elif opt == '-v':
             verbose = True
