@@ -490,10 +490,10 @@ def main():
         fres = method(results) * confobj['scaling']
 
         print("\nFinal result: " + str(fres))
-        confobj['hepscore'] = fres
+        confobj['score'] = fres
     else:
         confobj['ERROR'] = benchmark
-        confobj['hepscore'] = 'FAIL'
+        confobj['score'] = 'FAIL'
 
     if not outfile:
         outfile = output + '/' + confobj['name'] + '.' + opost
