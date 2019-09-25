@@ -128,7 +128,7 @@ def proc_results(benchmark, rpath, verbose, conf):
         jfile.close()
 
         jscore = json.loads(line)
-        bench_conf['run' + str(i)]['report']= jscore
+        bench_conf['run' + str(i)]['report'] = jscore
 
         try:
             if 'ref_scores' not in bench_conf.keys():
@@ -252,7 +252,8 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
 
         endtime = time.time()
         bench_conf[runstr]['end_at'] = time.ctime(endtime)
-        bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
+        bench_conf[runstr]['duration'] = math.floor(endtime) - \
+            math.floor(starttime)
 
         if cmdf.returncode != 0:
             print(("\nError: running " + benchmark + " failed.  Exit status " +
