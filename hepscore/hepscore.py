@@ -9,6 +9,7 @@
 import getopt
 import glob
 import json
+import math
 import os
 import string
 import subprocess
@@ -17,7 +18,7 @@ import time
 import yaml
 
 NAME = "HEPscore"
-VER = "0.62"
+VER = "0.63"
 DEBUG = False
 
 CONF = """
@@ -119,7 +120,6 @@ def proc_results(benchmark, rpath, verbose, conf):
 
     debug_print("Looking for results in " + str(gpaths), False)
     i = 0
-    bench_conf['report'] = {}
     for gpath in gpaths:
         debug_print("Opening file " + gpath, False)
 
@@ -128,7 +128,7 @@ def proc_results(benchmark, rpath, verbose, conf):
         jfile.close()
 
         jscore = json.loads(line)
-        bench_conf['report']['run' + str(i)] = jscore
+        bench_conf['run' + str(i)]['report']= jscore
 
         try:
             if 'ref_scores' not in bench_conf.keys():
@@ -176,7 +176,7 @@ def proc_results(benchmark, rpath, verbose, conf):
 
 def run_benchmark(benchmark, cm, output, verbose, copies, conf):
 
-    commands = {'docker': "docker run --network=host -v " + output +
+    commands = {'docker': "docker run --rm --network=host -v " + output +
                 ":/results ",
                 'singularity': "singularity run -B " + output +
                 ":/results docker://"}
@@ -225,12 +225,20 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
             sys.stdout.write('.')
             sys.stdout.flush()
 
+        runstr = 'run' + str(i)
+
+        bench_conf[runstr] = {}
+        starttime = time.time()
+        bench_conf[runstr]['start_at'] = time.ctime(starttime)
         try:
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
         except Exception:
             print("\nError: failure to execute: " + command_string)
             lfile.close()
+            bench_conf['run' + str(i)]['end_at'] = \
+                bench_conf['run' + str(i)]['start_at']
+            bench_conf['run' + str(i)]['duration'] = 0
             proc_results(benchmark, output, verbose, conf)
             return(-1)
 
@@ -241,6 +249,10 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
             line = cmdf.stdout.readline()
 
         cmdf.wait()
+
+        endtime = time.time()
+        bench_conf[runstr]['end_at'] = time.ctime(endtime)
+        bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
 
         if cmdf.returncode != 0:
             print(("\nError: running " + benchmark + " failed.  Exit status " +
@@ -410,7 +422,7 @@ def main():
     opost = "json"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVsyf:c:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyf:c:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
