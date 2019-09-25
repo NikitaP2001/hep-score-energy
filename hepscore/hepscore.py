@@ -369,8 +369,8 @@ def parse_conf():
         print("\nConfiguration error: no benchmarks specified")
         sys.exit(1)
 
-    debug_print("The parsed config is:\n" +\
-        yaml.safe_dump(dat['hepscore_benchmark']), False)
+    debug_print("The parsed config is:\n" +
+                yaml.safe_dump(dat['hepscore_benchmark']), False)
 
     return(dat['hepscore_benchmark'])
 
