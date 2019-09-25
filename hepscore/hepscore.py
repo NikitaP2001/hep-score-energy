@@ -17,12 +17,13 @@ import time
 import yaml
 
 NAME = "HEPscore"
-VER = "0.61"
+VER = "0.62"
+DEBUG = False
 
 CONF = """
 hepscore_benchmark:
   name: HEPscore19
-  version: 0.3
+  version: 0.31
   repetitions: 3  # number of repetitions of the same benchmark
   reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
   method: geometric_mean # or any other algorithm
@@ -55,10 +56,10 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution - Version " + VER)
-    print(namel + " {-s|-d} [-v] [-c NCOPIES] [-o OUTFILE] [-f CONFIGFILE] "
-          "OUTPUTDIR")
+    print(namel + " {-s|-d} [-v] [-V] [-y] [-c NCOPIES] [-o OUTFILE] "
+          "[-f CONF] OUTDIR")
     print(namel + " -h")
-    print(namel + " -p")
+    print(namel + " -p [-f CONF]")
     print("Option overview:")
     print("-h           Print help information and exit")
     print("-v           Display verbose output, including all component "
@@ -71,8 +72,9 @@ def help():
           "built-in)")
     print("-o           Specify an alternate summary output file location")
     print("-y           Specify output file should be YAML instead of JSON")
-    print("-p           Print default (built-in) YAML configuration")
-    print("\nExamples:")
+    print("-p           Print configuration and exit")
+    print("-V           Enable debugging output: implies -v")
+    print("Examples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
     print("Run with Singularity, using a non-standard benchmark "
@@ -81,6 +83,15 @@ def help():
     print("Additional information: https://gitlab.cern.ch/hep-benchmarks/hep-"
           "score")
     print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
+
+
+def debug_print(dstring, newline):
+    global DEBUG
+
+    if DEBUG:
+        if newline:
+            print("")
+        print("DEBUG: " + dstring)
 
 
 def proc_results(benchmark, rpath, verbose, conf):
@@ -106,11 +117,11 @@ def proc_results(benchmark, rpath, verbose, conf):
 
     gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/*summary.json")
 
-    print("Looking for results in %s" % gpaths)
+    debug_print("Looking for results in " + str(gpaths), False)
     i = 0
     bench_conf['report'] = {}
     for gpath in gpaths:
-        print("Opening file %s" % gpath)
+        debug_print("Opening file " + gpath, False)
 
         jfile = open(gpath, mode='r')
         line = jfile.readline()
@@ -202,11 +213,12 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     sys.stdout.write("Executing " + str(runs) + " run")
     if runs > 1:
         sys.stdout.write('s')
-    sys.stdout.write(" of " + benchmark + "\n")
+    sys.stdout.write(" of " + benchmark)
 
     command_string = commands[cm] + benchmark_complete
     command = command_string.split(' ')
-    sys.stdout.write("Running  %s " % command)
+
+    debug_print("Running " + str(command), True)
 
     for i in range(runs):
         if verbose:
@@ -357,8 +369,9 @@ def parse_conf():
         print("\nConfiguration error: no benchmarks specified")
         sys.exit(1)
 
-    print("The parsed config is %s" %
-          yaml.safe_dump(dat['hepscore_benchmark']))
+    debug_print("The parsed config is:\n" +\
+        yaml.safe_dump(dat['hepscore_benchmark']), False)
+
     return(dat['hepscore_benchmark'])
 
 
@@ -386,7 +399,7 @@ def geometric_mean(results):
 
 def main():
 
-    global CONF, NAME
+    global CONF, NAME, DEBUG
 
     allowed_methods = {'geometric_mean': geometric_mean}
     outfile = ""
@@ -397,7 +410,7 @@ def main():
     opost = "json"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvdsyf:c:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVsyf:c:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
@@ -412,6 +425,9 @@ def main():
             print_conf_and_exit = True
         elif opt == '-v':
             verbose = True
+        elif opt == '-V':
+            verbose = True
+            DEBUG = True
         elif opt == '-f':
             read_conf(arg)
         elif opt == '-y':
