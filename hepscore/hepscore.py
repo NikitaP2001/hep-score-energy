@@ -213,10 +213,11 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     sys.stdout.write("Executing " + str(runs) + " run")
     if runs > 1:
         sys.stdout.write('s')
-    sys.stdout.write(" of " + benchmark)
+    sys.stdout.write(" of " + benchmark + "\n")
 
     command_string = commands[cm] + benchmark_complete
     command = command_string.split(' ')
+    sys.stdout.write("Running  %s " % command)
 
     debug_print("Running " + str(command), True)
 
