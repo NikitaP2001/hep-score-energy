@@ -174,8 +174,6 @@ def proc_results(benchmark, rpath, verbose, conf):
             return(-1)
 
     final_result, final_run = median_tuple(results)
-    print(str(final_result))
-    print(str(final_run))
 
 #   Insert wl-score from chosen run
     if 'wl-scores' not in conf:
@@ -450,7 +448,7 @@ def main():
     opost = "json"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyf:c:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
