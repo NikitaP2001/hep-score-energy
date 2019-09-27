@@ -1,7 +1,7 @@
 stages:
   - build-testing-image
+  - unit-test
   - test
-  - build
 
     
 # Build the tox image (which is used to test the hep-score package)
@@ -27,8 +27,8 @@ job_build_image_tox:
     # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
     - /kaniko/executor --context $CI_PROJECT_DIR/docker-images/tox --dockerfile $CI_PROJECT_DIR/docker-images/tox/Dockerfile --destination $CI_REGISTRY_IMAGE/tox:latest
 
-pep8:
-  stage: test
+.pep8:
+  stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
   except:
     - tags
@@ -38,7 +38,7 @@ pep8:
     - scl enable rh-python35 'tox -epep8'
 
 python27:
-  stage: test
+  stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
   except:
     - tags
@@ -48,7 +48,7 @@ python27:
     - tox -epy27
 
 coverage:
-  stage: test
+  stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
   except:
     - tags
@@ -59,3 +59,32 @@ coverage:
   artifacts:
     paths:
       - cover
+
+job_test_kv_run_cc7:
+    image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
+    tags:
+        -  hep-score-docker-runner 
+    stage: test
+    script: 
+        - yum install -y yum-plugin-ovl #because of https://github.com/CentOS/sig-cloud-instance-images/issues/15
+        - echo "install hepscore"
+        - pip install .
+        - echo "create working dir"
+        - mkdir -p /tmp/HEPSCORE/$CI_JOB_ID
+        - echo "test the configuration dump"
+        - hep-score -p -f $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci.yaml /tmp/HEPSCORE/$CI_JOB_ID
+        - export TESTDIR=$CI_PROJECT_DIR/hepscore/tests
+        - echo "test the parsing of existing wl results"
+        - $TESTDIR/mock_hepscore.py $TESTDIR/etc/hepscore_conf_ci.yaml $TESTDIR/data/HEPscore_ci/
+        - echo "test run of hep-score with configuration for atlas-kv-bmk"
+        - hep-score -d -f $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci.yaml /tmp/HEPSCORE/$CI_JOB_ID
+    after_script:
+        - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
+    only:
+      refs:
+        - qa
+    artifacts:
+        paths:
+           - hep-score-test.tgz
+        expire_in: 1 week
+        when: always
