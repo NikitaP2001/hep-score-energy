@@ -10,6 +10,7 @@ import getopt
 import glob
 import json
 import math
+import operator
 import os
 import string
 import subprocess
@@ -57,8 +58,7 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution - Version " + VER)
-    print(namel + " {-s|-d} [-v] [-V] [-y] [-c NCOPIES] [-o OUTFILE] "
-          "[-f CONF] OUTDIR")
+    print(namel + " {-s|-d} [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
     print(namel + " -h")
     print(namel + " -p [-f CONF]")
     print("Option overview:")
@@ -67,8 +67,6 @@ def help():
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
-    print("-c           Set the sub-benchmark NCOPIES parameter (default: "
-          "autodetect)")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
     print("-o           Specify an alternate summary output file location")
@@ -97,7 +95,7 @@ def debug_print(dstring, newline):
 
 def proc_results(benchmark, rpath, verbose, conf):
 
-    results = []
+    results = {}
     fail = False
     overall_refscore = 1.0
     bench_conf = conf['benchmarks'][benchmark]
@@ -128,7 +126,10 @@ def proc_results(benchmark, rpath, verbose, conf):
         jfile.close()
 
         jscore = json.loads(line)
-        bench_conf['run' + str(i)]['report'] = jscore
+        runstr = 'run' + str(i)
+        if runstr not in bench_conf:
+            bench_conf[runstr] = {}
+        bench_conf[runstr]['report'] = jscore
 
         try:
             if 'ref_scores' not in bench_conf.keys():
@@ -152,21 +153,47 @@ def proc_results(benchmark, rpath, verbose, conf):
                       "The retrieved json report contains\n%s" % jscore)
                 fail = True
 
-        i = i + 1
-
         if not fail:
-            results.append(score)
+            results[i] = score
+
             if verbose:
                 print(" " + str(score))
 
-    if fail:
+        i = i + 1
+
+    if len(results) == 0:
+        print("\nNo results: fail")
         return(-1)
 
     if len(results) != runs:
+        fail = True
         print("\nError: missing json score file for one or more runs")
-        return(-1)
 
-    final_result = median(results)
+    if fail:
+        if 'allow_fail' not in conf.keys() or conf['allow_fail'] is False:
+            return(-1)
+
+    final_result, final_run = median_tuple(results)
+
+#   Insert wl-score from chosen run
+    if 'wl-scores' not in conf:
+        conf['wl-scores'] = {}
+    conf['wl-scores'][benchmark] = {}
+
+    if 'ref_scores' in bench_conf.keys():
+        for sub_bmk in bench_conf['ref_scores'].keys():
+            if len(results) % 2 != 0:
+                runstr = 'run' + str(final_run)
+                debug_print("Median selected run " + runstr, True)
+                conf['wl-scores'][benchmark][sub_bmk] = \
+                    bench_conf[runstr]['report']['wl-scores'][sub_bmk]
+            else:
+                avg_names = ['run' + str(rv) for rv in final_run]
+                sum = 0
+                for runstr in avg_names:
+                    sum = sum + \
+                        bench_conf[runstr]['report']['wl-scores'][sub_bmk]
+                conf['wl-scores'][benchmark][sub_bmk] = sum / 2
 
     if len(results) > 1 and verbose:
         print(" Median: " + str(final_result))
@@ -174,7 +201,7 @@ def proc_results(benchmark, rpath, verbose, conf):
     return(final_result)
 
 
-def run_benchmark(benchmark, cm, output, verbose, copies, conf):
+def run_benchmark(benchmark, cm, output, verbose, conf):
 
     commands = {'docker': "docker run --rm --network=host -v " + output +
                 ":/results ",
@@ -183,12 +210,9 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
 
     bench_conf = conf['benchmarks'][benchmark]
     bmark_keys = bench_conf.keys()
-    bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e'}
-
-    if copies != 0:
-        options_string = " -c " + str(copies)
-    else:
-        options_string = ""
+    bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e',
+                   'copies': '-c'}
+    options_string = ""
 
     runs = int(conf['repetitions'])
     log = output + "/" + conf['name'] + ".log"
@@ -218,8 +242,6 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
     command_string = commands[cm] + benchmark_complete
     command = command_string.split(' ')
     sys.stdout.write("Running  %s " % command)
-
-    debug_print("Running " + str(command), True)
 
     for i in range(runs):
         if verbose:
@@ -259,9 +281,11 @@ def run_benchmark(benchmark, cm, output, verbose, copies, conf):
         if cmdf.returncode != 0:
             print(("\nError: running " + benchmark + " failed.  Exit status " +
                   str(cmdf.returncode) + "\n"))
-            lfile.close()
-            proc_results(benchmark, output, verbose, conf)
-            return(-1)
+
+            if 'allow_fail' not in conf.keys() or conf['allow_fail'] is False:
+                lfile.close()
+                proc_results(benchmark, output, verbose, conf)
+                return(-1)
 
     lfile.close()
 
@@ -389,17 +413,18 @@ def parse_conf():
     return(dat['hepscore_benchmark'])
 
 
-def median(vals):
+def median_tuple(vals):
 
-    if len(vals) == 1:
-        return(vals[0])
+    sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
 
-    vals.sort()
-    med_ind = len(vals) / 2
-    if len(vals) % 2 == 1:
-        return(vals[med_ind])
+    med_ind = len(sorted_vals) / 2
+    if len(sorted_vals) % 2 == 1:
+        return(sorted_vals[med_ind][::-1])
     else:
-        return((vals[med_ind] + vals[med_ind - 1]) / 2.0)
+        val1 = sorted_vals[med_ind - 1][1]
+        val2 = sorted_vals[med_ind][1]
+        return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
+                                       sorted_vals[med_ind][0]))
 
 
 def geometric_mean(results):
@@ -420,11 +445,10 @@ def main():
     verbose = False
     cec = ""
     outobj = {}
-    copies = 0
     opost = "json"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyf:c:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help()
@@ -446,12 +470,6 @@ def main():
             read_conf(arg)
         elif opt == '-y':
             opost = 'yaml'
-        elif opt == '-c':
-            try:
-                copies = int(arg)
-            except ValueError:
-                print("\nError: argument to -c must be an integer\n")
-                sys.exit(1)
         elif opt == '-o':
             outfile = arg
         elif opt == '-s' or opt == '-d':
@@ -494,22 +512,22 @@ def main():
     curtime = time.asctime()
 
     confobj['environment'] = {'system': sysname, 'date': curtime,
-                              'container_exec': cec, 'ncopies': copies}
+                              'container_exec': cec}
 
     print(confobj['name'] + " Benchmark")
     print("Version: " + str(confobj['version']))
-    if copies > 0:
-        print("Sub-benchmark NCOPIES: " + str(copies))
     print("System: " + sysname)
     print("Container Execution: " + cec)
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
     print("Date: " + curtime + "\n")
 
+    confobj['wl-scores'] = {}
+
     results = []
     res = 0
     for benchmark in confobj['benchmarks']:
-        res = run_benchmark(benchmark, cec, output, verbose, copies, confobj)
+        res = run_benchmark(benchmark, cec, output, verbose, confobj)
         if res < 0:
             break
         results.append(res)
@@ -517,7 +535,9 @@ def main():
 # Only compute a final score if all sub-benchmarks reported a score
     if res >= 0:
         method = allowed_methods[confobj['method']]
-        fres = method(results) * confobj['scaling']
+        fres = method(results)
+        if 'scaling' in confobj.keys():
+            fres = fres * confobj['scaling']
 
         print("\nFinal result: " + str(fres))
         confobj['score'] = fres
