@@ -1,0 +1,24 @@
+hepscore_benchmark:
+  name: HEPscore19
+  version: 0.21
+  repetitions: 1  #number of repetitions of the same benchmark
+  reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
+  method: geometric_mean #or any other algorithm
+  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+  benchmarks:
+    atlas-sim-bmk:
+      version: v0.18
+      scorekey: CPU_score
+      refscore: 0.0052
+    cms-reco-bmk:
+      version: v0.11
+      scorekey: throughput_score
+      refscore: 0.1625
+      normalization: 10.0
+    lhcb-gen-sim:
+      version: v0.5
+      refscore: 7.1811
+      scorekey: througput_score
+      debug: false
+      events:
+      threads:

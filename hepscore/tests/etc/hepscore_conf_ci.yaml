@@ -1,0 +1,19 @@
+hepscore_benchmark:
+  name: HEPscore19
+  version: 0.21
+  scaling: 10
+  repetitions: 2  #number of repetitions of the same benchmark
+  reference_machine: 'Unknown'
+  method: geometric_mean #or any other algorithm
+  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+  benchmarks:
+    atlas-kv-bmk:
+      ref_scores:
+        sim: 1
+      scorekey: wl-scores
+      events: 3
+      threads: 1
+      copies: 2
+      version: ci1.1
+      debug : true
+    
