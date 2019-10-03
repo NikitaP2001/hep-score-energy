@@ -2,8 +2,6 @@
 ###############################################################################
 #
 # hepscore.py - HEPscore benchmark execution
-# Chris Hollowell <hollowec@bnl.gov>
-#
 #
 
 import getopt
