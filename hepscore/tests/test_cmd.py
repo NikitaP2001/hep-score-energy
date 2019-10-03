@@ -55,5 +55,3 @@ class TestConf(unittest.TestCase):
         with open(self.path) as f:
             test_conf = f.read()
         self.assertEqual(hepscore.get_conf(), test_conf)
-
-
