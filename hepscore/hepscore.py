@@ -10,7 +10,6 @@ import json
 import math
 import operator
 import os
-import string
 import subprocess
 import sys
 import time
