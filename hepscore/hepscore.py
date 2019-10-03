@@ -19,35 +19,63 @@ import time
 import yaml
 
 NAME = "HEPscore"
-VER = "0.63"
+VER = "0.64"
 DEBUG = False
 
 CONF = """
 hepscore_benchmark:
-  name: HEPscore19
-  version: 0.31
-  repetitions: 3  # number of repetitions of the same benchmark
-  reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
-  method: geometric_mean # or any other algorithm
-  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
-  scaling: 10
   benchmarks:
+    .alice-gen-sim-bmk:
+      ref_scores:
+        gen-sim: 1
+      scorekey: wl-scores
+      #events: 1
+      version: v0.16
+    atlas-gen-bmk:
+      ref_scores:
+        gen: 207.6
+      scorekey: wl-scores
+      threads: 1
+      version: v1.1
     atlas-sim-bmk:
-      version: v1.0
+      ref_scores:
+        sim: 0.028
       scorekey: wl-scores
-      ref_scores: { sim: 0.0052 }
+      threads: 4
+      #events: 3
+      version: v1.0
+    cms-gen-sim-bmk:
+      ref_scores:
+        gen-sim: 0.362
+      scorekey: wl-scores
+      #events: 4
+      version: v1.0
+    cms-digi-bmk:
+      ref_scores:
+        digi: 1.94
+      scorekey: wl-scores
+      #events: 20
+      version: v1.0
     cms-reco-bmk:
-      version: v1.0
+      ref_scores:
+        reco: 1.117
       scorekey: wl-scores
-      ref_scores: { reco: 0.1625 }
+      #events: 3
+      version: v1.0
     lhcb-gen-sim-bmk:
       version: v0.12
-      refscore: 7.1811
+      refscore: 41.32
       scorekey: throughput_score
       subkey: 'GENSIM0 (evts per wall msec, including 1st evt)'
       debug: false
-      events:
-      threads:
+      #events: 5
+  method: geometric_mean
+  name: HEPscore19
+  reference_machine: "bmk16-cc7-7xc9mygbzq"
+  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+  repetitions: 3
+  scaling: 10
+  version: 0.3
 """
 
 
