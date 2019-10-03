@@ -1,5 +1,4 @@
 from hepscore import hepscore
-from hepscore import hepscorev2
 import numpy as np
 import os
 # from parameterized import parameterized
@@ -58,39 +57,3 @@ class TestConf(unittest.TestCase):
         self.assertEqual(hepscore.get_conf(), test_conf)
 
 
-class Test_bmk_options(unittest.TestCase):
-
-    def test_bmk_option_good(self):
-        conf = {'debug': True, 'copies': 4,
-                'events': 3, 'threads': 2,
-                'something_else': 123}
-        self.assertEqual(
-            hepscorev2.check_bmk_options(conf, 1), ' -c 4 -d -e 3 -t 2')
-
-    def test_bmk_option_no_int_value(self):
-        conf = {'debug': True, 'copies': 4,
-                'events': 3, 'threads': 2.1,
-                'something_else': 123}
-        self.assertEqual(
-            hepscorev2.check_bmk_options(conf, 1), ' -c 4 -d -e 3')
-
-    def test_bmk_option_debug_false(self):
-        conf = {'debug': False, 'copies': 4,
-                'events': 3, 'threads': 2.1,
-                'something_else': 123}
-        self.assertEqual(
-            hepscorev2.check_bmk_options(conf, 1), ' -c 4 -e 3')
-
-    def test_bmk_option_debug_missing(self):
-        conf = {'copies': 4,
-                'events': 3, 'threads': 2.1,
-                'something_else': 123}
-        self.assertEqual(
-            hepscorev2.check_bmk_options(conf, 1), ' -c 4 -e 3')
-
-    def test_bmk_option_value_none(self):
-        conf = {'debug': False, 'copies': None,
-                'events': 3, 'threads': 2.1,
-                'something_else': 123}
-        self.assertEqual(
-            hepscorev2.check_bmk_options(conf, 1), ' -e 3')
