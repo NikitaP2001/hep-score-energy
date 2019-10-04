@@ -2,8 +2,6 @@
 ###############################################################################
 #
 # hepscore.py - HEPscore benchmark execution
-# Chris Hollowell <hollowec@bnl.gov>
-#
 #
 
 import getopt
@@ -12,7 +10,6 @@ import json
 import math
 import operator
 import os
-import string
 import subprocess
 import sys
 import time
