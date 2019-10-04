@@ -27,7 +27,7 @@ job_build_image_tox:
     # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
     - /kaniko/executor --context $CI_PROJECT_DIR/docker-images/tox --dockerfile $CI_PROJECT_DIR/docker-images/tox/Dockerfile --destination $CI_REGISTRY_IMAGE/tox:latest
 
-.pep8:
+pep8:
   stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
   except:
