@@ -538,7 +538,7 @@ def main():
     curtime = time.asctime()
 
     if cec and 'container_exec' in confobj:
-        print "INFO: Overiding container_exec parameter on the commandline\n"
+        print("INFO: Overiding container_exec parameter on the commandline\n")
     elif not cec:
         if 'container_exec' in confobj:
             if confobj['container_exec'] == 'singularity' or \
