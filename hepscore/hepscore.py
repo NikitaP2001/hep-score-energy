@@ -548,8 +548,8 @@ def main():
                       "'singularity' or 'docker'\n")
                 sys.exit(1)
         else:
-            print("\nWarning: Run type not specified on commandline or in config "
-                  "- assuming docker\n")
+            print("\nWarning: Run type not specified on commandline or in "
+                  "config - assuming docker\n")
             cec = 'docker'
 
     confobj['environment'] = {'system': sysname, 'date': curtime,
