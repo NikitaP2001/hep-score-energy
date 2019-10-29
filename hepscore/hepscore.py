@@ -83,7 +83,7 @@ def help():
     namel = NAME.lower() + ".py"
 
     print(NAME + " Benchmark Execution - Version " + VER)
-    print(namel + " {-s|-d} [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
+    print(namel + " [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
     print(namel + " -h")
     print(namel + " -p [-f CONF]")
     print("Option overview:")
@@ -515,11 +515,6 @@ def main():
         print(yaml.safe_dump(yaml.safe_load(CONF)))
         sys.exit(0)
 
-    if not cec:
-        print("\nError: must specify run type (Docker or Singularity)\n")
-        help()
-        sys.exit(1)
-
     if len(args) < 1:
         help()
         sys.exit(1)
@@ -540,6 +535,22 @@ def main():
 
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
+
+    if cec and 'container_exec' in confobj:
+        print "INFO: Overiding container_exec parameter on the commandline\n"
+    elif not cec:
+        if 'container_exec' in confobj:
+            if confobj['container_exec'] == 'singularity' or \
+                confobj['container_exec'] == 'docker':
+                cec = confobj['container_exec']
+            else:
+                print("\nError: container_exec config parameter must be "
+                      "'singularity' or 'docker'\n")
+                sys.exit(1)
+        else:
+            print("\nWarning: Run type not specified on commandline or in config "
+                  "- assuming docker\n")
+            cec = 'docker'
 
     confobj['environment'] = {'system': sysname, 'date': curtime,
                               'container_exec': cec}
