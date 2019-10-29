@@ -271,7 +271,8 @@ def run_benchmark(benchmark, cm, output, verbose, conf):
     for i in range(runs):
         if verbose:
             sys.stdout.write('.')
-            sys.stdout.flush()
+
+        sys.stdout.flush()
 
         runstr = 'run' + str(i)
 
@@ -541,7 +542,7 @@ def main():
     elif not cec:
         if 'container_exec' in confobj:
             if confobj['container_exec'] == 'singularity' or \
-                confobj['container_exec'] == 'docker':
+                    confobj['container_exec'] == 'docker':
                 cec = confobj['container_exec']
             else:
                 print("\nError: container_exec config parameter must be "
