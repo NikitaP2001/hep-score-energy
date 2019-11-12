@@ -2,10 +2,7 @@
 
 BASEDIR=$(readlink -f $(dirname $0))
 
-# This script installs hepscore and runs the mock_hepscore test script
-# in order to verify that the produced json is compatible with the ref json
-yum install -y yum-plugin-ovl 
-
+cd $BASEDIR/../..
 echo "[run_bat_tests] Install hepscore"
 pip install .
 
