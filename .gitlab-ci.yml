@@ -66,18 +66,7 @@ job_test_kv_run_cc7:
         -  hep-score-docker-runner 
     stage: test
     script: 
-        - yum install -y yum-plugin-ovl #because of https://github.com/CentOS/sig-cloud-instance-images/issues/15
-        - echo "install hepscore"
-        - pip install .
-        - echo "create working dir"
-        - mkdir -p /tmp/HEPSCORE/$CI_JOB_ID
-        - echo "test the configuration dump"
-        - hep-score -p -f $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci.yaml /tmp/HEPSCORE/$CI_JOB_ID
-        - export TESTDIR=$CI_PROJECT_DIR/hepscore/tests
-        - echo "test the parsing of existing wl results"
-        - $TESTDIR/mock_hepscore.py $TESTDIR/etc/hepscore_conf_ci.yaml $TESTDIR/data/HEPscore_ci/
-        - echo "test run of hep-score with configuration for atlas-kv-bmk"
-        - hep-score -d -f $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci.yaml /tmp/HEPSCORE/$CI_JOB_ID
+        - $CI_PROJECT_DIR/hepscore/tests/run_bat_tests.sh
     after_script:
         - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
     only:
