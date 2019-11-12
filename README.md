@@ -131,6 +131,7 @@ INTEGER ; default set by container - saturates host
 Set the number of threads that the benchmark container will execute
 ##### copies
 INTEGER; default set by container - saturates host  
+The number of copies of the benchmark to run
 ##### debug
 BOOL ; default = false  
 Enable debugging output for the benchmark container
@@ -140,12 +141,12 @@ The name of the overall benchmark/configuration
 #### method (required)
 STRING  
 The method for combining the sub-benchmark scores into a single score.
-Currently only "geometric_mean" is supported.
+Currently only "geometric_mean" is supported
 #### reference_machine (required)
 STRING  
 An test host/configuration where the benchmark container scores have been 
 set to 1.  All reported scores are then relative to the performance of
-this host.
+this host
 #### registry (required)
 STRING  
 The Docker registry to pull images from
@@ -153,10 +154,10 @@ The Docker registry to pull images from
 INTEGER  
 The number of times each benchmark container should be run.  If the
 number of runs is greater than one, the median of that container's 
-resulting scores is used.
+resulting scores is used
 #### version (required)
 FLOAT  
-The version of the overal benchmark/configuration
+The version of the overall benchmark/configuration
 #### scaling
 FLOAT; default = 1.0  
 The multi-benchmark score calculated via the "method" parameter is then 
@@ -165,12 +166,12 @@ multiplied by this value to compute the final score
 STRING; defaullt = "docker"  
 Allows one to specify the default container execution platform: currently
 "singularity" or "docker" are supported.  This can be overidden on the
-commandline.
+commandline
 #### allow_fail
 BOOL; default = false  
 If multiple runs of a benchmark are requested via the "repetitions" parameter,
 allow failures as long as one run complete.  Normally, a single run failure
-will fail the entire benchmark, and no score will be reported.
+will fail the entire benchmark, and no score will be reported
 
 |     |     |     |
 | --- | --- | --- |
