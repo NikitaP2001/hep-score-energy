@@ -10,10 +10,10 @@ However, any benchmark containers stored in a Docker registry which
 conform to the HEP Workloads' naming conventions and output JSON schema,
 are potentially usable.  Both Docker and Singularity are supported for 
 container execution.  By default, if no configuration is passed to HEPscore, 
-the "HEPscore19" benchmark suite is run.
+the "HEPscore19" benchmark is run.
 
 ## HEPscore19 Benchmark
-HEPscore19 is a benchmark suite based on containerized HEP workloads that 
+HEPscore19 is a benchmark based on containerized HEP workloads that 
 the HEPiX Benchmarking Working Group is targeting to eventually replace 
 HEPSPEC06 as the standard HEPiX/WLCG benchmark.  It is currently in a beta 
 development state, and consists of the following workloads:  
@@ -73,7 +73,7 @@ log of the run of the application is also written to this directory:
 BENCHMARK_NAME.log, where BENCHMARK_NAME is taken from the "name" parameter in 
 the YAML configuration ("HEPscore19.log" by default).   
 
-The final computed score will be printed to stdout ("Final result: XYZ"), and 
+The final computed score will be printed to stdout ("Final score: XYZ"), and 
 also stored in a summary output JSON (or YAML, if ```-y``` is specified) file 
 under OUTDIR.  This file also contains all of the summary JSON output data from
 each sub-benchmark.
@@ -108,7 +108,7 @@ All configuration parameters must be under the "hepscore_benchmark" key.
 ### Parameters:
 #### benchmarks (required)
 DICTIONARY  
-List of benchmark containers to run,  with associated settings
+List of benchmark containers to run, with associated settings: see below
 ##### ref_scores (required)
 DICTIONARY  
 List of sub-scores to collect from the benchmark container output 
@@ -127,16 +127,16 @@ The version of the benchmark container in the Docker registry to execute
 INTEGER ; default set by container  
 Set the number of events to process
 ##### threads
-INTEGER ; default set by container - saturates host
+INTEGER ; default set by container - saturates host  
 Set the number of threads that the benchmark container will execute
 ##### copies
-INTEGER; default set by container - saturates host
+INTEGER; default set by container - saturates host  
 ##### debug
 BOOL ; default = false  
 Enable debugging output for the benchmark container
 #### name (required)
 STRING  
-The name of the benchmark suite/configuration
+The name of the overall benchmark/configuration
 #### method (required)
 STRING  
 The method for combining the sub-benchmark scores into a single score.
@@ -155,8 +155,8 @@ The number of times each benchmark container should be run.  If the
 number of runs is greater than one, the median of that container's 
 resulting scores is used.
 #### version (required)
-FLOAT
-The version of the benchmark suite/configuration
+FLOAT  
+The version of the overal benchmark/configuration
 #### scaling
 FLOAT; default = 1.0  
 The multi-benchmark score calculated via the "method" parameter is then 
