@@ -29,11 +29,10 @@ function run_atlas-kv-bmk {
 	 if [ ! -e $WDIR ]; then	
    	    mkdir -p $WDIR
 	 fi
-	 hep-score -d -f $TESTDIR/etc/hepscore_conf_ci.yaml $WDIR
+	 hep-score -v -V -d -f $TESTDIR/etc/hepscore_conf_ci.yaml $WDIR
 }
 
 @test "Test run of hep-score with configuration for atlas-kv-bmk" {
-    skip
     run run_atlas-kv-bmk
     echo -e "$output"
     [ "$status" -eq 0 ]
