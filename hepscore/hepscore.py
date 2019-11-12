@@ -139,7 +139,8 @@ def proc_results(benchmark, rpath, verbose, conf):
         benchmark_glob = benchmark.split('-')[:-1]
         benchmark_glob = '-'.join(benchmark_glob)
 
-    gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/" + benchmark_glob + "_summary.json")
+    gpaths = glob.glob(rpath + "/" + benchmark_glob + "*/" +
+                       benchmark_glob + "_summary.json")
 
     debug_print("Looking for results in " + str(gpaths), False)
     i = 0
