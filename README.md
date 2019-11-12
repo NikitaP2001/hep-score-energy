@@ -47,7 +47,8 @@ by changing your working directory to the root of the project, and running:
 ```pip install .```
 
 ## Running HEPscore
-```hepscore.py [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR
+```
+hepscore.py [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR
 hepscore.py -h
 hepscore.py -p [-f CONF]
 Option overview:
