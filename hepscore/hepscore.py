@@ -6,6 +6,7 @@
 
 import getopt
 import glob
+import hashlib
 import json
 import math
 import operator
@@ -14,6 +15,7 @@ import subprocess
 import sys
 import time
 import yaml
+
 
 NAME = "HEPscore"
 VER = "0.64"
@@ -535,6 +537,12 @@ def main():
 
     confobj = parse_conf()
 
+# Creating a hash representation of the configuration object
+# to be included in the final report
+    m = hashlib.sha256()
+    m.update(json.dumps(confobj, sort_keys=True))
+    confobj['hash'] = m.hexdigest()
+
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
 
@@ -564,6 +572,7 @@ def main():
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
     print("Date: " + curtime + "\n")
+    print("Hash: " + confobj['hash'] + "\n")
 
     confobj['wl-scores'] = {}
 
