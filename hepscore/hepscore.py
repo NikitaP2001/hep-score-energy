@@ -4,9 +4,9 @@
 # hepscore.py - HEPscore benchmark execution
 #
 
-import base64
 import getopt
 import glob
+import hashlib
 import json
 import math
 import operator
@@ -537,9 +537,11 @@ def main():
 
     confobj = parse_conf()
 
-# Creating a base64 representation of the configuration object
+# Creating a hash representation of the configuration object
 # to be included in the final report
-    confobj['base64'] = base64.b64encode(json.dumps(confobj, sort_keys=True))
+    m = hashlib.sha256()
+    m.update(json.dumps(confobj, sort_keys=True))
+    confobj['hash'] = m.hexdigest()
 
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
@@ -570,7 +572,7 @@ def main():
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
     print("Date: " + curtime + "\n")
-    print("Base64: " + confobj['base64'] + "\n")
+    print("Hash: " + confobj['hash'] + "\n")
 
     confobj['wl-scores'] = {}
 
