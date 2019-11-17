@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import yaml
+import base64
 
 NAME = "HEPscore"
 VER = "0.64"
@@ -535,6 +536,8 @@ def main():
 
     confobj = parse_conf()
 
+    #Creating a base64 representation of the configuration object, to be included in the final report
+    confobj['base64'] = base64.b64encode(json.dumps(confobj, sort_keys=True)) 
     sysname = ' '.join(os.uname())
     curtime = time.asctime()
 
@@ -564,6 +567,7 @@ def main():
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
     print("Date: " + curtime + "\n")
+    print("Base64: " + confobj['base64'] + "\n")
 
     confobj['wl-scores'] = {}
 
