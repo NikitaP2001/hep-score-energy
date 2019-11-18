@@ -5,14 +5,16 @@ hepscore_benchmark:
         gen: 207.6
       scorekey: wl-scores
       threads: 1
+      events: 200
       version: v1.1
     atlas-sim-bmk:
       ref_scores:
         sim: 0.028
       scorekey: wl-scores
       threads: 4
+      events: 10
       version: v1.0
-    atlas-digi-reco-bmk:
+    .atlas-digi-reco-bmk:
       ref_scores:
         digi-reco: 1.211
       scorekey: wl-scores
@@ -23,27 +25,31 @@ hepscore_benchmark:
       ref_scores:
         gen-sim: 0.362
       scorekey: wl-scores
+      events: 20
       version: v1.0
-    cms-digi-bmk:
+    .cms-digi-bmk:
       ref_scores:
         digi: 1.94
       scorekey: wl-scores
+      events: 50
       version: v1.0
-    cms-reco-bmk:
+    .cms-reco-bmk:
       ref_scores:
         reco: 1.117
       scorekey: wl-scores
+      events: 50
       version: v1.0
-    lhcb-gen-sim-bmk:
+    .lhcb-gen-sim-bmk:
       ref_scores:
         gen-sim: 41.32
       scorekey: wl-scores
+      events: 5
       version: v0.15
   method: geometric_mean
   name: HEPscore19
   reference_machine: "bmk16-cc7-7xc9mygbzq"
   registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   repetitions: 3
-  scaling: 1
+  scaling: 0
   container_exec: docker
   version: 0.3
