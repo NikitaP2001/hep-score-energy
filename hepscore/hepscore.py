@@ -24,12 +24,6 @@ DEBUG = False
 CONF = """
 hepscore_benchmark:
   benchmarks:
-    .alice-gen-sim-bmk:
-      ref_scores:
-        gen-sim: 1
-      scorekey: wl-scores
-      #events: 1
-      version: v0.16
     atlas-gen-bmk:
       ref_scores:
         gen: 207.6
@@ -41,39 +35,41 @@ hepscore_benchmark:
         sim: 0.028
       scorekey: wl-scores
       threads: 4
-      #events: 3
       version: v1.0
+    atlas-digi-reco-bmk:
+      ref_scores:
+        digi-reco: 1.211
+      scorekey: wl-scores
+      threads: 4
+      events: 30
+      version: v1.0    
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.362
       scorekey: wl-scores
-      #events: 4
       version: v1.0
     cms-digi-bmk:
       ref_scores:
         digi: 1.94
       scorekey: wl-scores
-      #events: 20
       version: v1.0
     cms-reco-bmk:
       ref_scores:
         reco: 1.117
       scorekey: wl-scores
-      #events: 3
       version: v1.0
     lhcb-gen-sim-bmk:
-      version: v0.12
-      refscore: 41.32
-      scorekey: throughput_score
-      subkey: 'GENSIM0 (evts per wall msec, including 1st evt)'
-      debug: false
-      #events: 5
+      ref_scores:
+        gen-sim: 41.32
+      scorekey: wl-scores
+      version: v0.15
   method: geometric_mean
   name: HEPscore19
   reference_machine: "bmk16-cc7-7xc9mygbzq"
   registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   repetitions: 3
-  scaling: 10
+  scaling: 1
+  container_exec: docker
   version: 0.3
 """
 
