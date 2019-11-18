@@ -42,7 +42,7 @@ hepscore_benchmark:
       scorekey: wl-scores
       threads: 4
       events: 30
-      version: v1.0    
+      version: v1.0
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.362
