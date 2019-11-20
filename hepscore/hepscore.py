@@ -18,7 +18,7 @@ import yaml
 
 
 NAME = "HEPscore"
-VER = "0.64"
+VER = "0.7"
 DEBUG = False
 
 CONF = """
@@ -70,7 +70,6 @@ hepscore_benchmark:
   repetitions: 3
   scaling: 1
   container_exec: docker
-  version: 0.3
 """
 
 
@@ -468,7 +467,7 @@ def geometric_mean(results):
 
 def main():
 
-    global CONF, NAME, DEBUG
+    global CONF, NAME, DEBUG, VER
 
     allowed_methods = {'geometric_mean': geometric_mean}
     outfile = ""
@@ -562,15 +561,15 @@ def main():
                               'container_exec': cec}
 
     print(confobj['name'] + " Benchmark")
-    print("Version: " + str(confobj['version']))
+    print("Version Hash: " + confobj['hash'])
     print("System: " + sysname)
     print("Container Execution: " + cec)
     print("Registry: " + confobj['registry'])
     print("Output: " + output)
     print("Date: " + curtime + "\n")
-    print("Hash: " + confobj['hash'] + "\n")
 
     confobj['wl-scores'] = {}
+    confobj['hepscore_ver'] = VER
 
     results = []
     res = 0
