@@ -11,81 +11,24 @@ import json
 import math
 import operator
 import os
+import oyaml as yaml
+import pbr.version
+import scipy.stats
 import subprocess
 import sys
 import time
-import yaml
-
-
-def geometric_mean(results):
-
-    product = 1
-    for result in results:
-        product = product * result
-
-    return(product ** (1.0 / len(results)))
 
 
 class HEPscore:
 
     NAME = "HEPscore"
-    VER = "0.9"
+    VER = pbr.version.VersionInfo("hep-score").version_string()
 
-    confstr = """
-hepscore_benchmark:
-  benchmarks:
-    atlas-gen-bmk:
-      ref_scores:
-        gen: 207.6
-      scorekey: wl-scores
-      threads: 1
-      version: v1.1
-    atlas-sim-bmk:
-      ref_scores:
-        sim: 0.028
-      scorekey: wl-scores
-      threads: 4
-      version: v1.0
-    atlas-digi-reco-bmk:
-      ref_scores:
-        digi-reco: 1.211
-      scorekey: wl-scores
-      threads: 4
-      events: 30
-      version: v1.0
-    cms-gen-sim-bmk:
-      ref_scores:
-        gen-sim: 0.362
-      scorekey: wl-scores
-      version: v1.0
-    cms-digi-bmk:
-      ref_scores:
-        digi: 1.94
-      scorekey: wl-scores
-      version: v1.0
-    cms-reco-bmk:
-      ref_scores:
-        reco: 1.117
-      scorekey: wl-scores
-      version: v1.0
-    lhcb-gen-sim-bmk:
-      ref_scores:
-        gen-sim: 41.32
-      scorekey: wl-scores
-      version: v0.15
-  method: geometric_mean
-  name: HEPscore19
-  reference_machine: "bmk16-cc7-7xc9mygbzq"
-  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
-  repetitions: 3
-  scaling: 1
-  container_exec: docker
-"""
-
-    allowed_methods = {'geometric_mean': geometric_mean}
+    allowed_methods = {'geometric_mean': scipy.stats.gmean}
+    conffile = "etc/hepscore_default.yaml"
     level = "INFO"
     outtype = "json"
-    confonly = False
+    confstr = ""
     outdir = ""
     outfile = ""
     resultsdir = ""
@@ -105,62 +48,12 @@ hepscore_benchmark:
             if vn in kwargs.keys():
                 raise ValueError("Not permitted to set variable specified in "
                                  "constructor")
-            vars(self).update(kwargs)
 
-        if self.conffile != "":
-            self.read_conf()
+        for var in kwargs.keys():
+            if var not in vars(HEPscore):
+                raise ValueError("Invalid argument to constructor")
 
-        self.parse_conf()
-
-        # Just parse configuration if conf_only is true
-        if not self.confonly:
-
-            if self.cec and 'container_exec' in self.confobj:
-                print("INFO: Overiding container_exec parameter on the "
-                      "commandline\n")
-            elif not self.cec:
-                if 'container_exec' in self.confobj:
-                    if self.confobj['container_exec'] == 'singularity' or \
-                            self.confobj['container_exec'] == 'docker':
-                        self.cec = self.confobj['container_exec']
-                    else:
-                        print("\nError: container_exec config parameter must "
-                              "be 'singularity' or 'docker'\n")
-                        sys.exit(1)
-                else:
-                    print("\nWarning: Run type not specified on commandline or"
-                          " in config - assuming docker\n")
-                    self.cec = "docker"
-
-            # Creating a hash representation of the configuration object
-            # to be included in the final report
-            m = hashlib.sha256()
-            m.update(json.dumps(self.confobj, sort_keys=True))
-            self.confobj['hash'] = m.hexdigest()
-
-            sysname = ' '.join(os.uname())
-            curtime = time.asctime()
-
-            self.confobj['environment'] = {'system': sysname, 'date': curtime,
-                                           'container_exec': self.cec}
-
-            if self.resultsdir != "" and self.outdir != "":
-                return(-1)
-
-            if self.resultsdir == "":
-                self.resultsdir = self.outdir + '/' + self.NAME + '_' + \
-                    time.strftime("%d%b%Y_%H%M%S")
-
-            print(self.confobj['name'] + " Benchmark")
-            print("Version Hash: " + self.confobj['hash'])
-            print("System: " + sysname)
-            print("Container Execution: " + self.cec)
-            print("Registry: " + self.confobj['registry'])
-            print("Output: " + self.resultsdir)
-            print("Date: " + curtime + "\n")
-
-            self.confobj['wl-scores'] = {}
-            self.confobj['hepscore_ver'] = self.VER
+        vars(self).update(kwargs)
 
     def debug_print(self, dstring, newline):
 
@@ -208,8 +101,9 @@ hepscore_benchmark:
                     sub_score = float(jscore[key][sub_bmk])
                     sub_score = sub_score / \
                         bench_conf['ref_scores'][sub_bmk]
+                    sub_score = round(sub_score, 4)
                     sub_results.append(sub_score)
-                    score = geometric_mean(sub_results)
+                    score = scipy.stats.gmean(sub_results)
 
             except (KeyError, ValueError):
                 if not fail:
@@ -218,7 +112,7 @@ hepscore_benchmark:
                     fail = True
 
             if not fail:
-                results[i] = score
+                results[i] = round(score, 4)
 
                 if self.level != "INFO":
                     print(" " + str(score))
@@ -360,7 +254,10 @@ hepscore_benchmark:
         result = self._proc_results(benchmark)
         return(result)
 
-    def read_conf(self):
+    def read_conf(self, conffile=""):
+
+        if conffile:
+            self.conffile = conffile
 
         print("Using custom configuration: " + self.conffile)
 
@@ -372,8 +269,14 @@ hepscore_benchmark:
             print("\nError: cannot open/read from " + self.conffile + "\n")
             sys.exit(1)
 
+        return self.confstr
+
     def print_conf(self):
         print(yaml.safe_dump(self.confobj))
+
+    def read_and_parse_conf(self, conffile=""):
+        self.read_conf(conffile)
+        self.parse_conf()
 
     def gen_score(self):
 
@@ -381,6 +284,8 @@ hepscore_benchmark:
         fres = method(self.results)
         if 'scaling' in self.confobj.keys():
             fres = fres * self.confobj['scaling']
+
+        fres = round(fres, 4)
 
         print("\nFinal result: " + str(fres))
         self.confobj['score'] = fres
@@ -397,23 +302,26 @@ hepscore_benchmark:
         else:
             outobj = self.confobj
 
-        try:
-            jfile = open(self.outfile, mode='w')
-            if self.outtype == 'yaml':
-                jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                            allow_unicode=True))
-            else:
-                jfile.write(json.dumps(outobj))
-            jfile.close()
-        except Exception:
-            print("\nError: Failed to create summary output " + self.outfile +
-                  "\n")
-            sys.exit(2)
+        #try:
+        jfile = open(self.outfile, mode='w')
+        if self.outtype == 'yaml':
+            jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
+                        allow_unicode=True))
+        else:
+            jfile.write(json.dumps(outobj))
+        jfile.close()
+        #except Exception:
+        #    print("\nError: Failed to create summary output " + self.outfile +
+        #          "\n")
+        #    sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
             sys.exit(2)
 
-    def parse_conf(self):
+    def parse_conf(self, confstr=""):
+
+        if confstr:
+            self.confstr = confstr
 
         base_keys = ['reference_machine', 'repetitions', 'method',
                      'benchmarks', 'name', 'registry']
@@ -506,7 +414,56 @@ hepscore_benchmark:
 
         self.confobj = dat['hepscore_benchmark']
 
+        return self.confobj
+
     def run(self, mock=False):
+
+        if self.cec and 'container_exec' in self.confobj:
+            print("INFO: Overiding container_exec parameter on the "
+                  "commandline\n")
+        elif not self.cec:
+            if 'container_exec' in self.confobj:
+                if self.confobj['container_exec'] == 'singularity' or \
+                        self.confobj['container_exec'] == 'docker':
+                    self.cec = self.confobj['container_exec']
+                else:
+                    print("\nError: container_exec config parameter must "
+                          "be 'singularity' or 'docker'\n")
+                    sys.exit(1)
+            else:
+                print("\nWarning: Run type not specified on commandline or"
+                      " in config - assuming docker\n")
+                self.cec = "docker"
+
+        # Creating a hash representation of the configuration object
+        # to be included in the final report
+        m = hashlib.sha256()
+        m.update(json.dumps(self.confobj, sort_keys=True))
+        self.confobj['hash'] = m.hexdigest()
+
+        sysname = ' '.join(os.uname())
+        curtime = time.asctime()
+
+        self.confobj['environment'] = {'system': sysname, 'date': curtime,
+                                       'container_exec': self.cec}
+
+        if self.resultsdir != "" and self.outdir != "":
+            return(-1)
+
+        if self.resultsdir == "":
+            self.resultsdir = self.outdir + '/' + self.NAME + '_' + \
+                time.strftime("%d%b%Y_%H%M%S")
+
+        print(self.confobj['name'] + " Benchmark")
+        print("Version Hash: " + self.confobj['hash'])
+        print("System: " + sysname)
+        print("Container Execution: " + self.cec)
+        print("Registry: " + self.confobj['registry'])
+        print("Output: " + self.resultsdir)
+        print("Date: " + curtime + "\n")
+
+        self.confobj['wl-scores'] = {}
+        self.confobj['hepscore_ver'] = self.VER
 
         if not mock:
             try:
@@ -514,6 +471,8 @@ hepscore_benchmark:
             except Exception:
                 print("\nError: failed to create " + self.resultsdir)
                 sys.exit(2)
+        else:
+            print("NOTE: Replaying prior results")
 
         res = 0
         for benchmark in self.confobj['benchmarks']:
@@ -577,8 +536,9 @@ def help(progname):
 
 def main():
 
-    hsargs = {'confonly': False, 'outdir': ""}
+    hsargs = {'outdir': ""}
     replay = False
+    printconf_and_exit = False
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyrf:o:')
@@ -592,7 +552,7 @@ def main():
             help(sys.argv[0])
             sys.exit(0)
         if opt == '-p':
-            hsargs['confonly'] = True
+            printconf_and_exit = True
         elif opt == '-v':
             hsargs['level'] = 'VERBOSE'
         elif opt == '-V':
@@ -614,7 +574,7 @@ def main():
             else:
                 hsargs['cec'] = "docker"
 
-    if len(args) < 1 and not hsargs['confonly']:
+    if len(args) < 1 and not printconf_and_exit:
         help(sys.argv[0])
         sys.exit(1)
     elif len(args) >= 1:
@@ -628,13 +588,12 @@ def main():
             sys.exit(1)
 
     hs = HEPscore(**hsargs)
+    hs.read_and_parse_conf()
 
-    if hsargs['confonly']:
+    if printconf_and_exit:
         hs.print_conf()
         sys.exit(0)
-
     else:
-
         if hs.run(replay) >= 0:
             hs.gen_score()
         hs.write_output()
