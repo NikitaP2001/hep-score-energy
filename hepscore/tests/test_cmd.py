@@ -1,8 +1,6 @@
 from hepscore import hepscore
-import numpy as np
 import os
 # from parameterized import parameterized
-from scipy import stats
 import sys
 import unittest
 
