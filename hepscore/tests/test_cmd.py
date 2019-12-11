@@ -28,16 +28,6 @@ class TestArguments(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
 
 
-class TestHepScore(unittest.TestCase):
-
-    def test_geometric_mean(self):
-
-        vinput = [1, 2, 3]
-        gm = np.round(hepscore.geometric_mean(vinput), 3)
-        self.assertEqual(gm,
-                         np.round(stats.mstats.gmean(vinput), 3))
-
-
 class TestConf(unittest.TestCase):
 
     def setUp(self):
@@ -47,11 +37,13 @@ class TestConf(unittest.TestCase):
 
     def test_fail_read_conf(self):
         with self.assertRaises(SystemExit) as cm:
-            hepscore.read_conf('does_not_exist_file')
+            hs = hepscore.HEPscore(conffile="")
+            hs.read_conf('does_not_exist')
             self.assertEqual(cm.exception.code, 1)
 
     def test_succeed_read_conf(self):
-        hepscore.read_conf(self.path)
+        hs = hepscore.HEPscore()
+        hs.read_conf(conffile=self.path)
         with open(self.path) as f:
             test_conf = f.read()
-        self.assertEqual(hepscore.get_conf(), test_conf)
+        self.assertEqual(hs.confstr, test_conf)

@@ -30,7 +30,6 @@ class HEPscore:
     outtype = "json"
     confstr = ""
     outdir = ""
-    outfile = ""
     resultsdir = ""
     suboutput = ""
     conffile = ""
@@ -290,10 +289,10 @@ class HEPscore:
         print("\nFinal result: " + str(fres))
         self.confobj['score'] = fres
 
-    def write_output(self):
+    def write_output(self, outfile):
 
-        if not self.outfile:
-            self.outfile = self.resultsdir + '/' + self.confobj['name'] + '.' \
+        if not outfile:
+            outfile = self.resultsdir + '/' + self.confobj['name'] + '.' \
                 + self.outtype
 
         outobj = {}
@@ -539,6 +538,7 @@ def main():
     hsargs = {'outdir': ""}
     replay = False
     printconf_and_exit = False
+    outfile = ""
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyrf:o:')
@@ -562,7 +562,7 @@ def main():
         elif opt == '-y':
             hsargs['outtype'] = 'yaml'
         elif opt == '-o':
-            hsargs['outfile'] = arg
+            outfile = arg
         elif opt == '-r':
             replay = True
         elif opt == '-s' or opt == '-d':
@@ -596,7 +596,7 @@ def main():
     else:
         if hs.run(replay) >= 0:
             hs.gen_score()
-        hs.write_output()
+        hs.write_output(outfile)
 
 
 if __name__ == '__main__':
