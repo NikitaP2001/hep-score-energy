@@ -19,7 +19,7 @@ import sys
 import time
 
 
-class HEPscore:
+class HEPscore(object):
 
     NAME = "HEPscore"
     VER = pbr.version.VersionInfo("hep-score").version_string()
