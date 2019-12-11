@@ -22,7 +22,7 @@ import time
 class HEPscore(object):
 
     NAME = "HEPscore"
-    VER = pbr.version.VersionInfo("hep-score").version_string()
+    VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
     conffile = "etc/hepscore_default.yaml"
@@ -302,7 +302,7 @@ class HEPscore(object):
             outobj = self.confobj
 
         try:
-            jfile = open(self.outfile, mode='w')
+            jfile = open(outfile, mode='w')
             if self.outtype == 'yaml':
                 jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
                             allow_unicode=True))
@@ -310,7 +310,7 @@ class HEPscore(object):
                 jfile.write(json.dumps(outobj))
             jfile.close()
         except Exception:
-            print("\nError: Failed to create summary output " + self.outfile +
+            print("\nError: Failed to create summary output " + outfile +
                   "\n")
             sys.exit(2)
 
