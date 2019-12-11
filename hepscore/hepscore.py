@@ -302,18 +302,18 @@ class HEPscore:
         else:
             outobj = self.confobj
 
-        #try:
-        jfile = open(self.outfile, mode='w')
-        if self.outtype == 'yaml':
-            jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                        allow_unicode=True))
-        else:
-            jfile.write(json.dumps(outobj))
-        jfile.close()
-        #except Exception:
-        #    print("\nError: Failed to create summary output " + self.outfile +
-        #          "\n")
-        #    sys.exit(2)
+        try:
+            jfile = open(self.outfile, mode='w')
+            if self.outtype == 'yaml':
+                jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
+                            allow_unicode=True))
+            else:
+                jfile.write(json.dumps(outobj))
+            jfile.close()
+        except Exception:
+            print("\nError: Failed to create summary output " + self.outfile +
+                  "\n")
+            sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
             sys.exit(2)
