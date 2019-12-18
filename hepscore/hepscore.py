@@ -27,12 +27,9 @@ class HEPscore(object):
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
     conffile = "etc/hepscore_default.yaml"
     level = "INFO"
-    outtype = "json"
     confstr = ""
     outdir = ""
     resultsdir = ""
-    suboutput = ""
-    conffile = ""
     cec = ""
 
     confobj = {}
@@ -41,7 +38,7 @@ class HEPscore(object):
 
     def __init__(self, **kwargs):
 
-        unsettable = ['NAME', 'VER', 'confstr']
+        unsettable = ['NAME', 'VER', 'confstr', 'confobj', 'results', 'score']
 
         for vn in unsettable:
             if vn in kwargs.keys():
@@ -114,7 +111,7 @@ class HEPscore(object):
                 results[i] = round(score, 4)
 
                 if self.level != "INFO":
-                    print(" " + str(score))
+                    print(" " + str(results[i]))
 
             i = i + 1
 
@@ -225,7 +222,7 @@ class HEPscore(object):
 
                 line = cmdf.stdout.readline()
                 while line:
-                    lfile.write(line)
+                    lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
 
@@ -257,8 +254,7 @@ class HEPscore(object):
 
         if conffile:
             self.conffile = conffile
-
-        print("Using custom configuration: " + self.conffile)
+            print("Using custom configuration: " + self.conffile)
 
         try:
             yfile = open(self.conffile, mode='r')
@@ -271,7 +267,8 @@ class HEPscore(object):
         return self.confstr
 
     def print_conf(self):
-        print(yaml.safe_dump(self.confobj))
+        full_conf = {'hepscore': self.confobj}
+        print(yaml.safe_dump(full_conf))
 
     def read_and_parse_conf(self, conffile=""):
         self.read_conf(conffile)
@@ -287,25 +284,27 @@ class HEPscore(object):
         fres = round(fres, 4)
 
         print("\nFinal result: " + str(fres))
-        self.confobj['score'] = fres
+        self.confobj['score'] = float(fres)
 
-    def write_output(self, outfile):
+    def write_output(self, outtype, outfile):
 
         if not outfile:
             outfile = self.resultsdir + '/' + self.confobj['name'] + '.' \
-                + self.outtype
+                + outtype
 
         outobj = {}
-        if self.outtype == 'yaml':
+        if outtype == 'yaml':
             outobj['hepscore_benchmark'] = self.confobj
-        else:
+        elif outtype == 'json':
             outobj = self.confobj
+        else:
+            raise ValueError("outtype must be 'json' or 'yaml'")
 
         try:
             jfile = open(outfile, mode='w')
-            if self.outtype == 'yaml':
+            if outtype == 'yaml':
                 jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                            allow_unicode=True))
+                            allow_unicode=True).decode('utf-8'))
             else:
                 jfile.write(json.dumps(outobj))
             jfile.close()
@@ -437,7 +436,7 @@ class HEPscore(object):
         # Creating a hash representation of the configuration object
         # to be included in the final report
         m = hashlib.sha256()
-        m.update(json.dumps(self.confobj, sort_keys=True))
+        m.update(json.dumps(self.confobj, sort_keys=True).encode('utf-8'))
         self.confobj['hash'] = m.hexdigest()
 
         sysname = ' '.join(os.uname())
@@ -492,7 +491,7 @@ def median_tuple(vals):
 
     sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
 
-    med_ind = len(sorted_vals) / 2
+    med_ind = int(len(sorted_vals) / 2)
     if len(sorted_vals) % 2 == 1:
         return(sorted_vals[med_ind][::-1])
     else:
@@ -538,6 +537,8 @@ def main():
     hsargs = {'outdir': ""}
     replay = False
     printconf_and_exit = False
+    outtype = "json"
+    conffile = ""
     outfile = ""
 
     try:
@@ -558,9 +559,9 @@ def main():
         elif opt == '-V':
             hsargs['level'] = 'DEBUG'
         elif opt == '-f':
-            hsargs['conffile'] = arg
+            conffile = arg
         elif opt == '-y':
-            hsargs['outtype'] = 'yaml'
+            outtype = 'yaml'
         elif opt == '-o':
             outfile = arg
         elif opt == '-r':
@@ -588,7 +589,7 @@ def main():
             sys.exit(1)
 
     hs = HEPscore(**hsargs)
-    hs.read_and_parse_conf()
+    hs.read_and_parse_conf(conffile)
 
     if printconf_and_exit:
         hs.print_conf()
@@ -596,7 +597,7 @@ def main():
     else:
         if hs.run(replay) >= 0:
             hs.gen_score()
-        hs.write_output(outfile)
+        hs.write_output(outtype, outfile)
 
 
 if __name__ == '__main__':
