@@ -196,6 +196,8 @@ class HEPscore(object):
         command = command_string.split(' ')
         sys.stdout.write("Running  %s " % command)
 
+        confobj['replay'] = mock
+
         for i in range(runs):
             if self.level != "INFO":
                 sys.stdout.write('.')
@@ -484,7 +486,7 @@ class HEPscore(object):
             self.confobj['score'] = 'FAIL'
 
         return res
-# End of HEPScore class
+# End of HEPscore class
 
 
 def median_tuple(vals):
@@ -515,6 +517,7 @@ def help(progname):
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
+    print("-r           Replay output using existing results directory")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
     print("-o           Specify an alternate summary output file location")
