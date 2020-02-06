@@ -196,7 +196,7 @@ class HEPscore(object):
         command = command_string.split(' ')
         sys.stdout.write("Running  %s " % command)
 
-        confobj['replay'] = mock
+        self.confobj['replay'] = mock
 
         for i in range(runs):
             if self.level != "INFO":
