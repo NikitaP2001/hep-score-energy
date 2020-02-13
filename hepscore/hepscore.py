@@ -8,6 +8,7 @@ import getopt
 import glob
 import hashlib
 import json
+import logging
 import math
 import operator
 import os
@@ -17,7 +18,6 @@ import scipy.stats
 import subprocess
 import sys
 import time
-import logging
 
 
 class HEPscore(object):
@@ -53,10 +53,12 @@ class HEPscore(object):
         vars(self).update(kwargs)
 
         logging.basicConfig(level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
+                            format='%(asctime)s - %(levelname)s - '
+                            '%(message)s', stream=sys.stdout)
         if self.level == "DEBUG":
             logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
+                                format='%(asctime)s - %(levelname)s - '
+                                '%(message)s', stream=sys.stdout)
 
     def debug_print(self, dstring, newline):
 
@@ -111,7 +113,7 @@ class HEPscore(object):
             except (KeyError, ValueError):
                 if not fail:
                     logging.error("score not reported for one or more runs." +
-                          "The retrieved json report contains\n%s" % jscore)
+                                  "The retrieved json report contains\n%s" % jscore)
                     fail = True
 
             if not fail:
@@ -196,9 +198,8 @@ class HEPscore(object):
 
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
-            tmp +='s'
+            tmp += 's'
         logging.info(tmp + " of " + benchmark)
-
 
         command_string = commands[self.cec] + benchmark_complete
         command = command_string.split(' ')
@@ -219,7 +220,8 @@ class HEPscore(object):
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
             if not mock:
                 try:
-                    logging.debug('opening subprocess with command = {command}')
+                    logging.debug('opening subprocess with '
+                                  'command = {command}')
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except Exception:
@@ -347,25 +349,25 @@ class HEPscore(object):
                 if k == 'method':
                     if val != 'geometric_mean':
                         logging.error("Configuration: only 'geometric_mean'"
-                              "method is currently supported\n")
+                                      "method is currently supported\n")
                         sys.exit(1)
                 if k == 'registry':
                     reg_string = dat['hepscore_benchmark']['registry']
                     if not reg_string[0].isalpha() or \
                             reg_string.find(' ') != -1:
                         logging.error("Configuration: illegal character in "
-                              "registry")
+                                    "registry")
                         sys.exit(1)
                 if k == 'repetitions':
                     try:
                         int(dat['hepscore_benchmark']['repetitions'])
                     except ValueError:
                         logging.error("Configuration: 'repititions' "
-                              "configuration parameter must be an integer\n")
+                                      "configuration parameter must be an integer\n")
                         sys.exit(1)
         except KeyError:
             logging.error("Configuration: " + k + " parameter must be "
-                  "specified")
+                          "specified")
             sys.exit(1)
 
         if 'scaling' in dat['hepscore_benchmark']:
@@ -373,7 +375,7 @@ class HEPscore(object):
                 float(dat['hepscore_benchmark']['scaling'])
             except ValueError:
                 logging.error("Configuration: 'scaling' configuration "
-                      "parameter must be an float\n")
+                              "parameter must be an float\n")
                 sys.exit(1)
 
         bcount = 0
@@ -383,7 +385,7 @@ class HEPscore(object):
 
             if benchmark[0] == ".":
                 logging.info("the config has a commented entry " + benchmark +
-                      " : Skipping this benchmark!!!!\n")
+                             " : Skipping this benchmark!!!!\n")
                 dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
                 continue
 
@@ -394,7 +396,7 @@ class HEPscore(object):
 
             if benchmark.find('-') == -1:
                 logging.error("Configuration: expect at least 1 '-' character "
-                      "in benchmark name")
+                              "in benchmark name")
                 sys.exit(1)
 
             bmk_req_options = ['version', 'scorekey', 'ref_scores']
@@ -402,7 +404,7 @@ class HEPscore(object):
             for k in bmk_req_options:
                 if k not in bmark_conf.keys():
                     logging.error("Configuration: missing required benchmark "
-                          "option -" + k)
+                                  "option -" + k)
                     sys.exit(1)
 
             if 'ref_scores' in bmark_conf.keys():
@@ -411,7 +413,7 @@ class HEPscore(object):
                         float(bmark_conf['ref_scores'][score])
                     except ValueError:
                         logging.error("Configuration: ref_score " + score +
-                              " is not a float")
+                                      " is not a float")
                         sys.exit(1)
 
         if bcount == 0:
@@ -419,7 +421,7 @@ class HEPscore(object):
             sys.exit(1)
 
         logging.debug("The parsed config is:\n" +
-                         yaml.safe_dump(dat['hepscore_benchmark']))
+                      yaml.safe_dump(dat['hepscore_benchmark']))
 
         self.confobj = dat['hepscore_benchmark']
 
@@ -429,7 +431,7 @@ class HEPscore(object):
 
         if self.cec and 'container_exec' in self.confobj:
             logging.info("Overiding container_exec parameter on the "
-                  "commandline\n")
+                         "commandline\n")
         elif not self.cec:
             if 'container_exec' in self.confobj:
                 if self.confobj['container_exec'] == 'singularity' or \
@@ -437,11 +439,11 @@ class HEPscore(object):
                     self.cec = self.confobj['container_exec']
                 else:
                     logging.error("container_exec config parameter must "
-                          "be 'singularity' or 'docker'\n")
+                                  "be 'singularity' or 'docker'\n")
                     sys.exit(1)
             else:
                 logging.warning("Run type not specified on commandline or"
-                      " in config - assuming docker\n")
+                                " in config - assuming docker\n")
                 self.cec = "docker"
 
         # Creating a hash representation of the configuration object
