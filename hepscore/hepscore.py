@@ -113,7 +113,8 @@ class HEPscore(object):
             except (KeyError, ValueError):
                 if not fail:
                     logging.error("score not reported for one or more runs." +
-                                  "The retrieved json report contains\n%s" % jscore)
+                                  "The retrieved json report contains\n%s"
+                                  % jscore)
                     fail = True
 
             if not fail:
@@ -248,7 +249,7 @@ class HEPscore(object):
 
             if not mock and cmdf.returncode != 0:
                 logging.error("running " + benchmark + " failed.  Exit "
-                      "status " + str(cmdf.returncode) + "\n")
+                              "status " + str(cmdf.returncode) + "\n")
 
                 if 'allow_fail' not in self.confobj.keys() or \
                         self.confobj['allow_fail'] is False:
@@ -323,7 +324,7 @@ class HEPscore(object):
             jfile.close()
         except Exception:
             logging.error("Failed to create summary output " + outfile +
-                  "\n")
+                          "\n")
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
@@ -356,14 +357,15 @@ class HEPscore(object):
                     if not reg_string[0].isalpha() or \
                             reg_string.find(' ') != -1:
                         logging.error("Configuration: illegal character in "
-                                    "registry")
+                                      "registry")
                         sys.exit(1)
                 if k == 'repetitions':
                     try:
                         int(dat['hepscore_benchmark']['repetitions'])
                     except ValueError:
                         logging.error("Configuration: 'repititions' "
-                                      "configuration parameter must be an integer\n")
+                                      "configuration parameter must be"
+                                      " an integer\n")
                         sys.exit(1)
         except KeyError:
             logging.error("Configuration: " + k + " parameter must be "
@@ -391,7 +393,7 @@ class HEPscore(object):
 
             if not benchmark[0].isalpha() or benchmark.find(' ') != -1:
                 logging.error("Configuration: illegal character in " +
-                      benchmark + "\n")
+                              benchmark + "\n")
                 sys.exit(1)
 
             if benchmark.find('-') == -1:
