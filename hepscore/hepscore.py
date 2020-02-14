@@ -32,6 +32,7 @@ class HEPscore(object):
     outdir = ""
     resultsdir = ""
     cec = ""
+    clean = False
 
     confobj = {}
     results = []
@@ -55,7 +56,7 @@ class HEPscore(object):
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - '
                             '%(message)s', stream=sys.stdout)
-        if self.level == "DEBUG":
+        if self.level == 'DEBUG':
             logging.basicConfig(level=logging.NOTSET,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s', stream=sys.stdout)
@@ -164,6 +165,15 @@ class HEPscore(object):
 
         return(final_result)
 
+    def docker_rm(self, image):
+        if self.clean and self.confobj['container_exec'] == 'docker':
+            logging.info("Deleting Docker image %s", image)
+            command = "docker rmi -f " + image
+            logging.debug(command)
+            command = command.split(' ')
+            ret = subprocess.Popen(command)
+            res.wait()
+
     def _run_benchmark(self, benchmark, mock):
 
         commands = {'docker': "docker run --rm --network=host -v " +
@@ -194,8 +204,9 @@ class HEPscore(object):
             logging.error("failure to open " + log)
             return(-1)
 
-        benchmark_complete = self.confobj['registry'] + '/' + benchmark +\
-            ':' + bench_conf['version'] + options_string
+        benchmark_name = self.confobj['registry'] + '/' + benchmark +\
+            ':' + bench_conf['version']
+        benchmark_complete = benchmark_name + options_string
 
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
@@ -232,6 +243,7 @@ class HEPscore(object):
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
                     self._proc_results(benchmark)
+                    self.docker_rm(benchmark_name)
                     return(-1)
 
                 line = cmdf.stdout.readline()
@@ -241,6 +253,7 @@ class HEPscore(object):
                     line = cmdf.stdout.readline()
 
                 cmdf.wait()
+                self.docker_rm(benchmark_name)
 
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
@@ -537,6 +550,7 @@ def help(progname):
     print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print configuration and exit")
     print("-V           Enable debugging output: implies -v")
+    print("-c      Remove the docker image after completion")
     print("Examples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
@@ -558,7 +572,7 @@ def main():
     outfile = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyrf:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcdsyrf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help(sys.argv[0])
@@ -582,6 +596,8 @@ def main():
             outfile = arg
         elif opt == '-r':
             replay = True
+        elif opt == '-c':
+            hsargs['clean'] = True
         elif opt == '-s' or opt == '-d':
             if 'cec' in hsargs:
                 print("\nError: -s and -d are exclusive\n")
