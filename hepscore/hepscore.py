@@ -172,7 +172,7 @@ class HEPscore(object):
             logging.debug(command)
             command = command.split(' ')
             ret = subprocess.Popen(command)
-            res.wait()
+            ret.wait()
 
     def _run_benchmark(self, benchmark, mock):
 
