@@ -53,11 +53,12 @@ class HEPscore(object):
 
         vars(self).update(kwargs)
 
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s - %(levelname)s - '
-                            '%(message)s', stream=sys.stdout)
         if self.level == 'DEBUG':
-            logging.basicConfig(level=logging.NOTSET,
+            logging.basicConfig(level=logging.DEBUG,
+                                format='%(asctime)s - %(levelname)s - '
+                                '%(message)s', stream=sys.stdout)
+        else:
+            logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s', stream=sys.stdout)
 
@@ -216,12 +217,9 @@ class HEPscore(object):
         command_string = commands[self.cec] + benchmark_complete
         command = command_string.split(' ')
         logging.debug("Running  %s " % command)
-
         self.confobj['replay'] = mock
 
         for i in range(runs):
-            if self.level != "INFO":
-                sys.stdout.write('.')
 
             sys.stdout.flush()
 
@@ -251,6 +249,8 @@ class HEPscore(object):
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
+                    if line[-25:] == "no space left on device.\n":
+                        logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
                 self.docker_rm(benchmark_name)
@@ -550,7 +550,7 @@ def help(progname):
     print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print configuration and exit")
     print("-V           Enable debugging output: implies -v")
-    print("-c      Remove the docker image after completion")
+    print("-c           Remove the docker image after completion")
     print("Examples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
