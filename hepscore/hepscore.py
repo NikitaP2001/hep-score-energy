@@ -172,7 +172,8 @@ class HEPscore(object):
             command = "docker rmi -f " + image
             logging.debug(command)
             command = command.split(' ')
-            ret = subprocess.Popen(command)
+            ret = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
             ret.wait()
 
     def _run_benchmark(self, benchmark, mock):
@@ -231,17 +232,19 @@ class HEPscore(object):
             if not mock:
                 try:
                     logging.debug('opening subprocess with '
-                                  'command = {command}')
+                                  'command = ' + command_string)
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except Exception:
+                    self.check_rc(cmdf.returncode)
                     logging.error("failure to execute: " + command_string)
                     lfile.close()
                     bench_conf['run' + str(i)]['end_at'] = \
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
                     self._proc_results(benchmark)
-                    self.docker_rm(benchmark_name)
+                    if i == (runs - 1):
+                        self.docker_rm(benchmark_name)
                     return(-1)
 
                 line = cmdf.stdout.readline()
@@ -253,7 +256,10 @@ class HEPscore(object):
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                self.docker_rm(benchmark_name)
+                self.check_rc(cmdf.returncode)
+
+                if i == (runs - 1):
+                    self.docker_rm(benchmark_name)
 
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
@@ -276,6 +282,15 @@ class HEPscore(object):
 
         result = self._proc_results(benchmark)
         return(result)
+
+    def check_rc(self, rc):
+        if rc == 137 and self.cec == 'docker':
+            logging.error(self.cec + " returned code 137: OOM-kill or"
+                          " intervention")
+        elif rc != 0:
+            logging.error(self.cec + " returned code " + str(rc))
+        else:
+            logging.debug(self.cec + " terminated without errors")
 
     def read_conf(self, conffile=""):
 
