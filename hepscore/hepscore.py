@@ -320,6 +320,7 @@ class HEPscore(object):
 
         logging.info("Final result: " + str(fres))
         self.confobj['score'] = float(fres)
+        self.confobj['status'] = 'SUCCESS'
 
     def write_output(self, outtype, outfile):
 
@@ -517,7 +518,8 @@ class HEPscore(object):
 
         if res < 0:
             self.confobj['ERROR'] = benchmark
-            self.confobj['score'] = 'FAIL'
+            self.confobj['score'] = -1
+            self.confobj['status'] = 'FAILED'
 
         return res
 # End of HEPscore class
