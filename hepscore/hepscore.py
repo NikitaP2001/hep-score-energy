@@ -62,13 +62,6 @@ class HEPscore(object):
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s', stream=sys.stdout)
 
-    def debug_print(self, dstring, newline):
-
-        if self.level == "DEBUG":
-            if newline:
-                print("")
-            logging.debug(dstring)
-
     def _proc_results(self, benchmark):
 
         results = {}
