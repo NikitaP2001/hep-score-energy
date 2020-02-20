@@ -319,8 +319,14 @@ class HEPscore(object):
         fres = round(fres, 4)
 
         logging.info("Final result: " + str(fres))
-        self.confobj['score'] = float(fres)
-        self.confobj['status'] = 'SUCCESS'
+
+        if fres != fres:
+            logging.debug("Final result is not valid")
+            self.confobj['score'] = -1
+            self.confobj['status'] = 'FAILED'
+        else:
+            self.confobj['score'] = float(fres)
+            self.confobj['status'] = 'SUCCESS'
 
     def write_output(self, outtype, outfile):
 
