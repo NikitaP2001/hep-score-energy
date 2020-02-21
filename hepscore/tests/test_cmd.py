@@ -1,9 +1,9 @@
 from hepscore import hepscore
+import json
 import os
 # from parameterized import parameterized
 import sys
 import unittest
-import json
 
 # Import mock compatible with Python2 and Python3
 try:
@@ -70,6 +70,7 @@ class TestRun(unittest.TestCase):
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
             hs.write_output("json", "")
+            assertEqual(cm.exception.code, 2)
 
         bmkRes = os.path.normpath(
             os.path.join(hs.resultsdir, 'HEPscore19.json'))
