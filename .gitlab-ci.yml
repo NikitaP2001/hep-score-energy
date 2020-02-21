@@ -60,18 +60,6 @@ coverage:
     paths:
       - cover
 
-functions:
-  stage: unit-test
-  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
-  except:
-    - tags
-  script:
-    - yum install openldap-devel krb5-devel mysql-devel -y
-    - cd $CI_PROJECT_DIR
-    - mkdir /tmp/results
-    - pip install .
-    - python hepscore/tests/test_cmd.py -v
-
 job_test_kv_run_cc7:
     image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
     tags:
