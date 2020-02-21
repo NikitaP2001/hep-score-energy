@@ -63,7 +63,7 @@ class TestRun(unittest.TestCase):
         count = 0
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'outdir': '/tmp/results'}
+                  'clean': True, 'outdir': '/tmp'}
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=self.emptyPath)
         if hs.run(False) >= 0:
