@@ -63,14 +63,14 @@ class TestRun(unittest.TestCase):
         count = 0
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'outdir': '/tmp/results/'}
+                  'clean': True, 'outdir': '/tmp/results'}
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=self.emptyPath)
         if hs.run(False) >= 0:
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
             hs.write_output("json", "")
-            assertEqual(cm.exception.code, 2)
+            self.assertEqual(cm.exception.code, 2)
 
         bmkRes = os.path.normpath(
             os.path.join(hs.resultsdir, 'HEPscore19.json'))
