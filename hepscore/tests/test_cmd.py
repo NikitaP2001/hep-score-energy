@@ -2,6 +2,7 @@ from hepscore import hepscore
 import json
 import os
 # from parameterized import parameterized
+import shutil
 import sys
 import unittest
 
@@ -48,7 +49,7 @@ class TestConf(unittest.TestCase):
         self.assertEqual(hs.confstr, test_conf)
 
 
-class TestRun(unittest.TestCase):
+class TestOutput(unittest.TestCase):
 
     def setUp(self):
         head, _ = os.path.split(__file__)
@@ -91,6 +92,8 @@ class TestRun(unittest.TestCase):
                         count += 1
         if count > 0:
             print("Test resulted in " + str(count) + " errors")
+
+        shutil.rmtree(hs.resultsdir)
 
         self.assertEqual(count, 0, "Error count should be 0")
 
