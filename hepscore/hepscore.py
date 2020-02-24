@@ -181,6 +181,7 @@ class HEPscore(object):
         bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e',
                        'copies': '-c'}
         options_string = ""
+        output_logs = ['']
 
         runs = int(self.confobj['repetitions'])
         log = self.resultsdir + "/" + self.confobj['name'] + ".log"
@@ -245,11 +246,19 @@ class HEPscore(object):
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
+                    output_logs.insert(0, line)
+                    if len(output_logs) > 10:
+                        output_logs.pop()
                     if line[-25:] == "no space left on device.\n":
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
                 self.check_rc(cmdf.returncode)
+
+                if cmdf.returncode > 0:
+                    logging.error(self.cec + " output logs:")
+                    for line in reversed(output_logs):
+                        print(line)
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
