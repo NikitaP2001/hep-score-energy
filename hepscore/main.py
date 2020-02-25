@@ -30,6 +30,7 @@ def help(progname):
     print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print configuration and exit")
     print("-V           Enable debugging output: implies -v")
+    print("-c           Remove the docker image after completion")
     print("Examples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
@@ -51,7 +52,7 @@ def main():
     outfile = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVdsyrf:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcdsyrf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help(sys.argv[0])
@@ -75,6 +76,8 @@ def main():
             outfile = arg
         elif opt == '-r':
             replay = True
+        elif opt == '-c':
+            hsargs['clean'] = True
         elif opt == '-s' or opt == '-d':
             if 'cec' in hsargs:
                 print("\nError: -s and -d are exclusive\n")
