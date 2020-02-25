@@ -5,6 +5,7 @@
 #
 
 import getopt
+import os
 import sys
 #from hepscore.hepscore import HEPscore
 from hepscore import HEPscore
