@@ -101,7 +101,7 @@ def main():
             print("\nError: output directory must exist")
             sys.exit(1)
 
-    hs = hepscore.HEPscore(**hsargs)
+    hs = HEPscore(**hsargs)
     hs.read_and_parse_conf(conffile)
 
     if printconf_and_exit:
