@@ -4,7 +4,6 @@
 # hepscore.py - HEPscore benchmark execution
 #
 
-import getopt
 import glob
 import hashlib
 import json
