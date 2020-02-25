@@ -225,12 +225,9 @@ class HEPscore(object):
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
             if not mock:
                 try:
-                    logging.debug('opening subprocess with '
-                                  'command = ' + command_string)
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except Exception:
-                    self.check_rc(cmdf.returncode)
                     logging.error("failure to execute: " + command_string)
                     lfile.close()
                     bench_conf['run' + str(i)]['end_at'] = \
