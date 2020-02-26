@@ -25,7 +25,7 @@ class HEPscore(object):
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
-    conffile = "etc/hepscore_default.yaml"
+    conffile =  '/'.join(os.path.split(__file__)[:-1]) + "/etc/hepscore-default.yaml"
     level = "INFO"
     confstr = ""
     outdir = ""
