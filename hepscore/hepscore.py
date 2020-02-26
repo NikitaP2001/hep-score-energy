@@ -25,7 +25,8 @@ class HEPscore(object):
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
-    conffile =  '/'.join(os.path.split(__file__)[:-1]) + "/etc/hepscore-default.yaml"
+    conffile = '/'.join(os.path.split(__file__)[:-1]) + \
+        "/etc/hepscore-default.yaml"
     level = "INFO"
     confstr = ""
     outdir = ""
@@ -550,4 +551,3 @@ def median_tuple(vals):
         val2 = sorted_vals[med_ind][1]
         return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
                                        sorted_vals[med_ind][0]))
-
