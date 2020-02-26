@@ -1,4 +1,4 @@
-from hepscore import hepscore
+import hepscore
 import hepscore.main
 import json
 import os
