@@ -5,9 +5,9 @@
 #
 
 import getopt
+from hepscore import HEPscore
 import os
 import sys
-from hepscore import HEPscore
 
 
 def help(progname):

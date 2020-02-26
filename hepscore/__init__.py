@@ -1,3 +1,3 @@
 # __init.py__
 
-from .hepscore import HEPscore
+from hepscore import HEPscore
