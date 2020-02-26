@@ -1,5 +1,5 @@
 from hepscore import hepscore
-from hepscore.main
+import hepscore.main
 import json
 import os
 # from parameterized import parameterized
