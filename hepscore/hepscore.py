@@ -239,10 +239,10 @@ class HEPscore(object):
 
                 line = cmdf.stdout.readline()
                 while line:
+                    output_logs.insert(0, line)
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
-                    output_logs.insert(0, line)
                     if len(output_logs) > 10:
                         output_logs.pop()
                     if line[-25:] == "no space left on device.\n":
