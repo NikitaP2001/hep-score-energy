@@ -1,4 +1,5 @@
-from hepscore import hepscore
+import hepscore
+import hepscore.main
 import json
 import os
 # from parameterized import parameterized
@@ -18,13 +19,13 @@ class TestArguments(unittest.TestCase):
     def test_c_option_fails(self):
         with mock.patch.object(sys, 'argv', ["-v", "-c"]):
             with self.assertRaises(SystemExit) as cm:
-                hepscore.main()
+                hepscore.main.main()
                 self.assertEqual(cm.exception.code, 1)
 
     def test_h_option(self):
         with mock.patch.object(sys, 'argv', ["hepscore", "-h"]):
             with self.assertRaises(SystemExit) as cm:
-                hepscore.main()
+                hepscore.main.main()
         self.assertEqual(cm.exception.code, 0)
 
 
