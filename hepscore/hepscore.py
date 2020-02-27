@@ -215,12 +215,9 @@ class HEPscore(object):
         self.confobj['replay'] = mock
 
         for i in range(runs):
-            if self.level != "INFO":
-                sys.stdout.write('.')
-
-            sys.stdout.flush()
-
             runstr = 'run' + str(i)
+
+            logging.debug("starting run " + runstr)
 
             bench_conf[runstr] = {}
             starttime = time.time()
