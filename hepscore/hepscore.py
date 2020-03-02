@@ -33,6 +33,7 @@ class HEPscore(object):
     resultsdir = ""
     cec = ""
     clean = False
+    clean_files = True
 
     confobj = {}
     results = []
@@ -128,6 +129,8 @@ class HEPscore(object):
             fail = True
             logging.error("missing json score file for one or more runs")
 
+        self.cleanup_fs(benchmark_glob)
+
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
                     self.confobj['allow_fail'] is False:
@@ -168,6 +171,18 @@ class HEPscore(object):
             ret = subprocess.Popen(command, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
             ret.wait()
+
+    def cleanup_fs(self, benchmark):
+        if self.clean_files:
+            path = self.resultsdir + "/" + benchmark + \
+                   "*/**/*.root"
+            rootFiles = glob.glob(path)
+            for filePath in rootFiles:
+                try:
+                    os.remove(filePath)
+                except Exception:
+                    logging.warning("Error trying to remove excessive"
+                                    " root file: " + filePath)
 
     def _run_benchmark(self, benchmark, mock):
 
