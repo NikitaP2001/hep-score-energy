@@ -175,7 +175,7 @@ class HEPscore(object):
     def cleanup_fs(self, benchmark):
         if self.clean_files:
             path = self.resultsdir + "/" + benchmark + \
-                   "*/**/*.root"
+                "*/**/*.root"
             rootFiles = glob.glob(path)
             for filePath in rootFiles:
                 try:
