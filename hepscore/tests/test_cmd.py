@@ -121,7 +121,7 @@ class testOutput(unittest.TestCase):
 
         for entry in result:
             if len(entry[2]) == 1:
-                print '\n\t %s :\n\t\t %s\t%s' % entry
+                print('\n\t %s :\n\t\t %s\t%s' % entry)
             else:
                 print('\n\t %s :\n\t\t %s\n\t\t\t%s\n\t\t\t%s' %
                       (entry[0], entry[1], entry[2][0], entry[2][1]))
