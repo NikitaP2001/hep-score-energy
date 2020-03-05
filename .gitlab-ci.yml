@@ -43,11 +43,7 @@ python27:
   except:
     - tags
   script:
-    - yum remove docker docker-common docker-selinux docker-engine
-    - yum install openldap-devel krb5-devel mysql-devel yum-utils device-mapper-persistent-data lvm2 -y
-    - yum-config-manager  --add-repo   https://download.docker.com/linux/centos/docker-ce.repo
-    - yum install -y docker-ce
-    - dockerd &
+    - yum install openldap-devel krb5-devel mysql-devel -y
     - cd $CI_PROJECT_DIR
     - tox -epy27
 
@@ -57,11 +53,7 @@ coverage:
   except:
     - tags
   script:
-    - yum remove docker docker-common docker-selinux docker-engine
-    - yum install openldap-devel krb5-devel mysql-devel yum-utils device-mapper-persistent-data lvm2 -y
-    - yum-config-manager  --add-repo   https://download.docker.com/linux/centos/docker-ce.repo
-    - yum install -y docker-ce
-    - dockerd &
+    - yum install openldap-devel krb5-devel mysql-devel -y
     - cd $CI_PROJECT_DIR
     - scl enable rh-python35 'tox -ecover'
   artifacts:
