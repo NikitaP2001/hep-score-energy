@@ -1,3 +1,4 @@
+from dictdiffer import diff
 import hepscore
 import hepscore.main
 import json
@@ -50,27 +51,7 @@ class TestConf(unittest.TestCase):
         self.assertEqual(hs.confstr, test_conf)
 
 
-class TestOutput(unittest.TestCase):
-
-    def extract_values(self, obj, key):
-        """Pull all values of specified key from nested JSON."""
-        arr = []
-
-        def extract(obj, arr, key):
-            """Recursively search for values of key in JSON tree."""
-            if isinstance(obj, dict):
-                for k, v in obj.items():
-                    if isinstance(v, (dict, list)):
-                        extract(v, arr, key)
-                    elif k == key:
-                        arr.append(v)
-            elif isinstance(obj, list):
-                for item in obj:
-                    extract(item, arr, key)
-            return arr
-
-        results = extract(obj, arr, key)
-        return results
+class TestRun(unittest.TestCase):
 
     def setUp(self):
         head, _ = os.path.split(__file__)
@@ -87,69 +68,67 @@ class TestOutput(unittest.TestCase):
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True, 'outdir': '/tmp/test_run_empty_cfg'}
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=self.emptyPath)
-        if hs.run(False) >= 0:
-            hs.gen_score()
+
+        heps = hepscore.HEPscore(**hsargs)
+        heps.read_and_parse_conf(conffile=self.emptyPath)
+        if heps.run(False) >= 0:
+            heps.gen_score()
         with self.assertRaises(SystemExit) as cm:
-            hs.write_output("json", "")
+            heps.write_output("json", "")
+            self.assertEqual(cm.exception.code, 2)
 
-        self.assertEqual(cm.exception.code, 2)
 
-        bmkRes = os.path.normpath(
-            os.path.join(hs.resultsdir, 'HEPscore19.json'))
+class testOutput(unittest.TestCase):
 
-        keys = ["method", "name", "reference_machine", "registry",
-                "repetitions", "scaling", "container_exec",
-                "version", "hash", "date", "system", "container_exec",
-                "hepscore_ver", "score", "status"]
+    def test_parse_results(self):
+        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
+                      "cms-gen-sim-bmk", "cms-reco-bmk"]
 
-        o = open(bmkRes)
-        out = json.load(o)
+        head, _ = os.path.split(__file__)
 
-        for i in keys:
-            self.assertTrue(len(self.extract_values(out, i)) > 0)
+        resDir = os.path.join(head + "/data/HEPscore_ci_allWLs")
 
-    def test_run_bmks(self):
-
-        if not os.path.exists('/tmp/test_run_bmks'):
-            os.mkdir('/tmp/test_run_bmks')
+        conf = os.path.normpath(
+            os.path.join(head, "data/HEPscore_ci_allWLs/hepscore_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'outdir': '/tmp/test_run_bmks'}
+                  'clean': True,
+                  'resultsdir': resDir}
+
+        outtype = "json"
+        outfile = ""
+
         hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=self.path)
-        if hs.run(False) >= 0:
-            hs.gen_score()
-        with self.assertRaises(SystemExit) as cm:
-            hs.write_output("json", "")
+        hs.read_and_parse_conf(conffile=conf)
 
-        self.assertEqual(cm.exception.code, 2)
+        ignored_keys = ['hash', 'environment']
 
-        # bmkRes = os.path.normpath(
-        #     os.path.join(hs.resultsdir, 'HEPscore19.json'))
+        for benchmark in benchmarks:
+            hs.results.append(hs._proc_results(benchmark))
+            ignored_keys.append("benchmarks." + benchmark + ".run0")
+            ignored_keys.append("benchmarks." + benchmark + ".run1")
+            ignored_keys.append("benchmarks." + benchmark + ".run2")
 
-        # keys = ["method", "name", "reference_machine", "registry",
-        #         "repetitions", "scaling", "container_exec",
-        #         "version", "hash", "date", "system", "container_exec",
-        #         "hepscore_ver", "score", "status"]
+        hs.gen_score()
 
-        # o = open(bmkRes)
-        # out = json.load(o)
+        hs.write_output(outtype, outfile)
 
-        # for i in keys:
-        #     self.assertTrue(len(self.extract_values(out, i)) > 0)
+        expected_res = json.load(open(resDir +
+                                      "/hepscore_result_expected_output.json"))
+        actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
-        # wl_keys =["median", "max", "score", "avg", "min", "log",
-        #           "scorekey", "events", "duration", "bmkdata_checksum",
-        #           "cvmfs_checksum", "version", "bmk_checksum",
-        #           "copies", "threads_per_copy", "events_per_thread",
-        #           "start_at", "end_at"]
+        result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
 
-        # for i in wl_keys:
-        #     self.assertTrue(len(self.extract_values(out, i)) > 0)
+        for entry in result:
+            if len(entry[2]) == 1:
+                print '\n\t %s :\n\t\t %s\t%s' % entry
+            else:
+                print('\n\t %s :\n\t\t %s\n\t\t\t%s\n\t\t\t%s' %
+                      (entry[0], entry[1], entry[2][0], entry[2][1]))
 
-        # checkeveryindividualbmkjson
+        self.assertEqual(len(result), 0)
+
+        os.remove(resDir + "/HEPscore19.json")
 
 
 if __name__ == '__main__':
