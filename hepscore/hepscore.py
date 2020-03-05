@@ -186,19 +186,21 @@ class HEPscore(object):
         else:
             return False
 
-    def _run_benchmark(self, benchmark, mock):
-
-        uns = ""
+    # User namespace flag needed to support nested singularity
+    def get_usernamespace_flag(self):
         if self.cec == "singularity":
             if self.check_userns():
                 logging.debug("System supports user namespaces, enabling in "
                               "singularity call")
-                uns = "-u "
+                return("-u ")
 
+        return("")
+
+    def _run_benchmark(self, benchmark, mock):
         commands = {'docker': "docker run --rm --network=host -v " +
                     self.resultsdir + ":/results ",
                     'singularity': "singularity run -B " + self.resultsdir +
-                    ":/results " + uns + "docker://"}
+                    ":/results " + self.get_usernamespace_flag() + "docker://"}
 
         bench_conf = self.confobj['benchmarks'][benchmark]
         bmark_keys = bench_conf.keys()
