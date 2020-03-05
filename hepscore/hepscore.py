@@ -76,9 +76,8 @@ class HEPscore(object):
             benchmark_glob = benchmark.split('-')[:-1]
             benchmark_glob = '-'.join(benchmark_glob)
 
-        gpaths = glob.glob(self.resultsdir + "/" + benchmark_glob + "*/" +
-                           benchmark_glob + "_summary.json")
-
+        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
+                        "*/" + benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
