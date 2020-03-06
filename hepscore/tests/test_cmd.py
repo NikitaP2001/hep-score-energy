@@ -69,12 +69,12 @@ class TestRun(unittest.TestCase):
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True, 'outdir': '/tmp/test_run_empty_cfg'}
 
-        heps = hepscore.HEPscore(**hsargs)
-        heps.read_and_parse_conf(conffile=self.emptyPath)
-        if heps.run(False) >= 0:
-            heps.gen_score()
+        hs = hepscore.HEPscore(**hsargs)
+        hs.read_and_parse_conf(conffile=self.emptyPath)
+        if hs.run(False) >= 0:
+            hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
-            heps.write_output("json", "")
+            hs.write_output("json", "")
             self.assertEqual(cm.exception.code, 2)
 
 
@@ -101,16 +101,15 @@ class testOutput(unittest.TestCase):
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=conf)
 
-        ignored_keys = ['hash', 'environment']
+        ignored_keys = ['hash', 'environment', 'replay', 'hepscore_ver']
 
         for benchmark in benchmarks:
-            hs.results.append(hs._proc_results(benchmark))
             ignored_keys.append("benchmarks." + benchmark + ".run0")
             ignored_keys.append("benchmarks." + benchmark + ".run1")
             ignored_keys.append("benchmarks." + benchmark + ".run2")
 
+        hs.run(True)
         hs.gen_score()
-
         hs.write_output(outtype, outfile)
 
         expected_res = json.load(open(resDir +
@@ -129,6 +128,7 @@ class testOutput(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         os.remove(resDir + "/HEPscore19.json")
+        os.remove(resDir + "/HEPscore19.log")
 
 
 if __name__ == '__main__':
