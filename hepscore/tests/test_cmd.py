@@ -101,7 +101,8 @@ class testOutput(unittest.TestCase):
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=conf)
 
-        ignored_keys = ['hash', 'environment', 'replay', 'hepscore_ver']
+        ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
+                        'app_info.hepscore_ver']
 
         for benchmark in benchmarks:
             ignored_keys.append("benchmarks." + benchmark + ".run0")
