@@ -365,6 +365,8 @@ class HEPscore(object):
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
+            else:
+                time.sleep(1)
 
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
@@ -476,7 +478,6 @@ class HEPscore(object):
             self.confstr = confstr
 
         hep_settings = ['repetitions', 'method', 'benchmarks']
-        hep_info = ['name', 'registry', 'reference_machine']
 
         try:
             dat = yaml.safe_load(self.confstr)
