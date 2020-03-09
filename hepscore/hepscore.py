@@ -177,7 +177,7 @@ class HEPscore(object):
             max_usrns = int(mf.read())
         except Exception:
             logging.info("Cannot open/read from %s, assuming user namespace"
-                          "support disabled", proc_muns)
+                         "support disabled", proc_muns)
             return False
 
         mf.close()
@@ -191,7 +191,7 @@ class HEPscore(object):
         if self.cec == "singularity":
             if self.check_userns():
                 logging.info("System supports user namespaces, enabling in "
-                              "singularity call")
+                             "singularity call")
                 return("-u ")
 
         return("")
