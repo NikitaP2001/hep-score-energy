@@ -52,7 +52,7 @@ hepscore_benchmark:
         scorekey: wl-scores
         events: 5
         version: v0.15
-  app-info:
+  app_info:
     name: HEPscore19
     reference_machine: "bmk16-cc7-7xc9mygbzq"
     registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
