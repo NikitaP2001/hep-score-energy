@@ -61,7 +61,7 @@ class HEPscore(object):
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
-                                '%(funcName)s() - %(message)s',
+                                '%(message)s',
                                 stream=sys.stdout)
 
     def _proc_results(self, benchmark):
