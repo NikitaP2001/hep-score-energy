@@ -2,6 +2,7 @@ from dictdiffer import diff
 import hepscore
 import hepscore.main
 import json
+import logging
 import os
 # from parameterized import parameterized
 import shutil
@@ -132,6 +133,10 @@ class testOutput(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(levelname)s - '
+                        '%(funcName)s() - %(message)s',
+                        stream=sys.stdout)
     unittest.main()
 
 
