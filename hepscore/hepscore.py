@@ -225,12 +225,41 @@ def proc_results(benchmark, rpath, verbose, conf):
     return(final_result)
 
 
+def check_userns():
+    proc_muns = "/proc/sys/user/max_user_namespaces"
+
+    try:
+        mf = open(proc_muns, mode='r')
+        max_usrns = int(mf.read())
+    except Exception:
+        print("Cannot open/read from %s, assuming user namespace "
+              "support disabled", proc_muns)
+        return False
+
+    mf.close()
+    if max_usrns > 0:
+        return True
+    else:
+        return False
+
+
+# User namespace flag needed to support nested singularity
+def get_usernamespace_flag(cec):
+    if cec == "singularity":
+        if check_userns():
+            print("System supports user namespaces, enabling in "
+                  "singularity call")
+            return("-u ")
+
+    return("")
+
+
 def run_benchmark(benchmark, cm, output, verbose, conf):
 
     commands = {'docker': "docker run --rm --network=host -v " + output +
                 ":/results ",
                 'singularity': "singularity run -B " + output +
-                ":/results docker://"}
+                ":/results " + get_usernamespace_flag(cm) + "docker://"}
 
     bench_conf = conf['benchmarks'][benchmark]
     bmark_keys = bench_conf.keys()
