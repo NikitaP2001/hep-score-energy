@@ -56,11 +56,13 @@ class HEPscore(object):
         if self.level == 'DEBUG':
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
-                                '%(message)s', stream=sys.stdout)
+                                '%(funcName)s() - %(message)s ',
+                                stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
-                                '%(message)s', stream=sys.stdout)
+                                '%(message)s',
+                                stream=sys.stdout)
 
     def _proc_results(self, benchmark):
 
@@ -76,9 +78,8 @@ class HEPscore(object):
             benchmark_glob = benchmark.split('-')[:-1]
             benchmark_glob = '-'.join(benchmark_glob)
 
-        gpaths = glob.glob(self.resultsdir + "/" + benchmark_glob + "*/" +
-                           benchmark_glob + "_summary.json")
-
+        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
+                        "*/" + benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
@@ -239,10 +240,10 @@ class HEPscore(object):
 
                 line = cmdf.stdout.readline()
                 while line:
+                    output_logs.insert(0, line)
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
-                    output_logs.insert(0, line)
                     if len(output_logs) > 10:
                         output_logs.pop()
                     if line[-25:] == "no space left on device.\n":

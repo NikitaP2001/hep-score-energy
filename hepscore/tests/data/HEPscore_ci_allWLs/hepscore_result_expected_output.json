@@ -573,6 +573,7 @@
       }
     }
   },
+  "status": "SUCCESS",
   "score": 0,
   "method": "geometric_mean",
   "container_exec": "docker"
