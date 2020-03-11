@@ -170,12 +170,38 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
-    def _run_benchmark(self, benchmark, mock):
+    def check_userns(self):
+        proc_muns = "/proc/sys/user/max_user_namespaces"
 
+        try:
+            mf = open(proc_muns, mode='r')
+            max_usrns = int(mf.read())
+        except Exception:
+            logging.info("Cannot open/read from %s, assuming user namespace"
+                         "support disabled", proc_muns)
+            return False
+
+        mf.close()
+        if max_usrns > 0:
+            return True
+        else:
+            return False
+
+    # User namespace flag needed to support nested singularity
+    def get_usernamespace_flag(self):
+        if self.cec == "singularity":
+            if self.check_userns():
+                logging.info("System supports user namespaces, enabling in "
+                             "singularity call")
+                return("-u ")
+
+        return("")
+
+    def _run_benchmark(self, benchmark, mock):
         commands = {'docker': "docker run --rm --network=host -v " +
                     self.resultsdir + ":/results ",
                     'singularity': "singularity run -B " + self.resultsdir +
-                    ":/results docker://"}
+                    ":/results " + self.get_usernamespace_flag() + "docker://"}
 
         bench_conf = self.confobj['benchmarks'][benchmark]
         bmark_keys = bench_conf.keys()
@@ -218,7 +244,7 @@ class HEPscore(object):
         for i in range(runs):
             runstr = 'run' + str(i)
 
-            logging.debug("starting run " + runstr)
+            logging.debug("Starting " + runstr)
 
             bench_conf[runstr] = {}
             starttime = time.time()
@@ -308,8 +334,8 @@ class HEPscore(object):
         return self.confstr
 
     def print_conf(self):
-        full_conf = {'hepscore': self.confobj}
-        logging.info(yaml.safe_dump(full_conf))
+        full_conf = {'hepscore_benchmark': self.confobj}
+        print(yaml.safe_dump(full_conf))
 
     def read_and_parse_conf(self, conffile=""):
         self.read_conf(conffile)
