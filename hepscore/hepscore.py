@@ -53,7 +53,7 @@ class HEPscore(object):
 
         vars(self).update(kwargs)
 
-        if self.level == 'DEBUG':
+        if self.level is 'DEBUG':
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(funcName)s() - %(message)s ',
@@ -79,7 +79,8 @@ class HEPscore(object):
             benchmark_glob = '-'.join(benchmark_glob)
 
         gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
-                        "*/" + benchmark_glob + "_summary.json"))
+                                  "/run*/" + benchmark_glob + "*/" +
+                                  benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
@@ -198,10 +199,6 @@ class HEPscore(object):
         return("")
 
     def _run_benchmark(self, benchmark, mock):
-        commands = {'docker': "docker run --rm --network=host -v " +
-                    self.resultsdir + ":/results ",
-                    'singularity': "singularity run -B " + self.resultsdir +
-                    ":/results " + self.get_usernamespace_flag() + "docker://"}
 
         bench_conf = self.confobj['benchmarks'][benchmark]
         bmark_keys = bench_conf.keys()
@@ -236,12 +233,22 @@ class HEPscore(object):
             tmp += 's'
         logging.info(tmp + " of " + benchmark)
 
-        command_string = commands[self.cec] + benchmark_complete
-        command = command_string.split(' ')
-        logging.debug("Running  %s " % command)
         self.confobj['replay'] = mock
 
         for i in range(runs):
+            runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
+            logsFile = runDir + "/" + self.cec + "_logs"
+
+            commands = {'docker': "docker run --rm --network=host -v " +
+                        runDir + ":/results ",
+                        'singularity': "singularity run -B " + runDir +
+                        ":/results " + self.get_usernamespace_flag() +
+                        "docker://"}
+
+            command_string = commands[self.cec] + benchmark_complete
+            command = command_string.split(' ')
+            logging.debug("Running  %s " % command)
+
             runstr = 'run' + str(i)
 
             logging.debug("Starting " + runstr)
@@ -270,8 +277,6 @@ class HEPscore(object):
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
-                    if len(output_logs) > 10:
-                        output_logs.pop()
                     if line[-25:] == "no space left on device.\n":
                         logging.error("Docker: No space left on device.")
 
@@ -280,8 +285,12 @@ class HEPscore(object):
 
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
-                    for line in reversed(output_logs):
+                    for line in list(reversed(output_logs))[-10:]:
                         print(line)
+
+                with open(logsFile, 'w') as f:
+                    for line in reversed(output_logs):
+                        f.write('%s' % line)
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
