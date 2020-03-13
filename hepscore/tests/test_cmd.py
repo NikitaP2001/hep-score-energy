@@ -5,7 +5,6 @@ import json
 import logging
 import os
 # from parameterized import parameterized
-import shutil
 import sys
 import unittest
 
@@ -93,7 +92,7 @@ class testOutput(unittest.TestCase):
             os.path.join(head, "data/HEPscore_ci_allWLs/hepscore_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True,
+                  'clean': True, 'clean_files': False,
                   'resultsdir': resDir}
 
         outtype = "json"
