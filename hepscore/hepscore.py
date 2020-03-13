@@ -14,8 +14,10 @@ import os
 import oyaml as yaml
 import pbr.version
 import scipy.stats
+import shutil
 import subprocess
 import sys
+import tarfile
 import time
 
 
@@ -177,14 +179,24 @@ class HEPscore(object):
     def cleanup_fs(self, benchmark):
         if self.clean_files:
             path = self.resultsdir + "/" + benchmark + \
-                "*/**/*.root"
-            rootFiles = glob.glob(path)
+                "/run*/" + benchmark + "*"
+            rootFiles = glob.glob(path + "/**/*.root")
+
+            logging.debug("cleaning files: ")
             for filePath in rootFiles:
+                if self.level == 'DEBUG':
+                    print(filePath)
                 try:
                     os.remove(filePath)
                 except Exception:
                     logging.warning("Error trying to remove excessive"
                                     " root file: " + filePath)
+
+            dirPaths = glob.glob(path)
+            for dirPath in dirPaths:
+                with tarfile.open(dirPath + "_benchmark_tar", "w:gz") as tar:
+                    tar.add(dirPath, arcname=os.path.basename(dirPath))
+                shutil.rmtree(dirPath)
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
