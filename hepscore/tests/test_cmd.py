@@ -1,6 +1,8 @@
+from dictdiffer import diff
 import hepscore
 import hepscore.main
 import json
+import logging
 import os
 # from parameterized import parameterized
 import shutil
@@ -11,7 +13,7 @@ import unittest
 try:
     import mock
 except ImportError:
-    from unittest import mock
+    from unittest.mock import mock
 
 
 class TestArguments(unittest.TestCase):
@@ -50,22 +52,24 @@ class TestConf(unittest.TestCase):
         self.assertEqual(hs.confstr, test_conf)
 
 
-class TestOutput(unittest.TestCase):
+class TestRun(unittest.TestCase):
 
     def setUp(self):
         head, _ = os.path.split(__file__)
         self.path = os.path.normpath(
-            os.path.join(head, 'etc/hepscore_conf.yaml'))
+            os.path.join(head, 'etc/hepscore_conf_bmsreco_only.yaml'))
         self.emptyPath = os.path.normpath(
             os.path.join(head, 'etc/hepscore_empty_conf.yaml'))
-        self.resPath = os.path.normpath(
-            os.path.join(head, 'data/expected_output.json'))
+        self.resPath = os.path.normpath(head)
 
     def test_run_empty_cfg(self):
-        count = 0
+
+        if not os.path.exists('/tmp/test_run_empty_cfg'):
+            os.mkdir('/tmp/test_run_empty_cfg')
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'outdir': '/tmp'}
+                  'clean': True, 'outdir': '/tmp/test_run_empty_cfg'}
+
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=self.emptyPath)
         if hs.run(False) >= 0:
@@ -74,30 +78,77 @@ class TestOutput(unittest.TestCase):
             hs.write_output("json", "")
             self.assertEqual(cm.exception.code, 2)
 
-        bmkRes = os.path.normpath(
-            os.path.join(hs.resultsdir, 'HEPscore19.json'))
 
-        with open(self.resPath) as eo:
-            expected_output = json.load(eo)
-            with open(bmkRes) as ao:
-                actual_output = json.load(ao)
-                for key in actual_output.keys():
-                    if key not in expected_output.keys():
-                        print("Actual output error: Key \"" +
-                              key + "\" not in expected output")
-                        count += 1
-                for key in expected_output.keys():
-                    if key not in actual_output.keys():
-                        print("Expected output error: Key \"" +
-                              key + "\" not in actual output")
-                        count += 1
-        if count > 0:
-            print("Test resulted in " + str(count) + " errors")
+class testOutput(unittest.TestCase):
 
-        shutil.rmtree(hs.resultsdir)
+    def test_parse_results(self):
+        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
+                      "cms-gen-sim-bmk", "cms-reco-bmk"]
 
-        self.assertEqual(count, 0, "Error count should be 0")
+        head, _ = os.path.split(__file__)
+
+        resDir = os.path.join(head + "/data/HEPscore_ci_allWLs")
+
+        conf = os.path.normpath(
+            os.path.join(head, "data/HEPscore_ci_allWLs/hepscore_conf.yaml"))
+
+        hsargs = {'level': 'DEBUG', 'cec': 'docker',
+                  'clean': True,
+                  'resultsdir': resDir}
+
+        outtype = "json"
+        outfile = ""
+
+        hs = hepscore.HEPscore(**hsargs)
+        hs.read_and_parse_conf(conffile=conf)
+
+        ignored_keys = ['hash', 'environment', 'replay', 'hepscore_ver']
+
+        for benchmark in benchmarks:
+            ignored_keys.append("benchmarks." + benchmark + ".run0")
+            ignored_keys.append("benchmarks." + benchmark + ".run1")
+            ignored_keys.append("benchmarks." + benchmark + ".run2")
+
+        hs.run(True)
+        hs.gen_score()
+        hs.write_output(outtype, outfile)
+
+        expected_res = json.load(open(resDir +
+                                      "/hepscore_result_expected_output.json"))
+        actual_res = json.load(open(resDir + "/HEPscore19.json"))
+
+        result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
+
+        for entry in result:
+            if len(entry[2]) == 1:
+                print('\n\t %s :\n\t\t %s\t%s' % entry)
+            else:
+                print('\n\t %s :\n\t\t %s\n\t\t\t%s\n\t\t\t%s' %
+                      (entry[0], entry[1], entry[2][0], entry[2][1]))
+
+        self.assertEqual(len(result), 0)
+
+        os.remove(resDir + "/HEPscore19.json")
+        os.remove(resDir + "/HEPscore19.log")
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(levelname)s - '
+                        '%(funcName)s() - %(message)s',
+                        stream=sys.stdout)
     unittest.main()
+
+
+# Config:
+# - Get conf from yaml, validate V
+#
+# WL Runner:
+# - Run in sequence the list of WL's in config, store results
+#
+# Report:
+# - Access WL Jsons
+# - Validate WL results
+# - Compute geom mean
+# - Summarise WL Exit status
+# - Build HEP-score json report

@@ -54,14 +54,16 @@ class HEPscore(object):
 
         vars(self).update(kwargs)
 
-        if self.level == 'DEBUG':
+        if self.level is 'DEBUG':
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
-                                '%(message)s', stream=sys.stdout)
+                                '%(funcName)s() - %(message)s ',
+                                stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
-                                '%(message)s', stream=sys.stdout)
+                                '%(message)s',
+                                stream=sys.stdout)
 
     def _proc_results(self, benchmark):
 
@@ -77,9 +79,9 @@ class HEPscore(object):
             benchmark_glob = benchmark.split('-')[:-1]
             benchmark_glob = '-'.join(benchmark_glob)
 
-        gpaths = glob.glob(self.resultsdir + "/" + benchmark_glob + "*/" +
-                           benchmark_glob + "_summary.json")
-
+        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
+                                  "/run*/" + benchmark_glob + "*/" +
+                                  benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
@@ -184,12 +186,34 @@ class HEPscore(object):
                     logging.warning("Error trying to remove excessive"
                                     " root file: " + filePath)
 
-    def _run_benchmark(self, benchmark, mock):
+    def check_userns(self):
+        proc_muns = "/proc/sys/user/max_user_namespaces"
 
-        commands = {'docker': "docker run --rm --network=host -v " +
-                    self.resultsdir + ":/results ",
-                    'singularity': "singularity run -B " + self.resultsdir +
-                    ":/results docker://"}
+        try:
+            mf = open(proc_muns, mode='r')
+            max_usrns = int(mf.read())
+        except Exception:
+            logging.info("Cannot open/read from %s, assuming user namespace"
+                         "support disabled", proc_muns)
+            return False
+
+        mf.close()
+        if max_usrns > 0:
+            return True
+        else:
+            return False
+
+    # User namespace flag needed to support nested singularity
+    def get_usernamespace_flag(self):
+        if self.cec == "singularity":
+            if self.check_userns():
+                logging.info("System supports user namespaces, enabling in "
+                             "singularity call")
+                return("-u ")
+
+        return("")
+
+    def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
         bmark_keys = bench_conf.keys()
@@ -224,15 +248,25 @@ class HEPscore(object):
             tmp += 's'
         logging.info(tmp + " of " + benchmark)
 
-        command_string = commands[self.cec] + benchmark_complete
-        command = command_string.split(' ')
-        logging.debug("Running  %s " % command)
         self.confobj['replay'] = mock
 
         for i in range(runs):
+            runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
+            logsFile = runDir + "/" + self.cec + "_logs"
+
+            commands = {'docker': "docker run --rm --network=host -v " +
+                        runDir + ":/results ",
+                        'singularity': "singularity run -B " + runDir +
+                        ":/results " + self.get_usernamespace_flag() +
+                        "docker://"}
+
+            command_string = commands[self.cec] + benchmark_complete
+            command = command_string.split(' ')
+            logging.debug("Running  %s " % command)
+
             runstr = 'run' + str(i)
 
-            logging.debug("starting run " + runstr)
+            logging.debug("Starting " + runstr)
 
             bench_conf[runstr] = {}
             starttime = time.time()
@@ -254,12 +288,10 @@ class HEPscore(object):
 
                 line = cmdf.stdout.readline()
                 while line:
+                    output_logs.insert(0, line)
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
-                    output_logs.insert(0, line)
-                    if len(output_logs) > 10:
-                        output_logs.pop()
                     if line[-25:] == "no space left on device.\n":
                         logging.error("Docker: No space left on device.")
 
@@ -268,8 +300,12 @@ class HEPscore(object):
 
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
-                    for line in reversed(output_logs):
+                    for line in list(reversed(output_logs))[-10:]:
                         print(line)
+
+                with open(logsFile, 'w') as f:
+                    for line in reversed(output_logs):
+                        f.write('%s' % line)
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
@@ -322,8 +358,8 @@ class HEPscore(object):
         return self.confstr
 
     def print_conf(self):
-        full_conf = {'hepscore': self.confobj}
-        logging.info(yaml.safe_dump(full_conf))
+        full_conf = {'hepscore_benchmark': self.confobj}
+        print(yaml.safe_dump(full_conf))
 
     def read_and_parse_conf(self, conffile=""):
         self.read_conf(conffile)
