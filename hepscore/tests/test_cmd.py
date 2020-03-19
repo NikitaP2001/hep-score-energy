@@ -131,6 +131,42 @@ class testOutput(unittest.TestCase):
         os.remove(resDir + "/HEPscore19.json")
         os.remove(resDir + "/HEPscore19.log")
 
+    def test_parse_corrupt_results(self):
+        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
+                      "cms-gen-sim-bmk", "cms-reco-bmk"]
+
+        head, _ = os.path.split(__file__)
+
+        resDir = os.path.join(head + "/data/HEPscore_ci_empty_score")
+
+        conf = os.path.normpath(
+            os.path.join(head, "data/HEPscore_ci_empty_score/" +
+                         "hepscore_conf.yaml"))
+
+        hsargs = {'level': 'DEBUG', 'cec': 'docker',
+                  'clean': True,
+                  'resultsdir': resDir}
+
+        outtype = "json"
+        outfile = ""
+
+        hs = hepscore.HEPscore(**hsargs)
+        hs.read_and_parse_conf(conffile=conf)
+
+        hs.run(True)
+        hs.gen_score()
+        with self.assertRaises(SystemExit) as cm:
+            hs.write_output(outtype, outfile)
+            self.assertEqual(cm.exception.code, 2)
+
+        actual_res = json.load(open(resDir + "/HEPscore19.json"))
+
+        self.assertEqual(actual_res['score'], -1)
+        self.assertEqual(actual_res['status'], "FAILED")
+
+        os.remove(resDir + "/HEPscore19.json")
+        os.remove(resDir + "/HEPscore19.log")
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
