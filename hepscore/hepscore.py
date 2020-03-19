@@ -135,7 +135,7 @@ class HEPscore(object):
                     sub_results.append(sub_score)
                     score = scipy.stats.gmean(sub_results)
 
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, TypeError):
                 if not fail:
                     logging.error("score not reported for one or more runs." +
                                   "The retrieved json report contains\n%s"
