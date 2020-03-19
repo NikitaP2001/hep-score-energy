@@ -132,9 +132,6 @@ class testOutput(unittest.TestCase):
         os.remove(resDir + "/HEPscore19.log")
 
     def test_parse_corrupt_results(self):
-        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
-                      "cms-gen-sim-bmk", "cms-reco-bmk"]
-
         head, _ = os.path.split(__file__)
 
         resDir = os.path.join(head + "/data/HEPscore_ci_empty_score")
