@@ -266,7 +266,8 @@ class HEPscore(object):
             runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
             logsFile = runDir + "/" + self.cec + "_logs"
 
-            os.makedirs(runDir)
+            if self.confobj['replay'] == False:
+                os.makedirs(runDir)
 
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
