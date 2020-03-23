@@ -133,7 +133,10 @@ class HEPscore(object):
             fail = True
             logging.error("missing json score file for one or more runs")
 
-        self.cleanup_fs(benchmark_glob)
+        try:
+            self.cleanup_fs(benchmark_glob)
+        except Exception:
+            logging.warning("Failed to clean up FS. Are you root?")
 
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
@@ -317,10 +320,13 @@ class HEPscore(object):
                     logging.error(self.cec + " output logs:")
                     for line in list(reversed(output_logs))[-10:]:
                         print(line)
-
-                with open(logsFile, 'w') as f:
-                    for line in reversed(output_logs):
-                        f.write('%s' % line)
+                try:
+                    with open(logsFile, 'w') as f:
+                        for line in reversed(output_logs):
+                            f.write('%s' % line)
+                except Exception:
+                    logging.warning("Failed to write logs to file. "
+                                    "Are you root?")
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
