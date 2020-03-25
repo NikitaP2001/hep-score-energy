@@ -14,8 +14,10 @@ import os
 import oyaml as yaml
 import pbr.version
 import scipy.stats
+import shutil
 import subprocess
 import sys
+import tarfile
 import time
 
 
@@ -33,6 +35,7 @@ class HEPscore(object):
     resultsdir = ""
     cec = ""
     clean = False
+    clean_files = True
 
     confobj = {}
     results = []
@@ -53,7 +56,7 @@ class HEPscore(object):
 
         vars(self).update(kwargs)
 
-        if self.level == 'DEBUG':
+        if self.level is 'DEBUG':
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(funcName)s() - %(message)s ',
@@ -79,7 +82,8 @@ class HEPscore(object):
             benchmark_glob = '-'.join(benchmark_glob)
 
         gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
-                        "*/" + benchmark_glob + "_summary.json"))
+                                  "/run*/" + benchmark_glob + "*/" +
+                                  benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
@@ -129,6 +133,11 @@ class HEPscore(object):
             fail = True
             logging.error("missing json score file for one or more runs")
 
+        try:
+            self.cleanup_fs(benchmark_glob)
+        except Exception:
+            logging.warning("Failed to clean up FS. Are you root?")
+
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
                     self.confobj['allow_fail'] is False:
@@ -170,6 +179,29 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
+    def cleanup_fs(self, benchmark):
+        if self.clean_files:
+            path = self.resultsdir + "/" + benchmark + \
+                "/run*/" + benchmark + "*"
+            rootFiles = glob.glob(path + "/**/*.root")
+
+            logging.debug("cleaning files: ")
+            for filePath in rootFiles:
+                if self.level == 'DEBUG':
+                    print(filePath)
+                try:
+                    os.remove(filePath)
+                except Exception:
+                    logging.warning("Error trying to remove excessive"
+                                    " root file: " + filePath)
+
+            dirPaths = glob.glob(path)
+            for dirPath in dirPaths:
+                with tarfile.open(dirPath + "_benchmark.tar.gz", "w:gz") \
+                        as tar:
+                    tar.add(dirPath, arcname=os.path.basename(dirPath))
+                shutil.rmtree(dirPath)
+
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
 
@@ -198,10 +230,6 @@ class HEPscore(object):
         return("")
 
     def _run_benchmark(self, benchmark, mock):
-        commands = {'docker': "docker run --rm --network=host -v " +
-                    self.resultsdir + ":/results ",
-                    'singularity': "singularity run -B " + self.resultsdir +
-                    ":/results " + self.get_usernamespace_flag() + "docker://"}
 
         bench_conf = self.confobj['benchmarks'][benchmark]
         bmark_keys = bench_conf.keys()
@@ -236,12 +264,25 @@ class HEPscore(object):
             tmp += 's'
         logging.info(tmp + " of " + benchmark)
 
-        command_string = commands[self.cec] + benchmark_complete
-        command = command_string.split(' ')
-        logging.debug("Running  %s " % command)
         self.confobj['replay'] = mock
 
         for i in range(runs):
+            runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
+            logsFile = runDir + "/" + self.cec + "_logs"
+
+            if self.confobj['replay'] is False:
+                os.makedirs(runDir)
+
+            commands = {'docker': "docker run --rm --network=host -v " +
+                        runDir + ":/results ",
+                        'singularity': "singularity run -B " + runDir +
+                        ":/results " + self.get_usernamespace_flag() +
+                        "docker://"}
+
+            command_string = commands[self.cec] + benchmark_complete
+            command = command_string.split(' ')
+            logging.debug("Running  %s " % command)
+
             runstr = 'run' + str(i)
 
             logging.debug("Starting " + runstr)
@@ -270,8 +311,6 @@ class HEPscore(object):
                     lfile.write(line.decode('utf-8'))
                     lfile.flush()
                     line = cmdf.stdout.readline()
-                    if len(output_logs) > 10:
-                        output_logs.pop()
                     if line[-25:] == "no space left on device.\n":
                         logging.error("Docker: No space left on device.")
 
@@ -280,8 +319,15 @@ class HEPscore(object):
 
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
-                    for line in reversed(output_logs):
+                    for line in list(reversed(output_logs))[-10:]:
                         print(line)
+                try:
+                    with open(logsFile, 'w') as f:
+                        for line in reversed(output_logs):
+                            f.write('%s' % line)
+                except Exception:
+                    logging.warning("Failed to write logs to file. "
+                                    "Are you root?")
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
