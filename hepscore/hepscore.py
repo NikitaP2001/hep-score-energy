@@ -197,7 +197,7 @@ class HEPscore(object):
 
             dirPaths = glob.glob(path)
             for dirPath in dirPaths:
-                with tarfile.open(dirPath + "_benchmark_tar", "w:gz") as tar:
+                with tarfile.open(dirPath + "_benchmark.tar.gz", "w:gz") as tar:
                     tar.add(dirPath, arcname=os.path.basename(dirPath))
                 shutil.rmtree(dirPath)
 
