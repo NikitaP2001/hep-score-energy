@@ -295,16 +295,16 @@ class HEPscore(object):
             tmp += 's'
         logging.info(tmp + " of " + benchmark)
 
-        command_string = commands[self.cec] + benchmark_complete
-        command = command_string.split(' ')
-        logging.debug("Running  %s " % command)
+        # command_string = commands[self.cec] + benchmark_complete
+        # command = command_string.split(' ')
+        # logging.debug("Running  %s " % command)
         self.confobj['settings']['replay'] = mock
 
         for i in range(runs):
             runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
             logsFile = runDir + "/" + self.cec + "_logs"
 
-            if self.confobj['replay'] is False:
+            if self.confobj['settings']['replay'] is False:
                 os.makedirs(runDir)
 
             commands = {'docker': "docker run --rm --network=host -v " +

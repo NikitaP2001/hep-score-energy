@@ -1,16 +1,19 @@
 hepscore_benchmark:
   benchmarks:
-    cms-reco-bmk:
-      version: v1.1
-      scorekey: wl-scores
+    cms-digi-bmk:
       ref_scores:
-        reco: 1.117
-      events: 1
-  method: geometric_mean
-  name: HEPscore19
-  reference_machine: "An undefined machine"
-  registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
-  repetitions: 1
-  scaling: 1
-  container_exec: docker
-  version: 0.3
+        digi: 1.94
+      args:
+        scorekey: wl-scores
+        events: 1
+        version: v1.0
+  app_info:
+    name: HEPscore19
+    reference_machine: "An undefined machine"
+    registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+  settings:
+    method: geometric_mean
+    repetitions: 1
+    scaling: 1
+    container_exec: docker
+    version: 0.3
