@@ -70,8 +70,8 @@ job_test_kv_run_cc7:
     after_script:
         - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
     only:
-      refs:
-        - qa
+      variables:
+        - $CI_COMMIT_BRANCH =~ /^qa-.*$/
     artifacts:
         paths:
            - hep-score-test.tgz
