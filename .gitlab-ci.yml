@@ -19,7 +19,6 @@ job_build_image_tox:
       - $CI_COMMIT_BRANCH =~ /^qa-.*$/
     changes:
     - docker-images/tox/*
-    - Dockerfile
   script:
     # Prepare Kaniko configuration file
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
