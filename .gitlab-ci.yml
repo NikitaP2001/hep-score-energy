@@ -15,10 +15,11 @@ job_build_image_tox:
     name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
     entrypoint: [""]
   only:
-    refs:
-    - qa
+    variables:
+      - $CI_COMMIT_BRANCH =~ /^qa-.*$/
     changes:
     - docker-images/tox/*
+    - Dockerfile
   script:
     # Prepare Kaniko configuration file
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json

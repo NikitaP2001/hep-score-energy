@@ -7,4 +7,4 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt ./
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir pyyaml pylint pytest coverage 
+RUN pip install --no-cache-dir pyyaml pylint pytest coverage configparser
