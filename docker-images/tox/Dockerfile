@@ -1,6 +1,6 @@
 FROM cern/cc7-base:latest
 ENV PATH="/usr/bin"
-RUN yum install -y git gcc python-devel rh-python35 pip
+RUN yum install -y git gcc python-devel rh-python35
 RUN curl https://bootstrap.pypa.io/get-pip.py
 RUN python ./get-pip.py
 RUN pip install --upgrade pip
