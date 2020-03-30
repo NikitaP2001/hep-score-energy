@@ -1,4 +1,5 @@
 coverage>=4.5.1
+configparser
 doc8>=0.8.0
 hacking!=0.13.0,<0.14,>=0.12.0
 pep257==0.7.0
