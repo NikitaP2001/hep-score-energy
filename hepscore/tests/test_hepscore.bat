@@ -17,7 +17,7 @@ export WLDIR=$TESTDIR/data/HEPscore_ci/
 
 
 @test "Test parsing of existing atlas-kv-bmk results" {
-    hep-score -r -f $HEPSCORECONF $WLDIR
+    run hep-score -r -f $HEPSCORECONF $WLDIR
     echo -e "$output"
     [ "$status" -eq 0 ]
 
