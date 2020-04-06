@@ -263,7 +263,7 @@ class HEPscore(object):
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
-        bmark_keys = bench_conf.keys()
+        bmark_keys = bench_conf['args'].keys()
         bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e',
                        'copies': '-c'}
         options_string = ""
@@ -274,12 +274,12 @@ class HEPscore(object):
 
         for option in bmk_options.keys():
             if option in bmark_keys and \
-                    str(bench_conf[option]) \
+                    str(bench_conf['args'][option]) \
                     not in ['None', 'False']:
                 options_string = options_string + ' ' + bmk_options[option]
                 if option != 'debug':
                     options_string = options_string + ' ' + \
-                        str(bench_conf[option])
+                        str(bench_conf['args'][option])
         try:
             lfile = open(log, mode='a')
         except Exception:
