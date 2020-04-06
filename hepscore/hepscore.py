@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import math
+import multiprocessing
 import operator
 import os
 import oyaml as yaml
@@ -436,11 +437,18 @@ class HEPscore(object):
 
         if fres != fres:
             logging.debug("Final result is not valid")
+            self.confobj['score_per_core'] = -1
             self.confobj['score'] = -1
             self.confobj['status'] = 'FAILED'
         else:
             self.confobj['score'] = float(fres)
             self.confobj['status'] = 'SUCCESS'
+            try:
+                self.confobj['score_per_core'] = round(float(fres) /
+                    float(multiprocessing.cpu_count()), 3)
+            except Exception:
+                self.confobj['score_per_core'] = -1
+                logging.warning('Could not determine core count')
 
     def write_output(self, outtype, outfile):
 

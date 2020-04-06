@@ -491,7 +491,7 @@
       "sim": 0.0378
     }
   },
-  "status": "SUCCESS",
+  "score_per_core": 0.0,
   "score": 0,
   "status": "SUCCESS"
 }
