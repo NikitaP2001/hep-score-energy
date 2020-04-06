@@ -444,8 +444,8 @@ class HEPscore(object):
             self.confobj['score'] = float(fres)
             self.confobj['status'] = 'SUCCESS'
             try:
-                self.confobj['score_per_core'] = round(float(fres) /
-                    float(multiprocessing.cpu_count()), 3)
+                spc = float(fres) / float(multiprocessing.cpu_count())
+                self.confobj['score_per_core'] = round(spc, 3)
             except Exception:
                 self.confobj['score_per_core'] = -1
                 logging.warning('Could not determine core count')
