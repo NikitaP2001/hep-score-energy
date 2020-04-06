@@ -1,12 +1,12 @@
 hepscore_benchmark:
   benchmarks:
-    cms-digi-bmk:
+    cms-reco-bmk:
       ref_scores:
-        digi: 1.94
+        reco: 1.117
       args:
         scorekey: wl-scores
         events: 1
-        version: v1.0
+        version: v1.1
   app_info:
     name: HEPscore19
     reference_machine: "An undefined machine"
