@@ -275,7 +275,7 @@ class HEPscore(object):
 
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
-                        'singularity': "singularity run -B " + runDir +
+                        'singularity': "singularity run -C -B " + runDir +
                         ":/results " + self.get_usernamespace_flag() +
                         "docker://"}
 

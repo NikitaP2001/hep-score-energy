@@ -26,49 +26,45 @@ lhcb-gen-sim-bmk
 You can view the YAML HEPscore configuration for HEPscore19 by
 executing ```hepscore.py -p```.
 
-## Downloading HEPscore
-Using a curl, wget or browser:  
-https://gitlab.cern.ch/hep-benchmarks/hep-score/raw/master/hepscore/hepscore.py?inline=false
+## Downloading  and Installing HEPscore
+HEPscore must be installed using pip (https://pypi.org/project/pip/).  
 
-or
+If you want to install as a regular user (suggested):
+```# pip install --user git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@qa-v1.0```
+If you have administrator rights on your system and what to install hep-score and all depencies in system Python/bin paths:
+```# pip install git+https://gitlab.cern.ch/hep-benchmarks/hep-score.git@qa-v1.0```
+The ```hep-score``` script will then be acessible under ```~/.local/bin```.  Alternatively, you can clone the hep-score git repository, and run ```pip install --user .``` or ```pip install .``` in the root of the repo.
 
-Clone the entire project:  
-```git clone https://gitlab.cern.ch/hep-benchmarks/hep-score.git```  
-The "hepscore.py" script is then available under the "hepscore" directory.  If
-you optionally run ```pip install .``` in the root of the project, the entire
-module will be installed as ```hep-score```.
-
-## Installing Dependencies
-HEPscore currently only functions with Python 2 (Python 3 support
-is in development).  The following non-standard library modules must a
-also be installed/available:  PyYAML  
-If you clone the git repository, it's possible to install the dependencies
-by changing your working directory to the root of the project, and running: 
-```pip install .```
+## Dependencies
+HEPscore currently only functions with Python 2.7 and Python 3.  The pip installation will pull in all dependencies
 
 ## Running HEPscore
 ```
-hepscore.py [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR
-hepscore.py -h
-hepscore.py -p [-f CONF]
+HEPscore Benchmark Execution - Version 1.0.0
+hep-score [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR
+hep-score -h
+hep-score -p [-f CONF]
 Option overview:
 -h           Print help information and exit
 -v           Display verbose output, including all component benchmark scores
 -d           Run benchmark containers in Docker
 -s           Run benchmark containers in Singularity
+-r           Replay output using existing results directory
 -f           Use specified YAML configuration file (instead of built-in)
 -o           Specify an alternate summary output file location
 -y           Specify output file should be YAML instead of JSON
 -p           Print configuration and exit
 -V           Enable debugging output: implies -v
+-c           Remove the docker image after completion
+-C           Disable removing excessive files and tar BMK results
 Examples:
-Run the builtin benchmark using Docker, displaying all component scores:
-hepscore.py -v /tmp/hs19
+Run the benchmark using Docker, dispaying all component scores:
+hep-score -dv /tmp/hs19
 Run with Singularity, using a non-standard benchmark configuration:
-hepscore.py -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore
+hep-score -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore
 ```
 
-hepscore.py creates a HEPscore_DATE_TIME named directory under OUTDIR which 
+hep-score creates a HEPscore_DATE_TIME named directory under OUTDIR which 
 is used as the working directory for the sub-benchmark containers.  A detailed 
 log of the run of the application is also written to this directory: 
 BENCHMARK_NAME.log, where BENCHMARK_NAME is taken from the "name" parameter in 
