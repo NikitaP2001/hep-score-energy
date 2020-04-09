@@ -4,7 +4,6 @@ hepscore_benchmark:
     reference_machine: 'Intel Core i5-4590 @ 3.30GHz - 1 Logical Core'
     registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:
-    version: 0.21
     repetitions: 1  #number of repetitions of the same benchmark
     method: geometric_mean #or any other algorithm
   benchmarks:

@@ -30,4 +30,3 @@ hepscore_benchmark:
     repetitions: 1
     scaling: 0
     container_exec: docker
-    version: 0.3

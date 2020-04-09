@@ -53,4 +53,3 @@ hepscore_benchmark:
     method: geometric_mean
     repetitions: 1
     scaling: 10
-    version: 0.3
