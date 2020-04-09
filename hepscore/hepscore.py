@@ -113,20 +113,21 @@ class HEPscore(object):
             line = jfile.readline()
             jfile.close()
 
-            jscore = json.loads(line)
-            runstr = 'run' + str(i)
-            if runstr not in bench_conf:
-                bench_conf[runstr] = {}
-
-            if i is 0:
-                bench_conf = self._set_run_metadata(bench_conf,
-                                                    jscore, benchmark)
-
-            jscore = self._del_run_metadata(jscore)
-
-            bench_conf[runstr]['report'] = jscore
-
             try:
+                jscore = json.loads(line)
+                runstr = 'run' + str(i)
+                if runstr not in bench_conf:
+                    bench_conf[runstr] = {}
+                bench_conf[runstr]['report'] = jscore
+
+                if i is 0:
+                    bench_conf = self._set_run_metadata(bench_conf,
+                                                        jscore, benchmark)
+
+                jscore = self._del_run_metadata(jscore)
+
+                bench_conf[runstr]['report'] = jscore
+
                 sub_results = []
                 for sub_bmk in bench_conf['ref_scores'].keys():
                     sub_score = float(jscore[key][sub_bmk])
@@ -136,7 +137,7 @@ class HEPscore(object):
                     sub_results.append(sub_score)
                     score = scipy.stats.gmean(sub_results)
 
-            except (KeyError, ValueError, TypeError):
+            except (Exception):
                 if not fail:
                     logging.error("score not reported for one or more runs." +
                                   "The retrieved json report contains\n%s"
@@ -288,7 +289,7 @@ class HEPscore(object):
             return(-1)
 
         benchmark_name = self.confobj['app_info']['registry'] + '/' + \
-            benchmark + ':' + bench_conf['args']['version']
+            benchmark
         benchmark_complete = benchmark_name + options_string
 
         tmp = "Executing " + str(runs) + " run"
