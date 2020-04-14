@@ -495,28 +495,28 @@ class HEPscore(object):
             sys.exit(1)
 
         try:
-            for k in hep_settings:
+            for k in dat['hepscore_benchmark']:
                 if k == 'settings':
-                    for kk in k:
+                    for kk in dat['hepscore_benchmark'][k]:
                         if kk == 'method':
-                            val = dat['hepscore_benchmark']['settings'][k]
+                            val = dat['hepscore_benchmark']['settings'][kk]
                             if val != 'geometric_mean':
                                 logging.error("Configuration: only "
                                               "'geometric_mean' method is"
                                               " currently supported\n")
                                 sys.exit(1)
                         if kk == 'repetitions':
-                            val = dat['hepscore_benchmark']['settings'][k]
+                            val = dat['hepscore_benchmark']['settings'][kk]
                             if val != 'geometric_mean':
                                 logging.error("Configuration: 'repititions' "
                                               "configuration parameter must "
                                               "be an integer\n")
                                 sys.exit(1)
                 if k == 'app_info':
-                    for kk in k:
+                    for kk in dat['hepscore_benchmark'][k]:
                         if kk == 'registry':
                             reg_string = \
-                                dat['hepscore_benchmark']['app_info'][k]
+                                dat['hepscore_benchmark']['app_info'][kk]
                             if not reg_string[0].isalpha() or \
                                     reg_string.find(' ') != -1:
                                 logging.error("Configuration: illegal "
