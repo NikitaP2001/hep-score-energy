@@ -507,7 +507,7 @@ class HEPscore(object):
                                 sys.exit(1)
                         if kk == 'repetitions':
                             val = dat['hepscore_benchmark']['settings'][kk]
-                            if val != 'geometric_mean':
+                            if not type(val) is int:
                                 logging.error("Configuration: 'repititions' "
                                               "configuration parameter must "
                                               "be an integer\n")
