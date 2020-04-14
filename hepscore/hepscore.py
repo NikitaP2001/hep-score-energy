@@ -486,8 +486,6 @@ class HEPscore(object):
         if confstr:
             self.confstr = confstr
 
-        hep_settings = ['repetitions', 'method', 'benchmarks']
-
         try:
             dat = yaml.safe_load(self.confstr)
         except Exception:
