@@ -501,7 +501,8 @@ class HEPscore(object):
 
         for k in hep_settings:
             if k not in dat['hepscore_benchmark'].keys():
-                logging.error("Configuration: " + k + " section must be defined")
+                logging.error("Configuration: " + k + " section must be"
+                              " defined")
                 sys.exit(1)
             try:
                 if k == 'settings':
