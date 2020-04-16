@@ -483,6 +483,8 @@ class HEPscore(object):
 
     def parse_conf(self, confstr=""):
 
+        hep_settings = ['settings', 'app_info', 'benchmarks']
+
         if confstr:
             self.confstr = confstr
 
@@ -492,38 +494,46 @@ class HEPscore(object):
             logging.error("problem parsing YAML configuration\n")
             sys.exit(1)
 
-        try:
-            for k in dat['hepscore_benchmark']:
+        if 'hepscore_benchmark' not in dat.keys():
+            logging.error("Configuration: missing root hepscore_benchmark"
+                          " specification")
+            sys.exit(1)
+
+        for k in hep_settings:
+            if k not in dat['hepscore_benchmark'].keys():
+                logging.error("Configuration: " + k + " section must be defined")
+                sys.exit(1)
+            try:
                 if k == 'settings':
-                    for kk in dat['hepscore_benchmark'][k]:
-                        if kk == 'method':
-                            val = dat['hepscore_benchmark'][k][kk]
+                    for j in dat['hepscore_benchmark'][k]:
+                        if j == 'method':
+                            val = dat['hepscore_benchmark'][k][j]
                             if val != 'geometric_mean':
                                 logging.error("Configuration: only "
                                               "'geometric_mean' method is"
                                               " currently supported\n")
                                 sys.exit(1)
-                        if kk == 'repetitions':
-                            val = dat['hepscore_benchmark'][k][kk]
+                        if j == 'repetitions':
+                            val = dat['hepscore_benchmark'][k][j]
                             if not type(val) is int:
                                 logging.error("Configuration: 'repititions' "
                                               "configuration parameter must "
                                               "be an integer\n")
                                 sys.exit(1)
                 if k == 'app_info':
-                    for kk in dat['hepscore_benchmark'][k]:
-                        if kk == 'registry':
+                    for j in dat['hepscore_benchmark'][k]:
+                        if j == 'registry':
                             reg_string = \
-                                dat['hepscore_benchmark'][k][kk]
+                                dat['hepscore_benchmark'][k][j]
                             if not reg_string[0].isalpha() or \
                                     reg_string.find(' ') != -1:
                                 logging.error("Configuration: illegal "
                                               "character in registry")
                                 sys.exit(1)
-        except KeyError:
-            logging.error("Configuration: " + k + " parameter must be "
-                          "specified")
-            sys.exit(1)
+            except KeyError:
+                logging.error("Configuration: " + k + " parameter must be "
+                              "specified")
+                sys.exit(1)
 
         if 'scaling' in dat['hepscore_benchmark']['settings']:
             try:
