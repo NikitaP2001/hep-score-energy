@@ -289,7 +289,7 @@ class HEPscore(object):
             return(-1)
 
         benchmark_name = self.confobj['app_info']['registry'] + '/' + \
-            benchmark
+            benchmark + ':' + bench_conf['args']['version']
         benchmark_complete = benchmark_name + options_string
 
         tmp = "Executing " + str(runs) + " run"
