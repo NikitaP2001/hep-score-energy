@@ -662,7 +662,7 @@ class HEPscore(object):
             self.results.append(res)
 
         if res < 0:
-            self.confobj['ERROR'] = benchmark
+            self.confobj['error'] = benchmark
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
 
