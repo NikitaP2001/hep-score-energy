@@ -440,10 +440,10 @@ class HEPscore(object):
             logging.debug("Final result is not valid")
             self.confobj['score_per_core'] = -1
             self.confobj['score'] = -1
-            self.confobj['status'] = 'FAILED'
+            self.confobj['status'] = 'failed'
         else:
             self.confobj['score'] = float(fres)
-            self.confobj['status'] = 'SUCCESS'
+            self.confobj['status'] = 'success'
             try:
                 spc = float(fres) / float(multiprocessing.cpu_count())
                 self.confobj['score_per_core'] = round(spc, 3)
@@ -664,7 +664,7 @@ class HEPscore(object):
         if res < 0:
             self.confobj['ERROR'] = benchmark
             self.confobj['score'] = -1
-            self.confobj['status'] = 'FAILED'
+            self.confobj['status'] = 'failed'
 
         return res
 # End of HEPscore class
