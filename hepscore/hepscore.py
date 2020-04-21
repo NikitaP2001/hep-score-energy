@@ -114,6 +114,7 @@ class HEPscore(object):
             jfile.close()
 
             try:
+                jscore = ""
                 jscore = json.loads(line)
                 runstr = 'run' + str(i)
                 if runstr not in bench_conf:
@@ -139,9 +140,10 @@ class HEPscore(object):
 
             except (Exception):
                 if not fail:
-                    logging.error("score not reported for one or more runs." +
-                                  "The retrieved json report contains\n%s"
-                                  % jscore)
+                    logging.error("score not reported for one or more runs.")
+                    if jscore != "":
+                        logging.error("The retrieved json report contains\n%s"
+                                      % jscore)
                     fail = True
 
             if not fail:
