@@ -247,7 +247,7 @@ class HEPscore(object):
             logging.debug(self.NAME + " running inside of Docker.  Not enabling user namespaces.")
             return False
         except Exception:
-            logging.debug("Not running inside Docker.")
+            logging.debug(self.NAME + " not running inside Docker.")
 
         try:
             mf = open(proc_muns, mode='r')
