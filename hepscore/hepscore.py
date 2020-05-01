@@ -244,7 +244,8 @@ class HEPscore(object):
         try:
             cg = open(dockerenv, mode='r')
             cg.close()
-            logging.debug(self.NAME + " running inside of Docker.  Not enabling user namespaces.")
+            logging.debug(self.NAME + " running inside of Docker.  "
+                          "Not enabling user namespaces.")
             return False
         except Exception:
             logging.debug(self.NAME + " not running inside Docker.")
