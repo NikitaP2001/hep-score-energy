@@ -239,6 +239,16 @@ class HEPscore(object):
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
+        dockerenv = "/.dockerenv"
+
+        try:
+            cg = open(dockerenv, mode='r')
+            cg.close()
+            logging.debug(self.NAME + " running inside of Docker.  "
+                          "Not enabling user namespaces.")
+            return False
+        except Exception:
+            logging.debug(self.NAME + " not running inside Docker.")
 
         try:
             mf = open(proc_muns, mode='r')
