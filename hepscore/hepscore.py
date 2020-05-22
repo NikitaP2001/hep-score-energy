@@ -18,6 +18,7 @@ import operator
 import os
 import oyaml as yaml
 import pbr.version
+import re
 import scipy.stats
 import shutil
 import subprocess
@@ -277,6 +278,25 @@ class HEPscore(object):
                 return("-u ")
 
         return("")
+
+    def get_version(self):
+        commands = {'docker': "docker --version",
+                    'singularity': "singularity --version"}
+
+        try:
+            command = commands[self.cec].split(' ')
+            cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+        except Exception:
+            logging.error("Error fetching" + self.cec + "version")
+
+        line = cmdf.stdout.readline()
+
+        while line:
+            version = re.findall(r'(v?\d+\.\d+\.\d+)', line)
+            line = cmdf.stdout.readline()
+
+        return version[0]
 
     def _run_benchmark(self, benchmark, mock):
 
@@ -640,8 +660,11 @@ class HEPscore(object):
         sysname = ' '.join(os.uname())
         curtime = time.asctime()
 
+        ver = self.get_version()
+        exec_ver = self.cec + "_version"
+
         self.confobj['environment'] = {'system': sysname, 'date': curtime,
-                                       'container_exec': self.cec}
+                                       exec_ver: ver}
 
         if self.resultsdir != "" and self.outdir != "":
             return(-1)

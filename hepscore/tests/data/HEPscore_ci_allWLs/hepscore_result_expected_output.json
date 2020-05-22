@@ -466,8 +466,8 @@
   },
   "environment": {
     "date": "Mon Mar  9 13:21:41 2020",
-    "system": "Linux cas-XPS-15-9570 5.0.0-38-generic #41-Ubuntu SMP Tue Dec 3 00:27:35 UTC 2019 x86_64",
-    "container_exec": "docker"
+    "system": "Linux XPS-15-9570 5.0.0-38-generic #41-Ubuntu SMP Tue Dec 3 00:27:35 UTC 2019 x86_64",
+    "docker_version": "19.03.8"
   },
   "wl-scores": {
     "cms-digi-bmk": {
