@@ -290,13 +290,16 @@ class HEPscore(object):
         except Exception:
             logging.error("Error fetching" + self.cec + "version")
 
-        line = cmdf.stdout.readline()
-
-        while line:
-            version = re.findall(r'(v?\d+\.\d+\.\d+)', line)
+        try:
             line = cmdf.stdout.readline()
 
-        return version[0]
+            while line:
+                version = re.findall(r'(v?\d+\.\d+\.\d+)', line)
+                line = cmdf.stdout.readline()
+
+            return version[0]
+        except Exception:
+            return "error"
 
     def _run_benchmark(self, benchmark, mock):
 
