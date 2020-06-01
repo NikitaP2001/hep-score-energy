@@ -327,7 +327,7 @@ class HEPscore(object):
 
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
-                        'singularity': "singularity run -C -B " + runDir +
+                        'singularity': "singularity run -B " + runDir +
                         ":/results " + self.get_usernamespace_flag() +
                         "docker://"}
 
@@ -343,6 +343,8 @@ class HEPscore(object):
             starttime = time.time()
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
             if not mock:
+                if self.cec=='singularity':
+                    os.environ['SINGULARITYENV_PYTHONNOUSERSITE']="1"
                 try:
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
