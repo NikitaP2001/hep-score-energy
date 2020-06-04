@@ -294,7 +294,7 @@ class HEPscore(object):
             line = cmdf.stdout.readline()
 
             while line:
-                version = re.findall(r'(v?\d+\.\d+\.\d+)', line)
+                version = re.findall(r'(v?\d+\.\d+\.\d+)(-.*)*', line)
                 line = cmdf.stdout.readline()
 
             return version[0]
