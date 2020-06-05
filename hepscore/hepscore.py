@@ -18,7 +18,6 @@ import operator
 import os
 import oyaml as yaml
 import pbr.version
-import re
 import scipy.stats
 import shutil
 import subprocess
