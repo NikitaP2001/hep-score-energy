@@ -278,6 +278,31 @@ class HEPscore(object):
 
         return("")
 
+    def get_version(self):
+
+        commands = {'docker': "docker --version",
+                    'singularity': "singularity --version"}
+
+        try:
+            command = commands[self.cec].split(' ')
+            cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+        except Exception:
+            logging.error("Error fetching" + self.cec + "version")
+
+        try:
+            line = cmdf.stdout.readline()
+
+            while line:
+                version = line
+                if version[-1] == "\n":
+                    version = version[:-1]
+                line = cmdf.stdout.readline()
+
+            return version
+        except Exception:
+            return "error"
+
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
@@ -642,8 +667,11 @@ class HEPscore(object):
         sysname = ' '.join(os.uname())
         curtime = time.asctime()
 
+        ver = self.get_version()
+        exec_ver = self.cec + "_version"
+
         self.confobj['environment'] = {'system': sysname, 'date': curtime,
-                                       'container_exec': self.cec}
+                                       exec_ver: ver}
 
         if self.resultsdir != "" and self.outdir != "":
             return(-1)
