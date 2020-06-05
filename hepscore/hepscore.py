@@ -280,6 +280,7 @@ class HEPscore(object):
         return("")
 
     def get_version(self):
+
         commands = {'docker': "docker --version",
                     'singularity': "singularity --version"}
 
@@ -294,10 +295,12 @@ class HEPscore(object):
             line = cmdf.stdout.readline()
 
             while line:
-                version = re.findall(r'(v?\d+\.\d+\.\d+)(-.*)*', line)
+                version = line
+                if version[-1] == "\n":
+                    version = version[:-1]
                 line = cmdf.stdout.readline()
 
-            return version[0]
+            return version
         except Exception:
             return "error"
 
