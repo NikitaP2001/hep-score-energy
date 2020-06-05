@@ -343,8 +343,8 @@ class HEPscore(object):
             starttime = time.time()
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
             if not mock:
-                if self.cec=='singularity':
-                    os.environ['SINGULARITYENV_PYTHONNOUSERSITE']="1"
+                if self.cec == 'singularity':
+                    os.environ['SINGULARITYENV_PYTHONNOUSERSITE'] = "1"
                 try:
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
