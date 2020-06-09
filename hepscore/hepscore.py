@@ -167,9 +167,9 @@ class HEPscore(object):
             logging.error("missing json score file for one or more runs")
 
         try:
-            self.cleanup_fs(benchmark_glob)
+            self._cleanup_fs(benchmark_glob)
         except Exception:
-            logging.warning("Failed to clean up FS. Are you root?")
+            logging.warning("Failed to clean up container scratch working directory")
 
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
@@ -207,7 +207,7 @@ class HEPscore(object):
 
         return(final_result)
 
-    def docker_rm(self, image):
+    def _docker_rm(self, image):
         if self.clean and \
                 self.confobj['settings']['container_exec'] == 'docker':
             logging.info("Deleting Docker image %s", image)
@@ -218,8 +218,13 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
-    def cleanup_fs(self, benchmark):
+    def _cleanup_fs(self, benchmark):
         if self.clean_files:
+            if self.cec=='docker' and os.getuid()!=0:
+                logging.info("Running at non-root with docker: skipping "
+                             " container scratchdir cleanup")
+                return False
+
             path = self.resultsdir + "/" + benchmark + \
                 "/run*/" + benchmark + "*"
             rootFiles = glob.glob(path + "/**/*.root")
@@ -231,8 +236,8 @@ class HEPscore(object):
                 try:
                     os.remove(filePath)
                 except Exception:
-                    logging.warning("Error trying to remove excessive"
-                                    " root file: " + filePath)
+                    logging.warning("Error trying to remove .root file: " \
+                                    + filePath)
 
             dirPaths = glob.glob(path)
             for dirPath in dirPaths:
@@ -240,6 +245,10 @@ class HEPscore(object):
                         as tar:
                     tar.add(dirPath, arcname=os.path.basename(dirPath))
                 shutil.rmtree(dirPath)
+
+            return True
+        
+        return False
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
@@ -258,8 +267,9 @@ class HEPscore(object):
             mf = open(proc_muns, mode='r')
             max_usrns = int(mf.read())
         except Exception:
-            logging.info("Cannot open/read from %s, assuming user namespace"
-                         "support disabled", proc_muns)
+            if self.level!='INFO':
+                logging.info("Cannot open/read from %s, assuming user namespace"
+                             "support disabled", proc_muns)
             return False
 
         mf.close()
@@ -269,11 +279,12 @@ class HEPscore(object):
             return False
 
     # User namespace flag needed to support nested singularity
-    def get_usernamespace_flag(self):
+    def _get_usernamespace_flag(self):
         if self.cec == "singularity":
             if self.check_userns():
-                logging.info("System supports user namespaces, enabling in "
-                             "singularity call")
+                if self.level!='INFO':
+                    logging.info("System supports user namespaces, enabling in "
+                                 "singularity call")
                 return("-u ")
 
         return("")
@@ -353,16 +364,16 @@ class HEPscore(object):
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
                         'singularity': "singularity run -B " + runDir +
-                        ":/results " + self.get_usernamespace_flag() +
+                        ":/results " + self._get_usernamespace_flag() +
                         "docker://"}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
-            logging.debug("Running  %s " % command)
 
             runstr = 'run' + str(i)
 
-            logging.debug("Starting " + runstr)
+            logging.info("Starting " + runstr)
+            logging.debug("Running  %s " % command)
 
             bench_conf[runstr] = {}
             starttime = time.time()
@@ -381,7 +392,7 @@ class HEPscore(object):
                     bench_conf['run' + str(i)]['duration'] = 0
                     self._proc_results(benchmark)
                     if i == (runs - 1):
-                        self.docker_rm(benchmark_name)
+                        self._docker_rm(benchmark_name)
                     return(-1)
 
                 line = cmdf.stdout.readline()
@@ -394,7 +405,7 @@ class HEPscore(object):
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                self.check_rc(cmdf.returncode)
+                self._check_rc(cmdf.returncode)
 
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
@@ -435,7 +446,7 @@ class HEPscore(object):
         result = self._proc_results(benchmark)
         return(result)
 
-    def check_rc(self, rc):
+    def _check_rc(self, rc):
         if rc == 137 and self.cec == 'docker':
             logging.error(self.cec + " returned code 137: OOM-kill or"
                           " intervention")
