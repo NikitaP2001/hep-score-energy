@@ -218,34 +218,48 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
+    def _root_filter(f):
+        if re.match('.*\.root$', f.name):
+        print "Skipping " + f.name
+        return None
+    else:
+        return f
+
     def _cleanup_fs(self, benchmark):
         if self.clean_files:
-            if self.cec=='docker' and os.getuid()!=0:
+            if self.cec == 'docker' and os.getuid()!=0:
                 logging.info("Running at non-root with docker: skipping "
                              " container scratchdir cleanup")
                 return False
 
-            path = self.resultsdir + "/" + benchmark + \
-                "/run*/" + benchmark + "*"
-            rootFiles = glob.glob(path + "/**/*.root")
+            wp = self.resultsdir + "/" + benchmark
+            if benchmark == '' or benchmark.find('/') or \
+                    os.path.abspath(wp) == '/' or wp == '' or \
+                    wp.find('*') != -1  or wp.find('?') != -1 or \ 
+                    wp.find('..') != -1:
+                logging.info("Invalid path: skipping container scratchdir" 
+                             "cleanup")
+                return False
 
-            logging.debug("cleaning files: ")
-            for filePath in rootFiles:
-                if self.level == 'DEBUG':
-                    print(filePath)
-                try:
-                    os.remove(filePath)
-                except Exception:
-                    logging.warning("Error trying to remove .root file: " \
-                                    + filePath)
-
-            dirPaths = glob.glob(path)
-            for dirPath in dirPaths:
-                with tarfile.open(dirPath + "_benchmark.tar.gz", "w:gz") \
-                        as tar:
-                    tar.add(dirPath, arcname=os.path.basename(dirPath))
-                shutil.rmtree(dirPath)
-
+            for rundir in os.listdir(wp):
+                rundir_path = os.path.join(wp, rundir)
+                if re.match('^run[0-9]*', rundir) and \
+                        os.path.islink(rundir_path) == False:
+                    for resdir in os.listdir(rundir_path):
+                        resdir_path = os.path.join(rundir_path, resdir)
+                        if re.match("^" + benchmark + ".*", resdir) and \
+                                os.path.islink(resdir_path) == False and \
+                                os.path.isdir(resdir_path) == True:
+                            with tarfile.open(resdir_path + \
+                                    "_benchmark.tar.gz" "w:gz") as tar:
+                                tar.add(resdir_path, \ 
+                                    arcname=os.path.basename(resdir_path), \
+                                    filter=self._root_filter):
+                                if os.path.abspath(resdir_path) != '/' and \
+                                    resdir_path.find(self.resultsdir) == 0:
+                                print "shutil.rmtree " + resdir_path
+                                tar.close()
+                            
             return True
         
         return False
@@ -416,8 +430,7 @@ class HEPscore(object):
                         for line in reversed(output_logs):
                             f.write('%s' % line)
                 except Exception:
-                    logging.warning("Failed to write logs to file. "
-                                    "Are you root?")
+                    logging.warning("Failed to write logs to file. ")
 
                 if i == (runs - 1):
                     self.docker_rm(benchmark_name)
@@ -609,7 +622,7 @@ class HEPscore(object):
                 dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
                 continue
 
-            if not benchmark[0].isalpha() or benchmark.find(' ') != -1:
+            if re.match('^[a-zA-Z0-9\-_]*$') == None:
                 logging.error("Configuration: illegal character in " +
                               benchmark + "\n")
                 sys.exit(1)
