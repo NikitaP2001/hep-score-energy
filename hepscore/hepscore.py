@@ -299,7 +299,7 @@ class HEPscore(object):
                     version = version[:-1]
                 line = cmdf.stdout.readline()
 
-            return version
+            return version.encode('utf-8')
         except Exception:
             return "error"
 
