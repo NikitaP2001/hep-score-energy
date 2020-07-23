@@ -18,6 +18,7 @@ import operator
 import os
 import oyaml as yaml
 import pbr.version
+import re
 import scipy.stats
 import shutil
 import subprocess
@@ -40,7 +41,7 @@ class HEPscore(object):
     resultsdir = ""
     cec = ""
     clean = False
-    clean_files = True
+    clean_files = False
 
     confobj = {}
     results = []
@@ -218,26 +219,25 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
-    def _root_filter(f):
+    def root_filter(self, f):
         if re.match('.*\.root$', f.name):
-        print "Skipping " + f.name
-        return None
-    else:
-        return f
+            logging.debug("Skipping " + f.name)
+            return None
+        else:
+            return f
 
     def _cleanup_fs(self, benchmark):
         if self.clean_files:
-            if self.cec == 'docker' and os.getuid()!=0:
-                logging.info("Running at non-root with docker: skipping "
-                             " container scratchdir cleanup")
+            if self.cec == 'docker' and os.getuid() != 0:
+                logging.info("Running as non-root with docker: skipping "
+                             "container scratchdir cleanup")
                 return False
 
             wp = self.resultsdir + "/" + benchmark
-            if benchmark == '' or benchmark.find('/') or \
+            if benchmark == '' or benchmark.find('/') != -1 or \
                     os.path.abspath(wp) == '/' or wp == '' or \
-                    wp.find('*') != -1  or wp.find('?') != -1 or \ 
                     wp.find('..') != -1:
-                logging.info("Invalid path: skipping container scratchdir" 
+                logging.info("Invalid path: skipping container scratchdir " 
                              "cleanup")
                 return False
 
@@ -251,17 +251,23 @@ class HEPscore(object):
                                 os.path.islink(resdir_path) == False and \
                                 os.path.isdir(resdir_path) == True:
                             with tarfile.open(resdir_path + \
-                                    "_benchmark.tar.gz" "w:gz") as tar:
-                                tar.add(resdir_path, \ 
+                                    "_benchmark.tar", "w") as tar:
+                                logging.info("Tarring up " + resdir_path)
+                                tar.add(resdir_path, \
                                     arcname=os.path.basename(resdir_path), \
-                                    filter=self._root_filter):
+                                    filter=self.root_filter)
                                 if os.path.abspath(resdir_path) != '/' and \
                                     resdir_path.find(self.resultsdir) == 0:
-                                print "shutil.rmtree " + resdir_path
+                                    logging.info("Removing result directory " + resdir_path)
+                                    shutil.rmtree(resdir_path)
+                                else:
+                                    logging.info("Invalid path: skipping container "
+                                        "scratchdir removal")
+                                    return False
                                 tar.close()
-                            
+
             return True
-        
+
         return False
 
     def check_userns(self):
@@ -281,7 +287,7 @@ class HEPscore(object):
             mf = open(proc_muns, mode='r')
             max_usrns = int(mf.read())
         except Exception:
-            if self.level!='INFO':
+            if self.level != 'INFO':
                 logging.info("Cannot open/read from %s, assuming user namespace"
                              "support disabled", proc_muns)
             return False
@@ -296,7 +302,7 @@ class HEPscore(object):
     def _get_usernamespace_flag(self):
         if self.cec == "singularity":
             if self.check_userns():
-                if self.level!='INFO':
+                if self.level != 'INFO':
                     logging.info("System supports user namespaces, enabling in "
                                  "singularity call")
                 return("-u ")
@@ -377,9 +383,9 @@ class HEPscore(object):
 
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
-                        'singularity': "singularity run -B " + runDir +
-                        ":/results " + self._get_usernamespace_flag() +
-                        "docker://"}
+                        'singularity': "singularity run -C -B " + runDir +
+                        ":/results -B " + self.resultsdir + "/tmp:/tmp " + 
+                        self._get_usernamespace_flag() + "docker://"}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
@@ -433,7 +439,7 @@ class HEPscore(object):
                     logging.warning("Failed to write logs to file. ")
 
                 if i == (runs - 1):
-                    self.docker_rm(benchmark_name)
+                    self._docker_rm(benchmark_name)
             else:
                 time.sleep(1)
 
@@ -622,7 +628,7 @@ class HEPscore(object):
                 dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
                 continue
 
-            if re.match('^[a-zA-Z0-9\-_]*$') == None:
+            if re.match('^[a-zA-Z0-9\-_]*$', benchmark) == None:
                 logging.error("Configuration: illegal character in " +
                               benchmark + "\n")
                 sys.exit(1)
@@ -718,6 +724,7 @@ class HEPscore(object):
         if not mock:
             try:
                 os.mkdir(self.resultsdir)
+                os.mkdir(self.resultsdir + '/tmp')
             except Exception:
                 logging.error("failed to create " + self.resultsdir)
                 sys.exit(2)
@@ -738,7 +745,7 @@ class HEPscore(object):
 
         return res
 # End of HEPscore class
-
+    
 
 def median_tuple(vals):
 

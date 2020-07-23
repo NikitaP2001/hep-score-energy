@@ -36,7 +36,7 @@ def help(progname):
     print("-p           Print configuration and exit")
     print("-V           Enable debugging output: implies -v")
     print("-c           Remove the docker image after completion")
-    print("-C           Disable removing excessive files and tar BMK results")
+    print("-C           Tar up results and remove results directories")
     print("Examples:")
     print("Run the benchmark using Docker, dispaying all component scores:")
     print(namel + " -dv /tmp/hs19")
@@ -51,7 +51,6 @@ def help(progname):
 def main():
 
     hsargs = {'outdir': ""}
-    hsargs['clean_files'] = True
     replay = False
     printconf_and_exit = False
     outtype = "json"
@@ -86,7 +85,7 @@ def main():
         elif opt == '-c':
             hsargs['clean'] = True
         elif opt == '-C':
-            hsargs['clean_files'] = False
+            hsargs['clean_files'] = True
         elif opt == '-s' or opt == '-d':
             if 'cec' in hsargs:
                 print("\nError: -s and -d are exclusive\n")
