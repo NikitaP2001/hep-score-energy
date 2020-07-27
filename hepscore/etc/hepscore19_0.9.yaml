@@ -8,7 +8,7 @@ hepscore_benchmark:
         threads: 1
         events: 200
         version: v1.2
-    atlas-sim-bmk:
+    .atlas-sim-bmk:
       ref_scores:
         sim: 0.0641
       args:

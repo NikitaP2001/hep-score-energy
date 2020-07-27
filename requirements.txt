@@ -1,5 +1,6 @@
-setuptools
+setuptools<45
 pbr!=2.1.0,>=2.0.0
 pyyaml
 scipy
+numpy
 oyaml

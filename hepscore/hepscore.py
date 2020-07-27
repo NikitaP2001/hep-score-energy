@@ -18,6 +18,7 @@ import operator
 import os
 import oyaml as yaml
 import pbr.version
+import re
 import scipy.stats
 import shutil
 import subprocess
@@ -40,7 +41,7 @@ class HEPscore(object):
     resultsdir = ""
     cec = ""
     clean = False
-    clean_files = True
+    clean_files = False
 
     confobj = {}
     results = []
@@ -167,9 +168,10 @@ class HEPscore(object):
             logging.error("missing json score file for one or more runs")
 
         try:
-            self.cleanup_fs(benchmark_glob)
+            self._cleanup_fs(benchmark_glob)
         except Exception:
-            logging.warning("Failed to clean up FS. Are you root?")
+            logging.warning("Failed to clean up container scratch working "
+                            "directory")
 
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
@@ -207,7 +209,7 @@ class HEPscore(object):
 
         return(final_result)
 
-    def docker_rm(self, image):
+    def _docker_rm(self, image):
         if self.clean and \
                 self.confobj['settings']['container_exec'] == 'docker':
             logging.info("Deleting Docker image %s", image)
@@ -218,28 +220,58 @@ class HEPscore(object):
                                    stderr=subprocess.STDOUT)
             ret.wait()
 
-    def cleanup_fs(self, benchmark):
+    def root_filter(self, f):
+        if re.match('.*\.root$', f.name):
+            logging.debug("Skipping " + f.name)
+            return None
+        else:
+            return f
+
+    def _cleanup_fs(self, benchmark):
         if self.clean_files:
-            path = self.resultsdir + "/" + benchmark + \
-                "/run*/" + benchmark + "*"
-            rootFiles = glob.glob(path + "/**/*.root")
+            if self.cec == 'docker' and os.getuid() != 0:
+                logging.info("Running as non-root with docker: skipping "
+                             "container scratchdir cleanup")
+                return False
 
-            logging.debug("cleaning files: ")
-            for filePath in rootFiles:
-                if self.level == 'DEBUG':
-                    print(filePath)
-                try:
-                    os.remove(filePath)
-                except Exception:
-                    logging.warning("Error trying to remove excessive"
-                                    " root file: " + filePath)
+            wp = self.resultsdir + "/" + benchmark
+            if benchmark == '' or benchmark.find('/') != -1 or \
+                    os.path.abspath(wp) == '/' or wp == '' or \
+                    wp.find('..') != -1:
+                logging.info("Invalid path: skipping container scratchdir "
+                             "cleanup")
+                return False
 
-            dirPaths = glob.glob(path)
-            for dirPath in dirPaths:
-                with tarfile.open(dirPath + "_benchmark.tar.gz", "w:gz") \
-                        as tar:
-                    tar.add(dirPath, arcname=os.path.basename(dirPath))
-                shutil.rmtree(dirPath)
+            for rundir in os.listdir(wp):
+                rundir_path = os.path.join(wp, rundir)
+                if re.match('^run[0-9]*', rundir) and \
+                        os.path.islink(rundir_path) is False:
+                    for resdir in os.listdir(rundir_path):
+                        resdir_path = os.path.join(rundir_path, resdir)
+                        if re.match("^" + benchmark + ".*", resdir) and \
+                                os.path.islink(resdir_path) is False and \
+                                os.path.isdir(resdir_path) is True:
+                            with tarfile.open(resdir_path +
+                                              "_benchmark.tar", "w") as tar:
+                                logging.info("Tarring up " + resdir_path)
+                                tar.add(resdir_path,
+                                        arcname=os.path.basename(resdir_path),
+                                        filter=self.root_filter)
+                                if os.path.abspath(resdir_path) != '/' and \
+                                        resdir_path.find(self.resultsdir) == 0:
+                                    logging.info("Removing result directory "
+                                                 + resdir_path)
+                                    shutil.rmtree(resdir_path)
+                                else:
+                                    logging.info("Invalid path: skipping "
+                                                 "container scratchdir "
+                                                 "removal")
+                                    return False
+                                tar.close()
+
+            return True
+
+        return False
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
@@ -258,8 +290,9 @@ class HEPscore(object):
             mf = open(proc_muns, mode='r')
             max_usrns = int(mf.read())
         except Exception:
-            logging.info("Cannot open/read from %s, assuming user namespace"
-                         "support disabled", proc_muns)
+            if self.level != 'INFO':
+                logging.info("Cannot open/read from %s, assuming user "
+                             "namespace support disabled", proc_muns)
             return False
 
         mf.close()
@@ -269,11 +302,12 @@ class HEPscore(object):
             return False
 
     # User namespace flag needed to support nested singularity
-    def get_usernamespace_flag(self):
+    def _get_usernamespace_flag(self):
         if self.cec == "singularity":
             if self.check_userns():
-                logging.info("System supports user namespaces, enabling in "
-                             "singularity call")
+                if self.level != 'INFO':
+                    logging.info("System supports user namespaces, enabling in"
+                                 " singularity call")
                 return("-u ")
 
         return("")
@@ -352,17 +386,17 @@ class HEPscore(object):
 
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
-                        'singularity': "singularity run -B " + runDir +
-                        ":/results " + self.get_usernamespace_flag() +
-                        "docker://"}
+                        'singularity': "singularity run -C -B " + runDir +
+                        ":/results -B " + self.resultsdir + "/tmp:/tmp " +
+                        self._get_usernamespace_flag() + "docker://"}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
-            logging.debug("Running  %s " % command)
 
             runstr = 'run' + str(i)
 
-            logging.debug("Starting " + runstr)
+            logging.info("Starting " + runstr)
+            logging.debug("Running  %s " % command)
 
             bench_conf[runstr] = {}
             starttime = time.time()
@@ -381,7 +415,7 @@ class HEPscore(object):
                     bench_conf['run' + str(i)]['duration'] = 0
                     self._proc_results(benchmark)
                     if i == (runs - 1):
-                        self.docker_rm(benchmark_name)
+                        self._docker_rm(benchmark_name)
                     return(-1)
 
                 line = cmdf.stdout.readline()
@@ -394,7 +428,7 @@ class HEPscore(object):
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                self.check_rc(cmdf.returncode)
+                self._check_rc(cmdf.returncode)
 
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
@@ -405,11 +439,10 @@ class HEPscore(object):
                         for line in reversed(output_logs):
                             f.write('%s' % line)
                 except Exception:
-                    logging.warning("Failed to write logs to file. "
-                                    "Are you root?")
+                    logging.warning("Failed to write logs to file. ")
 
                 if i == (runs - 1):
-                    self.docker_rm(benchmark_name)
+                    self._docker_rm(benchmark_name)
             else:
                 time.sleep(1)
 
@@ -435,7 +468,7 @@ class HEPscore(object):
         result = self._proc_results(benchmark)
         return(result)
 
-    def check_rc(self, rc):
+    def _check_rc(self, rc):
         if rc == 137 and self.cec == 'docker':
             logging.error(self.cec + " returned code 137: OOM-kill or"
                           " intervention")
@@ -598,7 +631,7 @@ class HEPscore(object):
                 dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
                 continue
 
-            if not benchmark[0].isalpha() or benchmark.find(' ') != -1:
+            if re.match('^[a-zA-Z0-9\-_]*$', benchmark) is None:
                 logging.error("Configuration: illegal character in " +
                               benchmark + "\n")
                 sys.exit(1)
@@ -694,6 +727,7 @@ class HEPscore(object):
         if not mock:
             try:
                 os.mkdir(self.resultsdir)
+                os.mkdir(self.resultsdir + '/tmp')
             except Exception:
                 logging.error("failed to create " + self.resultsdir)
                 sys.exit(2)
