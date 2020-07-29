@@ -62,7 +62,7 @@ class HEPscore(object):
 
         vars(self).update(kwargs)
 
-        if self.level is 'DEBUG':
+        if self.level == 'DEBUG':
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(funcName)s() - %(message)s ',
@@ -126,7 +126,7 @@ class HEPscore(object):
                     bench_conf[runstr] = {}
                 bench_conf[runstr]['report'] = jscore
 
-                if i is 0:
+                if i == 0:
                     bench_conf = self._set_run_metadata(bench_conf,
                                                         jscore, benchmark)
 
@@ -621,7 +621,7 @@ class HEPscore(object):
                 sys.exit(1)
 
         bcount = 0
-        for benchmark in dat['hepscore_benchmark']['benchmarks'].keys():
+        for benchmark in list(dat['hepscore_benchmark']['benchmarks']):
             bmark_conf = dat['hepscore_benchmark']['benchmarks'][benchmark]
             bcount = bcount + 1
 
