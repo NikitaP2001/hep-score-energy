@@ -55,7 +55,7 @@ python35:
   script:
     - yum install openldap-devel krb5-devel mysql-devel -y
     - cd $CI_PROJECT_DIR
-    - tox -epy35
+    - scl enable rh-python35 'tox -epy35'
 
 coverage:
   stage: unit-test
