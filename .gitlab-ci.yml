@@ -43,6 +43,16 @@ python27:
     # python2 
     - tox -epy27
 
+python35:
+  stage: unit-test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  except:
+    - tags
+  script:
+    - yum install openldap-devel krb5-devel mysql-devel -y
+    - cd $CI_PROJECT_DIR
+    - scl enable rh-python35 'tox -epy35'
+
 coverage:
   stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
