@@ -1,8 +1,8 @@
 FROM cern/cc7-base:latest
-ENV PATH="/usr/bin"
-RUN yum install -y git gcc python-devel rh-python35
-RUN curl -o /root/get-pip.py https://bootstrap.pypa.io/get-pip.py
-RUN python /root/get-pip.py
-RUN pip install --upgrade tox coverage
-RUN scl enable rh-python35 'python /root/get-pip.py'
-RUN scl enable rh-python35 'pip install --upgrade tox coverage'
+RUN \
+    yum install -y git gcc openldap-devel krb5-devel mariadb-devel python2-pip python3 && \
+    yum clean all --enablerepo='*' && \
+    for V in 2 3; do \
+        python$V -m pip install --upgrade pip; \
+        python$V -m pip install tox coverage; \
+    done;
