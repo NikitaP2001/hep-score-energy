@@ -3,51 +3,57 @@ hepscore_benchmark:
     atlas-gen-bmk:
       ref_scores:
         gen: 384
+      version: v1.2
       args:
-        scorekey: wl-scores
-        threads: 1
-        events: 200
-        version: v1.2
+        # threads
+        -t: 1
+        # events
+        -e: 200
     .atlas-sim-bmk:
       ref_scores:
         sim: 0.0641
+      version: v1.1
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 10
-        version: v1.1
+        # threads
+        -t: 4
+        # events
+        -e: 10
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.726
+      version: v1.2
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 20
-        version: v1.2
+        # threads
+        -t: 4
+        # events
+        -e: 20
     cms-digi-bmk:
       ref_scores:
         digi: 3.58
+      version: v1.3
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 50
-        version: v1.3
+        # threads
+        -t: 4
+        # events
+        -e: 50
     cms-reco-bmk:
       ref_scores:
         reco: 2.196
+      version: v1.2
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 50
-        version: v1.2
+        # threads
+        -t: 4
+        # events
+        -e: 50
     lhcb-gen-sim-bmk:
       ref_scores:
         gen-sim: 90.29
+      version: v0.15
       args:
-        scorekey: wl-scores
-        threads: 1
-        events: 5
-        version: v0.15
+        # threads
+        -t: 1
+        # events
+        -e: 5
   app_info:
     name: HEPscore19
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"

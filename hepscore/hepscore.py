@@ -36,6 +36,7 @@ class HEPscore(object):
     conffile = '/'.join(os.path.split(__file__)[:-1]) + \
         "/etc/hepscore-default.yaml"
     level = "INFO"
+    scorekey = 'wl-scores'
     confstr = ""
     outdir = ""
     resultsdir = ""
@@ -97,7 +98,7 @@ class HEPscore(object):
         results = {}
         fail = False
         bench_conf = self.confobj['benchmarks'][benchmark]
-        key = bench_conf['args']['scorekey']
+        key = 'wl-scores'
         runs = int(self.confobj['settings']['repetitions'])
 
         if benchmark == "kv-bmk":
@@ -340,41 +341,50 @@ class HEPscore(object):
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
-        bmark_keys = bench_conf['args'].keys()
-        bmk_options = {'debug': '-d', 'threads': '-t', 'events': '-e',
-                       'copies': '-c'}
         options_string = ""
         output_logs = ['']
-
+        bmark_keys = ''
+        bmark_registry = self.confobj['app_info']['registry']        
+        
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['app_info']['name'] + ".log"
+        
+        tmp = "Executing " + str(runs) + " run"
+        if runs > 1:
+            tmp += 's'
+        logging.info(tmp + " of " + benchmark)
+        
+        if 'args' in bench_conf.keys():
+            bmark_keys = bench_conf['args'].keys()
+        
+        # Allow registry overrides in the benchmark configuration
+        if 'registry' in bench_conf.keys():
+            bmark_registry = bench_conf['registry']
+            logging.info("Overriding registry for this container: " + bmark_registry)
 
-        for option in bmk_options.keys():
-            if option in bmark_keys and \
-                    str(bench_conf['args'][option]) \
-                    not in ['None', 'False']:
-                options_string = options_string + ' ' + bmk_options[option]
-                if option != 'debug':
+        for option in bmark_keys:
+            if len(option) != 2 or option[0] != '-' or option[1].isalnum() \
+                    is False or str(bench_conf['args'][option]).isalnum() is False:
+                logging.error("Ignoring invalid option in YAML configuration '"
+                              + option + " " + bench_conf['args'][option] + "' !")
+                continue
+            if str(bench_conf['args'][option]) not in ['None', 'False']:
+                options_string = options_string + ' ' + option
+                if str(bench_conf['args'][option]) != 'True':
                     options_string = options_string + ' ' + \
                         str(bench_conf['args'][option])
+
         try:
             lfile = open(log, mode='a')
         except Exception:
             logging.error("failure to open " + log)
             return(-1)
 
-        benchmark_name = self.confobj['app_info']['registry'] + '/' + \
-            benchmark + ':' + bench_conf['args']['version']
+
+        benchmark_name = bmark_registry + '/' + benchmark + ':' + \
+            bench_conf['version']
         benchmark_complete = benchmark_name + options_string
 
-        tmp = "Executing " + str(runs) + " run"
-        if runs > 1:
-            tmp += 's'
-        logging.info(tmp + " of " + benchmark)
-
-        # command_string = commands[self.cec] + benchmark_complete
-        # command = command_string.split(' ')
-        # logging.debug("Running  %s " % command)
         self.confobj['settings']['replay'] = mock
 
         for i in range(runs):
@@ -603,7 +613,7 @@ class HEPscore(object):
                             reg_string = \
                                 dat['hepscore_benchmark'][k][j]
                             if not reg_string[0].isalpha() or \
-                                    reg_string.find(' ') != -1:
+                                    re.match('^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
                                 logging.error("Configuration: illegal "
                                               "character in registry")
                                 sys.exit(1)
@@ -627,26 +637,26 @@ class HEPscore(object):
 
             if benchmark[0] == ".":
                 logging.info("the config has a commented entry " + benchmark +
-                             " : Skipping this benchmark!!!!\n")
+                             " : Skipping this benchmark!\n")
                 dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
                 continue
 
             if re.match('^[a-zA-Z0-9\-_]*$', benchmark) is None:
-                logging.error("Configuration: illegal character in " +
-                              benchmark + "\n")
+                logging.error("Configuration: illegal character in benchmark" \
+                              + "name " + benchmark + "\n")
                 sys.exit(1)
 
             if benchmark.find('-') == -1:
                 logging.error("Configuration: expect at least 1 '-' character "
-                              "in benchmark name")
+                              "in benchmark name " + benchmark)
                 sys.exit(1)
 
-            bmk_req_options = ['version', 'scorekey']
+            bmk_req_options = ['version']
 
             for k in bmk_req_options:
-                if k not in bmark_conf['args'].keys():
+                if k not in bmark_conf.keys():
                     logging.error("Configuration: missing required benchmark "
-                                  "option -" + k)
+                                  "option for " + benchmark + " - " + k)
                     sys.exit(1)
 
             if 'ref_scores' in bmark_conf.keys():
@@ -655,11 +665,20 @@ class HEPscore(object):
                         float(bmark_conf['ref_scores'][score])
                     except ValueError:
                         logging.error("Configuration: ref_score " + score +
-                                      " is not a float")
+                                      " is not a float for " + benchmark)
                         sys.exit(1)
             else:
-                logging.error("Configuration: ref_scores missing")
+                logging.error("Configuration: ref_scores missing for " + \
+                              benchmark)
                 sys.exit(1)
+
+            if 'registry' in bmark_conf.keys():
+                if not reg_string[0].isalpha() or \
+                        re.match('^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
+                    logging.error("Configuration: illegal "
+                                  "character in registry")
+                    sys.exit(1)
+                
 
         if bcount == 0:
             logging.error("Configuration: no benchmarks specified")
