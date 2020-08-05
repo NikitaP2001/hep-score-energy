@@ -344,29 +344,31 @@ class HEPscore(object):
         options_string = ""
         output_logs = ['']
         bmark_keys = ''
-        bmark_registry = self.confobj['app_info']['registry']        
-        
+        bmark_registry = self.confobj['app_info']['registry']
+
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['app_info']['name'] + ".log"
-        
+
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
             tmp += 's'
         logging.info(tmp + " of " + benchmark)
-        
+
         if 'args' in bench_conf.keys():
             bmark_keys = bench_conf['args'].keys()
-        
+
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
             bmark_registry = bench_conf['registry']
-            logging.info("Overriding registry for this container: " + bmark_registry)
+            logging.info("Overriding registry for this container: "
+                         + bmark_registry)
 
         for option in bmark_keys:
-            if len(option) != 2 or option[0] != '-' or option[1].isalnum() \
-                    is False or str(bench_conf['args'][option]).isalnum() is False:
+            if len(option) != 2 or option[0] != '-' or \
+                    option[1].isalnum() is False or \
+                    str(bench_conf['args'][option]).isalnum() is False:
                 logging.error("Ignoring invalid option in YAML configuration '"
-                              + option + " " + bench_conf['args'][option] + "' !")
+                              + option + " " + bench_conf['args'][option])
                 continue
             if str(bench_conf['args'][option]) not in ['None', 'False']:
                 options_string = options_string + ' ' + option
@@ -379,7 +381,6 @@ class HEPscore(object):
         except Exception:
             logging.error("failure to open " + log)
             return(-1)
-
 
         benchmark_name = bmark_registry + '/' + benchmark + ':' + \
             bench_conf['version']
@@ -613,7 +614,8 @@ class HEPscore(object):
                             reg_string = \
                                 dat['hepscore_benchmark'][k][j]
                             if not reg_string[0].isalpha() or \
-                                    re.match('^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
+                                    re.match('^[a-zA-Z0-9:/\-_\.~]*$',
+                                             reg_string) is None:
                                 logging.error("Configuration: illegal "
                                               "character in registry")
                                 sys.exit(1)
@@ -642,7 +644,7 @@ class HEPscore(object):
                 continue
 
             if re.match('^[a-zA-Z0-9\-_]*$', benchmark) is None:
-                logging.error("Configuration: illegal character in benchmark" \
+                logging.error("Configuration: illegal character in benchmark"
                               + "name " + benchmark + "\n")
                 sys.exit(1)
 
@@ -668,7 +670,7 @@ class HEPscore(object):
                                       " is not a float for " + benchmark)
                         sys.exit(1)
             else:
-                logging.error("Configuration: ref_scores missing for " + \
+                logging.error("Configuration: ref_scores missing for " +
                               benchmark)
                 sys.exit(1)
 
@@ -678,7 +680,6 @@ class HEPscore(object):
                     logging.error("Configuration: illegal "
                                   "character in registry")
                     sys.exit(1)
-                
 
         if bcount == 0:
             logging.error("Configuration: no benchmarks specified")
