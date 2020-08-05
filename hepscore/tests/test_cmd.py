@@ -106,7 +106,7 @@ class testOutput(unittest.TestCase):
         hs.read_and_parse_conf(conffile=conf)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
-                        'app_info.hepscore_ver']
+                        'app_info.hepscore_ver', 'score_per_core']
 
         for benchmark in benchmarks:
             ignored_keys.append("benchmarks." + benchmark + ".run0")
