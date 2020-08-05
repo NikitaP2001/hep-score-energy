@@ -152,7 +152,7 @@ class testOutput(unittest.TestCase):
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=conf)
 
-        hs.run(True)>=0
+        hs.run(True) >= 0:
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
             hs.write_output(outtype, outfile)
