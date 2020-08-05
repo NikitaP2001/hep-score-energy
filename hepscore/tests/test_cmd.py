@@ -140,7 +140,7 @@ class testOutput(unittest.TestCase):
         resDir = os.path.join(head, "data/HEPscore_ci_empty_score")
 
         conf = os.path.normpath(
-            os.path.join(head, "etc/hepscore_empty_conf.yaml"))
+            os.path.join(head, "etc/hepscore_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True,
