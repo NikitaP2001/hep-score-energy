@@ -85,8 +85,8 @@ class TestRun(unittest.TestCase):
 class testOutput(unittest.TestCase):
 
     def test_parse_results(self):
-        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
-                      "cms-gen-sim-bmk", "cms-reco-bmk"]
+        benchmarks = ["atlas-gen-bmk",  "cms-digi-bmk", "cms-gen-sim-bmk", 
+                      "cms-reco-bmk", "lhcb-gen-sim-bmk"]
 
         head, _ = os.path.split(__file__)
 
