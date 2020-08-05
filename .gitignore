@@ -24,6 +24,7 @@ cover/
 *~
 .*.swp
 .*sw?
+.vscode
 
 # Desktop Service Store
 *.DS_Store
