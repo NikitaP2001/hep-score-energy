@@ -133,7 +133,6 @@ class testOutput(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         os.remove(resDir + "/HEPscore19.json")
-        os.remove(resDir + "/HEPscore19.log")
 
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
@@ -165,7 +164,6 @@ class testOutput(unittest.TestCase):
         self.assertEqual(actual_res['status'], "failed")
 
         os.remove(resDir + "/HEPscore19.json")
-        os.remove(resDir + "/HEPscore19.log")
 
 
 if __name__ == '__main__':
