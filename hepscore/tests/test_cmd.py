@@ -90,7 +90,7 @@ class testOutput(unittest.TestCase):
 
         head, _ = os.path.split(__file__)
 
-        resDir = os.path.join(head + "/data/HEPscore_ci_allWLs")
+        resDir = os.path.join(head, "data/HEPscore_ci_allWLs")
 
         conf = os.path.normpath(
             os.path.join(head, "etc/hepscore_conf.yaml"))
@@ -138,10 +138,10 @@ class testOutput(unittest.TestCase):
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
 
-        resDir = os.path.join(head + "/data/HEPscore_ci_empty_score")
+        resDir = os.path.join(head, "data/HEPscore_ci_empty_score")
 
         conf = os.path.normpath(
-            os.path.join(head, "/etc/hepscore_empty_conf.yaml"))
+            os.path.join(head, "etc/hepscore_empty_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True,
