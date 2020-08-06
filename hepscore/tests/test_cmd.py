@@ -154,9 +154,7 @@ class testOutput(unittest.TestCase):
 
         if hs.run(True) >= 0:
             hs.gen_score()
-        with self.assertRaises(SystemExit) as cm:
-            hs.write_output(outtype, outfile)
-            self.assertEqual(cm.exception.code, 2)
+        hs.write_output(outtype, outfile)
 
         actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
