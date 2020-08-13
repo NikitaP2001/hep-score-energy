@@ -1,57 +1,50 @@
 hepscore_benchmark:
   benchmarks:
     .atlas-gen-bmk:
+      version: v1.1
       ref_scores:
         gen: 207.6
       args:
-        scorekey: wl-scores
-        threads: 1
-        events: 300
-        version: v1.1
+        -t: 1
+        -e: 300
     .atlas-sim-bmk:
+      version: v1.0
       ref_scores:
         sim: 0.028
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 15
-        version: v1.0
+        -t: 4
+        -e: 15
     .atlas-digi-reco-bmk:
+      version: v1.0
       ref_scores:
         digi-reco: 1.211
       args:
-        scorekey: wl-scores
-        threads: 4
-        events: 30
-        version: v1.0
+        -t: 4
+        -e: 30
     .cms-gen-sim-bmk:
+      version: v1.0
       ref_scores:
         gen-sim: 0.362
       args:
-        scorekey: wl-scores
-        events: 50
-        version: v1.0
+        -e: 50
     .cms-digi-bmk:
+      version: v1.0
       ref_scores:
         digi: 1.94
       args:
-        scorekey: wl-scores
-        events: 50
-        version: v1.0
+        -e: 50
     .cms-reco-bmk:
+      version: v1.0
       ref_scores:
         reco: 1.117
       args:
-        scorekey: wl-scores
-        events: 50
-        version: v1.0
+        -e: 50
     .lhcb-gen-sim-bmk:
+      version: v0.15
       ref_scores:
         gen-sim: 41.32
       args:
-        scorekey: wl-scores
-        events: 5
-        version: v0.15
+        -e: 5
   app_info:
     name: HEPscore19
     reference_machine: "An undefined machine"

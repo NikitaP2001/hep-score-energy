@@ -15,10 +15,10 @@ job_build_image_tox:
     name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
     entrypoint: [""]
   only:
-    variables:
-      - $CI_COMMIT_BRANCH =~ /^qa-.*$/
     changes:
-    - docker-images/tox/*
+    - docker-images/tox/Dockerfile
+    variables:
+    - $CI_COMMIT_BRANCH =~ /^qa-.*$/
   script:
     # Prepare Kaniko configuration file
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
@@ -33,9 +33,8 @@ pep8:
   except:
     - tags
   script:
-    - yum install openldap-devel krb5-devel -y
-    - cd $CI_PROJECT_DIR
-    - scl enable rh-python35 'tox -epep8'
+    # run python2 tox
+    - tox -epep8
 
 python27:
   stage: unit-test
@@ -43,9 +42,16 @@ python27:
   except:
     - tags
   script:
-    - yum install openldap-devel krb5-devel mysql-devel -y
-    - cd $CI_PROJECT_DIR
+    # python2 
     - tox -epy27
+
+python35:
+  stage: unit-test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  except:
+    - tags
+  script:
+    - tox -epy36
 
 coverage:
   stage: unit-test
@@ -53,12 +59,21 @@ coverage:
   except:
     - tags
   script:
-    - yum install openldap-devel krb5-devel mysql-devel -y
-    - cd $CI_PROJECT_DIR
-    - scl enable rh-python35 'tox -ecover'
+    - tox -ecover
   artifacts:
     paths:
       - cover
+
+test_python_support:
+  # determine minimum supported python version
+  stage: unit-test
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  script:
+    - python3 -m pip install vermin
+    - vermin -vv .
+  only:
+    changes:
+      - "*.py"
 
 job_test_kv_run_cc7:
     image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest

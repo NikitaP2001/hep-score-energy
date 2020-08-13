@@ -85,15 +85,15 @@ class TestRun(unittest.TestCase):
 class testOutput(unittest.TestCase):
 
     def test_parse_results(self):
-        benchmarks = ["atlas-gen-bmk", "atlas-sim-bmk", "cms-digi-bmk",
-                      "cms-gen-sim-bmk", "cms-reco-bmk"]
+        benchmarks = ["atlas-gen-bmk", "cms-digi-bmk", "cms-gen-sim-bmk",
+                      "cms-reco-bmk", "lhcb-gen-sim-bmk"]
 
         head, _ = os.path.split(__file__)
 
-        resDir = os.path.join(head + "/data/HEPscore_ci_allWLs")
+        resDir = os.path.join(head, "data/HEPscore_ci_allWLs")
 
         conf = os.path.normpath(
-            os.path.join(head, "data/HEPscore_ci_allWLs/hepscore_conf.yaml"))
+            os.path.join(head, "etc/hepscore_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True, 'clean_files': False,
@@ -106,7 +106,7 @@ class testOutput(unittest.TestCase):
         hs.read_and_parse_conf(conffile=conf)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
-                        'app_info.hepscore_ver']
+                        'app_info.hepscore_ver', 'score_per_core']
 
         for benchmark in benchmarks:
             ignored_keys.append("benchmarks." + benchmark + ".run0")
@@ -133,16 +133,14 @@ class testOutput(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         os.remove(resDir + "/HEPscore19.json")
-        os.remove(resDir + "/HEPscore19.log")
 
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
 
-        resDir = os.path.join(head + "/data/HEPscore_ci_empty_score")
+        resDir = os.path.join(head, "data/HEPscore_ci_empty_score")
 
         conf = os.path.normpath(
-            os.path.join(head, "data/HEPscore_ci_empty_score/" +
-                         "hepscore_conf.yaml"))
+            os.path.join(head, "etc/hepscore_conf.yaml"))
 
         hsargs = {'level': 'DEBUG', 'cec': 'docker',
                   'clean': True,
@@ -154,11 +152,9 @@ class testOutput(unittest.TestCase):
         hs = hepscore.HEPscore(**hsargs)
         hs.read_and_parse_conf(conffile=conf)
 
-        hs.run(True)
-        hs.gen_score()
-        with self.assertRaises(SystemExit) as cm:
-            hs.write_output(outtype, outfile)
-            self.assertEqual(cm.exception.code, 2)
+        if hs.run(True) >= 0:
+            hs.gen_score()
+        hs.write_output(outtype, outfile)
 
         actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
@@ -166,7 +162,6 @@ class testOutput(unittest.TestCase):
         self.assertEqual(actual_res['status'], "failed")
 
         os.remove(resDir + "/HEPscore19.json")
-        os.remove(resDir + "/HEPscore19.log")
 
 
 if __name__ == '__main__':

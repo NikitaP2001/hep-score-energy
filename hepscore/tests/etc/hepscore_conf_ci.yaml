@@ -9,13 +9,16 @@ hepscore_benchmark:
     method: geometric_mean #or any other algorithm
   benchmarks:
     atlas-kv-bmk:
+      version: ci1.1
       ref_scores:
         sim: 1
       args:
-        scorekey: wl-scores
-        events: 3
-        threads: 1
-        copies: 2
-        version: ci1.1
-        debug : true
+        # events
+        -e: 3
+        # threads
+        -t: 1
+        # copies
+        -c: 2
+        # debug
+        -d: true
     
