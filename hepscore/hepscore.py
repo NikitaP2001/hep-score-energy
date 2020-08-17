@@ -398,7 +398,7 @@ class HEPscore(object):
             commands = {'docker': "docker run --rm --network=host -v " +
                         runDir + ":/results ",
                         'singularity': "singularity run -C -B " + runDir +
-                        ":/results -B " + self.resultsdir + "/tmp:/tmp " +
+                        ":/results -B " + "/tmp:/tmp " +
                         self._get_usernamespace_flag() + "docker://"}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -747,7 +747,6 @@ class HEPscore(object):
         if not mock:
             try:
                 os.mkdir(self.resultsdir)
-                os.mkdir(self.resultsdir + '/tmp')
             except Exception:
                 logging.error("failed to create " + self.resultsdir)
                 sys.exit(2)
