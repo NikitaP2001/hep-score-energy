@@ -43,6 +43,7 @@ class HEPscore(object):
     cec = ""
     clean = False
     clean_files = False
+    userns = False
 
     confobj = {}
     results = []
@@ -304,7 +305,7 @@ class HEPscore(object):
 
     # User namespace flag needed to support nested singularity
     def _get_usernamespace_flag(self):
-        if self.cec == "singularity":
+        if self.cec == "singularity" and self.userns is True:
             if self.check_userns():
                 if self.level != 'INFO':
                     logging.info("System supports user namespaces, enabling in"
@@ -327,6 +328,7 @@ class HEPscore(object):
 
         try:
             line = cmdf.stdout.readline()
+            line.decode('utf-8')
 
             while line:
                 version = line
@@ -334,7 +336,7 @@ class HEPscore(object):
                     version = version[:-1]
                 line = cmdf.stdout.readline()
 
-            return version.encode('utf-8')
+            return version
         except Exception:
             return "error"
 
@@ -661,6 +663,14 @@ class HEPscore(object):
                                   "option for " + benchmark + " - " + k)
                     sys.exit(1)
 
+            if 'weight' in bmark_conf.keys():
+                try:
+                    float(bmark_conf['weight'])
+                except ValueError:
+                    logging.error("Configuration: invalid 'weight' specified:"
+                                  "'" + bmark_conf['weight'] + "."
+                                  "  Must be a float")
+
             if 'ref_scores' in bmark_conf.keys():
                 for score in bmark_conf['ref_scores']:
                     try:
@@ -708,8 +718,8 @@ class HEPscore(object):
                     sys.exit(1)
             else:
                 logging.warning("Run type not specified on commandline or"
-                                " in config - assuming docker\n")
-                self.cec = "docker"
+                                " in config - assuming singularity\n")
+                self.cec = "singularity"
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
