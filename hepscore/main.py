@@ -88,7 +88,7 @@ def main():
             hsargs['clean'] = True
         elif opt == '-C':
             hsargs['clean_files'] = True
-        elif opt in ['-s', '-S','-d']:
+        elif opt in ['-s', '-S', '-d']:
             if 'cec' in hsargs:
                 print("\nError: -s, -d and -S are exclusive\n")
                 sys.exit(1)
@@ -98,7 +98,6 @@ def main():
                 hsargs['cec'] = "singularity"
                 if opt == '-S':
                     hsargs['userns'] = True
-                    
 
     if len(args) < 1 and not printconf_and_exit:
         help(sys.argv[0])
