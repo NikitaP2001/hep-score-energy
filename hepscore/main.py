@@ -9,9 +9,11 @@
 #
 
 import getopt
+import hepscore
 from hepscore import HEPscore
 import os
 import sys
+import yaml
 
 
 def help(progname):
@@ -54,7 +56,8 @@ def main():
     replay = False
     printconf_and_exit = False
     outtype = "json"
-    conffile = ""
+    conffile = '/'.join(os.path.split(hepscore.__file__)[:-1]) + \
+        "/etc/hepscore-default.yaml"
     outfile = ""
 
     try:
@@ -108,8 +111,23 @@ def main():
             print("\nError: output directory must exist")
             sys.exit(1)
 
-    hs = HEPscore(**hsargs)
-    hs.read_and_parse_conf(conffile)
+    # Read config yaml
+    try:
+        with open(conffile, 'r') as yam:
+            active_config = yaml.full_load(yam)
+            # log.debug("Loaded config yaml from {}".format(args['conffile']))
+            # args.pop('conffile', None)
+    except Exception:
+        # log.exception("Error reading config yaml {}".format(args['conffile']))
+        raise
+
+    # Populate active config with cli override
+    for k, v in hsargs:
+        if v != "":
+            active_config['hepscore_benchmark']['settings'][k] = v
+
+    hs = HEPscore(active_config)
+    hs.parse_conf(hs.config)
 
     if printconf_and_exit:
         hs.print_conf()

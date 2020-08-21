@@ -16,7 +16,7 @@ import math
 import multiprocessing
 import operator
 import os
-import oyaml as yaml
+import yaml
 import pbr.version
 import re
 import scipy.stats
@@ -33,37 +33,32 @@ class HEPscore(object):
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
-    conffile = '/'.join(os.path.split(__file__)[:-1]) + \
-        "/etc/hepscore-default.yaml"
     level = "INFO"
     scorekey = 'wl-scores'
-    confstr = ""
     outdir = ""
     resultsdir = ""
     cec = ""
     clean = False
     clean_files = False
 
-    confobj = {}
     results = []
     score = -1
 
-    def __init__(self, **kwargs):
+    def __init__(self, config=None):
+        """Set minimal objects from config, enable logging."""
+        try:
+            self.config = config["hepscore_benchmark"]
+            self.settings = self.config['settings']
+            if 'container_exec' in self.settings:
+                self.cec = self.settings['cec']
+            if 'outdir' not in self.settings:
+                self.settings['outdir'] = "/results"
+        except (TypeError, KeyError):
+            # log.exception("hepscore expects a dict containing master key"
+            #              "'hepscore_benchmark'")
+            raise
 
-        unsettable = ['NAME', 'VER', 'confstr', 'confobj', 'results', 'score']
-
-        for vn in unsettable:
-            if vn in kwargs.keys():
-                raise ValueError("Not permitted to set variable specified in "
-                                 "constructor")
-
-        for var in kwargs.keys():
-            if var not in vars(HEPscore):
-                raise ValueError("Invalid argument to constructor")
-
-        vars(self).update(kwargs)
-
-        if self.level == 'DEBUG':
+        if self.settings['level'] in ("VERBOSE", "DEBUG"):
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(funcName)s() - %(message)s ',
@@ -73,6 +68,18 @@ class HEPscore(object):
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s',
                                 stream=sys.stdout)
+
+        if 'clean' in self.settings:
+            self.clean = True
+        if 'clean_files' in self.settings:
+            self.clean_files = True
+
+        # hepscore creates some subdirectories in 'outdir'
+        # unless told otherwise via passed 'resultsdir'
+        if 'resultsdir' not in self.settings:
+            self.settings['resultsdir'] = os.path.join(
+                self.settings['outdir'],
+                self._NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
         bench_conf['app'] = jscore['app']
@@ -488,30 +495,6 @@ class HEPscore(object):
         else:
             logging.debug(self.cec + " terminated without errors")
 
-    def read_conf(self, conffile=""):
-
-        if conffile:
-            self.conffile = conffile
-            logging.info("Using custom configuration: " + self.conffile)
-
-        try:
-            yfile = open(self.conffile, mode='r')
-            self.confstr = yfile.read()
-            yfile.close()
-        except Exception:
-            logging.error("cannot open/read from " + self.conffile + "\n")
-            sys.exit(1)
-
-        return self.confstr
-
-    def print_conf(self):
-        full_conf = {'hepscore_benchmark': self.confobj}
-        print(yaml.safe_dump(full_conf))
-
-    def read_and_parse_conf(self, conffile=""):
-        self.read_conf(conffile)
-        self.parse_conf()
-
     def gen_score(self):
 
         method = self.allowed_methods[self.confobj['settings']['method']]
@@ -568,18 +551,9 @@ class HEPscore(object):
         if len(self.results) == 0 or self.results[-1] < 0:
             sys.exit(2)
 
-    def parse_conf(self, confstr=""):
+    def parse_conf(self, dat):
 
         hep_settings = ['settings', 'app_info', 'benchmarks']
-
-        if confstr:
-            self.confstr = confstr
-
-        try:
-            dat = yaml.safe_load(self.confstr)
-        except Exception:
-            logging.error("problem parsing YAML configuration\n")
-            sys.exit(1)
 
         if 'hepscore_benchmark' not in dat.keys():
             logging.error("Configuration: missing root hepscore_benchmark"
