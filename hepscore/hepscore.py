@@ -16,7 +16,6 @@ import math
 import multiprocessing
 import operator
 import os
-import yaml
 import pbr.version
 import re
 import scipy.stats
@@ -25,6 +24,7 @@ import subprocess
 import sys
 import tarfile
 import time
+import yaml
 
 
 class HEPscore(object):
@@ -37,7 +37,7 @@ class HEPscore(object):
     scorekey = 'wl-scores'
     outdir = ""
     resultsdir = ""
-    cec = ""
+    cec = "docker"
     clean = False
     clean_files = False
 
@@ -47,19 +47,24 @@ class HEPscore(object):
     def __init__(self, config=None):
         """Set minimal objects from config, enable logging."""
         try:
-            self.config = config["hepscore_benchmark"]
-            self.settings = self.config['settings']
+            self.config = config
+            self.settings = self.config["hepscore_benchmark"]['settings']
             if 'container_exec' in self.settings:
-                self.cec = self.settings['cec']
+                self.cec = self.settings['container_exec']
+            else:
+                logging.warning("Run type not specified on commandline or"
+                                " in config - assuming docker\n")
             if 'outdir' not in self.settings:
                 self.settings['outdir'] = "/results"
+                self.outdir = "/results"
         except (TypeError, KeyError):
             # log.exception("hepscore expects a dict containing master key"
             #              "'hepscore_benchmark'")
             raise
 
-        if self.settings['level'] in ("VERBOSE", "DEBUG"):
-            logging.basicConfig(level=logging.DEBUG,
+        if 'level' in self.settings:
+            if self.settings['level'] in ("VERBOSE", "DEBUG"):
+                logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(funcName)s() - %(message)s ',
                                 stream=sys.stdout)
@@ -79,7 +84,8 @@ class HEPscore(object):
         if 'resultsdir' not in self.settings:
             self.settings['resultsdir'] = os.path.join(
                 self.settings['outdir'],
-                self._NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+                self.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+            self.resultsdir = self.settings['resultsdir']
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
         bench_conf['app'] = jscore['app']
@@ -668,23 +674,6 @@ class HEPscore(object):
 
     def run(self, mock=False):
 
-        if self.cec and 'container_exec' in self.confobj:
-            logging.info("Overiding container_exec parameter on the "
-                         "commandline\n")
-        elif not self.cec:
-            if 'container_exec' in self.confobj:
-                if self.confobj['container_exec'] == 'singularity' or \
-                        self.confobj['container_exec'] == 'docker':
-                    self.cec = self.confobj['container_exec']
-                else:
-                    logging.error("container_exec config parameter must "
-                                  "be 'singularity' or 'docker'\n")
-                    sys.exit(1)
-            else:
-                logging.warning("Run type not specified on commandline or"
-                                " in config - assuming docker\n")
-                self.cec = "docker"
-
         # Creating a hash representation of the configuration object
         # to be included in the final report
         m = hashlib.sha256()
@@ -720,7 +709,7 @@ class HEPscore(object):
 
         if not mock:
             try:
-                os.mkdir(self.resultsdir)
+                os.makedirs(self.resultsdir, exist_ok=True)
             except Exception:
                 logging.error("failed to create " + self.resultsdir)
                 sys.exit(2)

@@ -115,10 +115,7 @@ def main():
     try:
         with open(conffile, 'r') as yam:
             active_config = yaml.full_load(yam)
-            # log.debug("Loaded config yaml from {}".format(args['conffile']))
-            # args.pop('conffile', None)
     except Exception:
-        # log.exception("Error reading config yaml {}".format(args['conffile']))
         raise
 
     # Populate active config with cli override
@@ -130,7 +127,7 @@ def main():
     hs.parse_conf(hs.config)
 
     if printconf_and_exit:
-        hs.print_conf()
+        yaml.safe_dump(hs.confobj)
         sys.exit(0)
     else:
         if hs.run(replay) >= 0:
