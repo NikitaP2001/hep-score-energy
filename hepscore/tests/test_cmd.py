@@ -15,9 +15,11 @@ import yaml
 
 # Import mock compatible with Python2 and Python3
 try:
-    from mock import mock, patch
+    from mock import mock
+    from mock import patch
 except ImportError:
-    from unittest.mock import mock, patch
+    from unittest.mock import mock
+    from unittest.mock import patch
 
 
 class TestArguments(unittest.TestCase):
@@ -152,6 +154,7 @@ class testOutput(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         os.remove(resDir + "/HEPscore19.json")
+
     @unittest.skip
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)

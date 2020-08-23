@@ -65,9 +65,9 @@ class HEPscore(object):
         if 'level' in self.settings:
             if self.settings['level'] in ("VERBOSE", "DEBUG"):
                 logging.basicConfig(level=logging.DEBUG,
-                                format='%(asctime)s - %(levelname)s - '
-                                '%(funcName)s() - %(message)s ',
-                                stream=sys.stdout)
+                                    format='%(asctime)s - %(levelname)s - '
+                                    '%(funcName)s() - %(message)s ',
+                                    stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
