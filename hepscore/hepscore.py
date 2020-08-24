@@ -27,7 +27,6 @@ import tarfile
 import time
 
 
-
 class HEPscore(object):
 
     NAME = "HEPscore"

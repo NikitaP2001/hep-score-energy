@@ -12,8 +12,8 @@ import getopt
 import hepscore
 from hepscore import HEPscore
 import os
+import oyaml as yaml
 import sys
-import oyaml
 
 
 def help(progname):
