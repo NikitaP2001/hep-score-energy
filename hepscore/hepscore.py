@@ -49,8 +49,8 @@ class HEPscore(object):
         try:
             self.config = config
             self.settings = self.config["hepscore_benchmark"]['settings']
-            if 'container_exec' in self.settings:
-                self.cec = self.settings['container_exec']
+            if 'cec' in self.settings:
+                self.cec = self.settings['cec']
             else:
                 logging.warning("Run type not specified on commandline or"
                                 " in config - assuming docker\n")
@@ -689,13 +689,6 @@ class HEPscore(object):
         self.confobj['environment'] = {'system': sysname, 'date': curtime,
                                        exec_ver: ver}
 
-        if self.resultsdir != "" and self.outdir != "":
-            return(-1)
-
-        if self.resultsdir == "":
-            self.resultsdir = self.outdir + '/' + self.NAME + '_' + \
-                time.strftime("%d%b%Y_%H%M%S")
-
         print(self.confobj['app_info']['name'] + " Benchmark")
         print("Version Hash:         " + self.confobj['app_info']['hash'])
         print("System:               " + sysname)
@@ -708,11 +701,15 @@ class HEPscore(object):
         self.confobj['app_info']['hepscore_ver'] = self.VER
 
         if not mock:
-            try:
-                os.makedirs(self.resultsdir, exist_ok=True)
-            except Exception:
-                logging.error("failed to create " + self.resultsdir)
-                sys.exit(2)
+            # python2 workaround, exists_ok flag not yet implemented
+            if os.path.exists(self.resultsdir):
+                logging.warning("resultsdir already exists...")
+            else:
+                try:
+                    os.makedirs(self.resultsdir)
+                except Exception:
+                    logging.error("failed to create " + self.resultsdir)
+                    sys.exit(2)
         else:
             logging.info("NOTE: Replaying prior results")
 

@@ -47,7 +47,6 @@ class Test_Constructor(unittest.TestCase):
         with self.assertRaises(KeyError):
             hepscore.HEPscore(dict())
 
-    @unittest.skip
     def test_succeed_read_set_defaults(self):
         standard = {'hepscore_benchmark': {'settings': {}}}
         test_config = standard.copy()
@@ -56,14 +55,13 @@ class Test_Constructor(unittest.TestCase):
 
         self.assertEqual(hs.cec, "docker")
         self.assertEqual(hs.settings['outdir'], "/results")
-        self.assertEqual(hs.settings['outtype'], "json")
         self.assertIn('/results/HEPscore_', hs.settings['resultsdir'])
         self.assertEqual(hs.config, standard)
 
     def test_succeed_override_defaults(self):
         standard = {'hepscore_benchmark':
                     {'settings':
-                        {'container_exec': "singularity",
+                        {'cec': "singularity",
                          'outdir': "/tmp",
                          'resultsdir': "/tmp1"}}}
         test_config = standard.copy()
@@ -104,7 +102,7 @@ class TestRun(unittest.TestCase):
 
 
 class testOutput(unittest.TestCase):
-    @unittest.skip
+    @unittest.skip("WIP")
     def test_parse_results(self):
         benchmarks = ["atlas-gen-bmk", "cms-digi-bmk", "cms-gen-sim-bmk",
                       "cms-reco-bmk", "lhcb-gen-sim-bmk"]
@@ -155,7 +153,7 @@ class testOutput(unittest.TestCase):
 
         os.remove(resDir + "/HEPscore19.json")
 
-    @unittest.skip
+    @unittest.skip("WIP")
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
 

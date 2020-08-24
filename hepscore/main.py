@@ -103,13 +103,16 @@ def main():
         sys.exit(1)
     elif len(args) >= 1:
         if replay:
+            if not os.path.isdir(args[0]):
+                print("\nError: output directory must exist")
+                sys.exit(1)
             hsargs['resultsdir'] = args[0]
-        else:
-            hsargs['outdir'] = args[0]
 
-        if not os.path.isdir(args[0]):
-            print("\nError: output directory must exist")
-            sys.exit(1)
+        else:
+            if not os.path.isdir(args[0]):
+                os.makedirs(args[0])
+                print("Creating output directory {}".format(args[0]))
+            hsargs['outdir'] = args[0]
 
     # Read config yaml
     try:
@@ -119,7 +122,7 @@ def main():
         raise
 
     # Populate active config with cli override
-    for k, v in hsargs:
+    for k, v in hsargs.items():
         if v != "":
             active_config['hepscore_benchmark']['settings'][k] = v
 
