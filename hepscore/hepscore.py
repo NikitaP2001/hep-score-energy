@@ -328,7 +328,7 @@ class HEPscore(object):
 
         try:
             line = cmdf.stdout.readline()
-            line.decode('utf-8')
+            line = line.decode('utf-8')
 
             while line:
                 version = line
