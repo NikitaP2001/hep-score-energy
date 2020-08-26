@@ -16,6 +16,7 @@ import math
 import multiprocessing
 import operator
 import os
+import oyaml as yaml
 import pbr.version
 import re
 import scipy.stats
@@ -24,7 +25,6 @@ import subprocess
 import sys
 import tarfile
 import time
-import yaml
 
 
 class HEPscore(object):

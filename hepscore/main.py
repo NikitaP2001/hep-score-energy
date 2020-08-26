@@ -12,8 +12,8 @@ import getopt
 import hepscore
 from hepscore import HEPscore
 import os
+import oyaml as yaml
 import sys
-import yaml
 
 
 def help(progname):
@@ -117,7 +117,7 @@ def main():
     # Read config yaml
     try:
         with open(conffile, 'r') as yam:
-            active_config = yaml.full_load(yam)
+            active_config = yaml.safe_load(yam)
     except Exception:
         raise
 
