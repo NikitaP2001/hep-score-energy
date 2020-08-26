@@ -55,6 +55,5 @@ hepscore_benchmark:
     container_exec: docker
     repetitions: 1
     level: DEBUG
-    cec: docker
     clean: True
     outdir: /tmp/test_run_empty_cfg

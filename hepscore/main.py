@@ -52,7 +52,7 @@ def help(progname):
 
 def main():
 
-    hsargs = {'outdir': ""}
+    hsargs = {}
     replay = False
     printconf_and_exit = False
     outtype = "json"
@@ -90,13 +90,13 @@ def main():
         elif opt == '-C':
             hsargs['clean_files'] = True
         elif opt == '-s' or opt == '-d':
-            if 'cec' in hsargs:
+            if 'container_exec' in hsargs:
                 print("\nError: -s and -d are exclusive\n")
                 sys.exit(1)
             if opt == '-s':
-                hsargs['cec'] = "singularity"
+                hsargs['container_exec'] = "singularity"
             else:
-                hsargs['cec'] = "docker"
+                hsargs['container_exec'] = "docker"
 
     if len(args) < 1 and not printconf_and_exit:
         help(sys.argv[0])
@@ -112,7 +112,7 @@ def main():
             if not os.path.isdir(args[0]):
                 os.makedirs(args[0])
                 print("Creating output directory {}".format(args[0]))
-            hsargs['outdir'] = args[0]
+            outdir = args[0]
 
     # Read config yaml
     try:
@@ -126,8 +126,7 @@ def main():
         if v != "":
             active_config['hepscore_benchmark']['settings'][k] = v
 
-    hs = HEPscore(active_config)
-    hs.parse_conf(hs.config)
+    hs = HEPscore(active_config, outdir)
 
     if printconf_and_exit:
         yaml.safe_dump(hs.confobj)

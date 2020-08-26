@@ -8,10 +8,11 @@ import hepscore.main
 import json
 import logging
 import os
+import oyaml as yaml
 # from parameterized import parameterized
 import sys
 import unittest
-import yaml
+
 
 # Import mock compatible with Python2 and Python3
 try:
@@ -47,31 +48,32 @@ class Test_Constructor(unittest.TestCase):
         with self.assertRaises(KeyError):
             hepscore.HEPscore(dict())
 
-    def test_succeed_read_set_defaults(self):
+    @patch.object(hepscore.HEPscore, 'validate_conf')
+    def test_succeed_read_set_defaults(self, mock_validate):
         standard = {'hepscore_benchmark': {'settings': {}}}
         test_config = standard.copy()
 
-        hs = hepscore.HEPscore(test_config)
+        hs = hepscore.HEPscore(test_config, "/tmp")
 
         self.assertEqual(hs.cec, "docker")
-        self.assertEqual(hs.settings['outdir'], "/results")
-        self.assertIn('/results/HEPscore_', hs.settings['resultsdir'])
-        self.assertEqual(hs.config, standard)
+        self.assertEqual(hs.outdir, "/tmp")
+        self.assertIn('/tmp/HEPscore_', hs.resultsdir)
+        self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
-    def test_succeed_override_defaults(self):
+    @patch.object(hepscore.HEPscore, 'validate_conf')
+    def test_succeed_override_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
                     {'settings':
-                        {'cec': "singularity",
-                         'outdir': "/tmp",
+                        {'container_exec': "singularity",
                          'resultsdir': "/tmp1"}}}
         test_config = standard.copy()
 
-        hs = hepscore.HEPscore(test_config)
+        hs = hepscore.HEPscore(test_config, "/tmp")
 
         self.assertEqual(hs.cec, "singularity")
-        self.assertEqual(hs.settings['outdir'], "/tmp")
+        self.assertEqual(hs.outdir, "/tmp")
         self.assertEqual(hs.settings['resultsdir'], "/tmp1")
-        self.assertEqual(hs.config, standard)
+        self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
 
 class TestRun(unittest.TestCase):
@@ -92,8 +94,7 @@ class TestRun(unittest.TestCase):
         with open(self.emptyPath, 'r') as yam:
             test_config = yaml.full_load(yam)
 
-        hs = hepscore.HEPscore(test_config)
-        hs.parse_conf(hs.config)
+        hs = hepscore.HEPscore(test_config, "/tmp/test_run_empty_cfg")
         if hs.run(False) >= 0:
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
@@ -102,7 +103,7 @@ class TestRun(unittest.TestCase):
 
 
 class testOutput(unittest.TestCase):
-    @unittest.skip("WIP")
+
     def test_parse_results(self):
         benchmarks = ["atlas-gen-bmk", "cms-digi-bmk", "cms-gen-sim-bmk",
                       "cms-reco-bmk", "lhcb-gen-sim-bmk"]
@@ -111,18 +112,20 @@ class testOutput(unittest.TestCase):
 
         resDir = os.path.join(head, "data/HEPscore_ci_allWLs")
 
-        conf = os.path.normpath(
-            os.path.join(head, "etc/hepscore_conf.yaml"))
+        conf = os.path.normpath(os.path.join(head, "etc/hepscore_conf.yaml"))
 
-        hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'clean_files': False,
-                  'resultsdir': resDir}
+        with open(conf, 'r') as yam:
+            test_config = yaml.full_load(yam)
+
+        test_config['hepscore_benchmark']['settings']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['settings']['clean'] = True
+        test_config['hepscore_benchmark']['settings']['clean_files'] = False
+        test_config['hepscore_benchmark']['settings']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=conf)
+        hs = hepscore.HEPscore(test_config)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
                         'app_info.hepscore_ver', 'score_per_core']
@@ -153,7 +156,6 @@ class testOutput(unittest.TestCase):
 
         os.remove(resDir + "/HEPscore19.json")
 
-    @unittest.skip("WIP")
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
 
@@ -162,15 +164,17 @@ class testOutput(unittest.TestCase):
         conf = os.path.normpath(
             os.path.join(head, "etc/hepscore_conf.yaml"))
 
-        hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True,
-                  'resultsdir': resDir}
+        with open(conf, 'r') as yam:
+            test_config = yaml.full_load(yam)
+
+        test_config['hepscore_benchmark']['settings']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['settings']['clean'] = True
+        test_config['hepscore_benchmark']['settings']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=conf)
+        hs = hepscore.HEPscore(test_config)
 
         if hs.run(True) >= 0:
             hs.gen_score()

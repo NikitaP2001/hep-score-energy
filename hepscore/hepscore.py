@@ -35,8 +35,6 @@ class HEPscore(object):
     allowed_methods = {'geometric_mean': scipy.stats.gmean}
     level = "INFO"
     scorekey = 'wl-scores'
-    outdir = ""
-    resultsdir = ""
     cec = "docker"
     clean = False
     clean_files = False
@@ -44,19 +42,17 @@ class HEPscore(object):
     results = []
     score = -1
 
-    def __init__(self, config=None):
-        """Set minimal objects from config, enable logging."""
+    def __init__(self, config, outdir=None):
+        """Set & validate config, enable logging."""
         try:
-            self.config = config
-            self.settings = self.config["hepscore_benchmark"]['settings']
-            if 'cec' in self.settings:
-                self.cec = self.settings['cec']
+            self.outdir = outdir
+            self.confobj = config['hepscore_benchmark']
+            self.settings = self.confobj['settings']
+            if 'container_exec' in self.settings:
+                self.cec = self.settings['container_exec']
             else:
                 logging.warning("Run type not specified on commandline or"
                                 " in config - assuming docker\n")
-            if 'outdir' not in self.settings:
-                self.settings['outdir'] = "/results"
-                self.outdir = "/results"
         except (TypeError, KeyError):
             # log.exception("hepscore expects a dict containing master key"
             #              "'hepscore_benchmark'")
@@ -74,6 +70,8 @@ class HEPscore(object):
                                 '%(message)s',
                                 stream=sys.stdout)
 
+        self.validate_conf()
+
         if 'clean' in self.settings:
             self.clean = True
         if 'clean_files' in self.settings:
@@ -82,9 +80,13 @@ class HEPscore(object):
         # hepscore creates some subdirectories in 'outdir'
         # unless told otherwise via passed 'resultsdir'
         if 'resultsdir' not in self.settings:
-            self.settings['resultsdir'] = os.path.join(
-                self.settings['outdir'],
+            if self.outdir is None:
+                logging.error("No outdir or results dir specified.")
+                sys.exit(1)
+            self.resultsdir = os.path.join(
+                self.outdir,
                 self.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+        else:
             self.resultsdir = self.settings['resultsdir']
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
@@ -550,49 +552,43 @@ class HEPscore(object):
                 jfile.write(json.dumps(outobj))
             jfile.close()
         except Exception:
-            logging.error("Failed to create summary output " + outfile +
-                          "\n")
+            logging.error("Failed to create summary output " + outfile)
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
             sys.exit(2)
 
-    def parse_conf(self, dat):
+    def validate_conf(self):
 
         hep_settings = ['settings', 'app_info', 'benchmarks']
 
-        if 'hepscore_benchmark' not in dat.keys():
-            logging.error("Configuration: missing root hepscore_benchmark"
-                          " specification")
-            sys.exit(1)
-
         for k in hep_settings:
-            if k not in dat['hepscore_benchmark'].keys():
-                logging.error("Configuration: " + k + " section must be"
-                              " defined")
+            if k not in self.confobj:
+                logging.error("Configuration: {} section must be"
+                              " defined".format(k))
                 sys.exit(1)
             try:
                 if k == 'settings':
-                    for j in dat['hepscore_benchmark'][k]:
+                    for j in self.confobj[k]:
                         if j == 'method':
-                            val = dat['hepscore_benchmark'][k][j]
+                            val = self.confobj[k][j]
                             if val != 'geometric_mean':
                                 logging.error("Configuration: only "
                                               "'geometric_mean' method is"
-                                              " currently supported\n")
+                                              " currently supported")
                                 sys.exit(1)
                         if j == 'repetitions':
-                            val = dat['hepscore_benchmark'][k][j]
+                            val = self.confobj[k][j]
                             if not type(val) is int:
                                 logging.error("Configuration: 'repititions' "
                                               "configuration parameter must "
-                                              "be an integer\n")
+                                              "be an integer")
                                 sys.exit(1)
                 if k == 'app_info':
-                    for j in dat['hepscore_benchmark'][k]:
+                    for j in self.confobj[k]:
                         if j == 'registry':
                             reg_string = \
-                                dat['hepscore_benchmark'][k][j]
+                                self.confobj[k][j]
                             if not reg_string[0].isalpha() or \
                                     re.match('^[a-zA-Z0-9:/\-_\.~]*$',
                                              reg_string) is None:
@@ -604,23 +600,23 @@ class HEPscore(object):
                               "specified")
                 sys.exit(1)
 
-        if 'scaling' in dat['hepscore_benchmark']['settings']:
+        if 'scaling' in self.confobj['settings']:
             try:
-                float(dat['hepscore_benchmark']['settings']['scaling'])
+                float(self.confobj['settings']['scaling'])
             except ValueError:
                 logging.error("Configuration: 'scaling' configuration "
                               "parameter must be an float\n")
                 sys.exit(1)
 
         bcount = 0
-        for benchmark in list(dat['hepscore_benchmark']['benchmarks']):
-            bmark_conf = dat['hepscore_benchmark']['benchmarks'][benchmark]
+        for benchmark in list(self.confobj['benchmarks']):
+            bmark_conf = self.confobj['benchmarks'][benchmark]
             bcount = bcount + 1
 
             if benchmark[0] == ".":
                 logging.info("the config has a commented entry " + benchmark +
                              " : Skipping this benchmark!\n")
-                dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
+                self.confobj['benchmarks'].pop(benchmark, None)
                 continue
 
             if re.match('^[a-zA-Z0-9\-_]*$', benchmark) is None:
@@ -665,10 +661,8 @@ class HEPscore(object):
             logging.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logging.debug("The parsed config is:\n" +
-                      yaml.safe_dump(dat['hepscore_benchmark']))
-
-        self.confobj = dat['hepscore_benchmark']
+        logging.debug("The parsed config is: {}".format(
+                      yaml.safe_dump(self.confobj)))
 
         return self.confobj
 
@@ -703,7 +697,7 @@ class HEPscore(object):
         if not mock:
             # python2 workaround, exists_ok flag not yet implemented
             if os.path.exists(self.resultsdir):
-                logging.warning("resultsdir already exists...")
+                logging.warning("Found existing results directory")
             else:
                 try:
                     os.makedirs(self.resultsdir)
