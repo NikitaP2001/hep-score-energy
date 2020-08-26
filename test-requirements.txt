@@ -10,5 +10,3 @@ parameterized
 scipy<1.3
 numpy<1.17
 dictdiffer>=0.8.1
-oyaml
-json
