@@ -49,10 +49,11 @@ class HEPscore(object):
             self.confobj = config['hepscore_benchmark']
             self.settings = self.confobj['settings']
             if 'container_exec' in self.settings:
-                self.cec = self.settings['container_exec']
+                if self.settings['container_exec'] in ("singularity", "docker"):
+                    self.cec = self.settings['container_exec']
             else:
                 logging.warning("Run type not specified on commandline or"
-                                " in config - assuming docker\n")
+                                " in config - assuming docker")
         except (TypeError, KeyError):
             # log.exception("hepscore expects a dict containing master key"
             #              "'hepscore_benchmark'")
