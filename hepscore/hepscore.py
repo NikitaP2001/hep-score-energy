@@ -51,6 +51,9 @@ class HEPscore(object):
             if 'container_exec' in self.settings:
                 if self.settings['container_exec'] in ("singularity", "docker"):
                     self.cec = self.settings['container_exec']
+                else:
+                    logging.error(self.settings['container_exec'] + "not understood. Stopping")
+                    sys.exit(1)
             else:
                 logging.warning("Run type not specified on commandline or"
                                 " in config - assuming docker")
