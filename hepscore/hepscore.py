@@ -27,12 +27,46 @@ import tarfile
 import time
 
 
+def median_tuple(vals):
+
+    sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
+
+    med_ind = int(len(sorted_vals) / 2)
+    if len(sorted_vals) % 2 == 1:
+        return(sorted_vals[med_ind][::-1])
+    else:
+        val1 = sorted_vals[med_ind - 1][1]
+        val2 = sorted_vals[med_ind][1]
+        return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
+                                       sorted_vals[med_ind][0]))
+
+
+def weighted_geometric_mean(vals, weights):
+
+    if len(vals) != len(weights):
+        return(0)
+
+    total_weight = sum(weights)
+    if total_weight == 0:
+        return(0)
+
+    weighted_vals = [vals[i] ** weights[i] for i in range(len(vals))]
+
+    total_val = 1
+    for val in weighted_vals:
+        total_val *= val
+
+    weighted_gmean = total_val ** (1 / total_weight)
+
+    return(weighted_gmean)
+
+
 class HEPscore(object):
 
     NAME = "HEPscore"
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
-    allowed_methods = {'geometric_mean': scipy.stats.gmean}
+    allowed_methods = {'geometric_mean': weighted_geometric_mean}
     conffile = '/'.join(os.path.split(__file__)[:-1]) + \
         "/etc/hepscore-default.yaml"
     level = "INFO"
@@ -47,6 +81,7 @@ class HEPscore(object):
 
     confobj = {}
     results = []
+    weights = []
     score = -1
 
     def __init__(self, **kwargs):
@@ -517,7 +552,7 @@ class HEPscore(object):
     def gen_score(self):
 
         method = self.allowed_methods[self.confobj['settings']['method']]
-        fres = method(self.results)
+        fres = method(self.results, self.weights)
         if 'scaling' in self.confobj['settings'].keys():
             fres = fres * self.confobj['settings']['scaling']
 
@@ -769,6 +804,11 @@ class HEPscore(object):
             if res < 0:
                 break
             self.results.append(res)
+            bench_conf = self.confobj['benchmarks'][benchmark]
+            if 'weight' in bench_conf:
+                self.weights.append(bench_conf['weight'])
+            else:
+                self.weights.append(1.0)
 
         if res < 0:
             self.confobj['error'] = benchmark
@@ -777,17 +817,3 @@ class HEPscore(object):
 
         return res
 # End of HEPscore class
-
-
-def median_tuple(vals):
-
-    sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
-
-    med_ind = int(len(sorted_vals) / 2)
-    if len(sorted_vals) % 2 == 1:
-        return(sorted_vals[med_ind][::-1])
-    else:
-        val1 = sorted_vals[med_ind - 1][1]
-        val2 = sorted_vals[med_ind][1]
-        return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
-                                       sorted_vals[med_ind][0]))
