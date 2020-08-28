@@ -121,10 +121,19 @@ def main():
     except Exception:
         raise
 
+    if 'container_exec' in hsargs:
+        active_config['hepscore_benchmark']['settings']['container_exec'] \
+            = hsargs['container_exec']
+        hsargs.pop('container_exec', None)
+
+    option_args = dict()
     # Populate active config with cli override
     for k, v in hsargs.items():
         if v != "":
-            active_config['hepscore_benchmark']['settings'][k] = v
+            option_args[k] = v
+
+    active_config['hepscore_benchmark']['options'] = option_args
+    print(active_config)
 
     hs = HEPscore(active_config, outdir)
 

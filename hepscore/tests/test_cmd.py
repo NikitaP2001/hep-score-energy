@@ -117,10 +117,10 @@ class testOutput(unittest.TestCase):
         with open(conf, 'r') as yam:
             test_config = yaml.full_load(yam)
 
-        test_config['hepscore_benchmark']['settings']['level'] = 'DEBUG'
-        test_config['hepscore_benchmark']['settings']['clean'] = True
-        test_config['hepscore_benchmark']['settings']['clean_files'] = False
-        test_config['hepscore_benchmark']['settings']['resultsdir'] = resDir
+        test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['options']['clean'] = True
+        test_config['hepscore_benchmark']['options']['clean_files'] = False
+        test_config['hepscore_benchmark']['options']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
@@ -128,7 +128,7 @@ class testOutput(unittest.TestCase):
         hs = hepscore.HEPscore(test_config)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
-                        'app_info.hepscore_ver', 'score_per_core']
+                        'app_info.hepscore_ver', 'score_per_core', 'score']
 
         for benchmark in benchmarks:
             ignored_keys.append("benchmarks." + benchmark + ".run0")
@@ -167,9 +167,9 @@ class testOutput(unittest.TestCase):
         with open(conf, 'r') as yam:
             test_config = yaml.full_load(yam)
 
-        test_config['hepscore_benchmark']['settings']['level'] = 'DEBUG'
-        test_config['hepscore_benchmark']['settings']['clean'] = True
-        test_config['hepscore_benchmark']['settings']['resultsdir'] = resDir
+        test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['options']['clean'] = True
+        test_config['hepscore_benchmark']['options']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
