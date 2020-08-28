@@ -117,6 +117,7 @@ class testOutput(unittest.TestCase):
         with open(conf, 'r') as yam:
             test_config = yaml.full_load(yam)
 
+        test_config['hepscore_benchmark']['options'] = {}
         test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
         test_config['hepscore_benchmark']['options']['clean'] = True
         test_config['hepscore_benchmark']['options']['clean_files'] = False
@@ -167,6 +168,7 @@ class testOutput(unittest.TestCase):
         with open(conf, 'r') as yam:
             test_config = yaml.full_load(yam)
 
+        test_config['hepscore_benchmark']['options'] = {}
         test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
         test_config['hepscore_benchmark']['options']['clean'] = True
         test_config['hepscore_benchmark']['options']['resultsdir'] = resDir
