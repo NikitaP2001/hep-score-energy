@@ -103,6 +103,18 @@ def main():
         print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
+    
+    # Read config yaml
+    try:
+        with open(conffile, 'r') as yam:
+            active_config = yaml.safe_load(yam)
+    except Exception:
+        print("Error reading/parsing YAML configuration file " + conffile)
+        sys.exit(1)
+
+    if printconf_and_exit:
+        print(str(yaml.safe_dump(active_config)))
+        sys.exit(0)
 
     # check passed dir
     if replay:
@@ -121,14 +133,6 @@ def main():
             print("Error creating output directory " + resultsdir)
             sys.exit(1)
 
-    # Read config yaml
-    try:
-        with open(conffile, 'r') as yam:
-            active_config = yaml.safe_load(yam)
-    except Exception:
-        print("Error reading/parsing YAML configuration file " + conffile)
-        sys.exit(1)
-
     if 'container_exec' in hsargs:
         active_config['hepscore_benchmark']['settings']['container_exec'] \
             = hsargs['container_exec']
@@ -144,13 +148,9 @@ def main():
 
     hs = HEPscore(active_config, resultsdir)
 
-    if printconf_and_exit:
-        yaml.safe_dump(hs.confobj)
-        sys.exit(0)
-    else:
-        if hs.run(replay) >= 0:
-            hs.gen_score()
-        hs.write_output(outtype, outfile)
+    if hs.run(replay) >= 0:
+        hs.gen_score()
+    hs.write_output(outtype, outfile)
 
 
 if __name__ == '__main__':
