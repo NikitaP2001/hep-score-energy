@@ -66,10 +66,12 @@ class HEPscore(object):
 
         if self.confobj.get('options', {}).get('level') in \
                 ("VERBOSE", "DEBUG"):
-            logging.basicConfig(level=logging.DEBUG,
-                                format='%(asctime)s - %(levelname)s - '
-                                '%(funcName)s() - %(message)s ',
-                                stream=sys.stdout)
+            self.level = self.confobj['options']['level']
+            if self.confobj['options']['level'] == "DEBUG":
+                logging.basicConfig(level=logging.DEBUG,
+                                    format='%(asctime)s - %(levelname)s - '
+                                    '%(funcName)s() - %(message)s ',
+                                    stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
