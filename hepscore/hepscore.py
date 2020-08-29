@@ -67,7 +67,8 @@ class HEPscore(object):
         if self.confobj.get('options', {}).get('level') in \
                 ("VERBOSE", "DEBUG"):
             self.level = self.confobj['options']['level']
-            if self.confobj['options']['level'] == "DEBUG":
+
+        if self.level == "DEBUG":
                 logging.basicConfig(level=logging.DEBUG,
                                     format='%(asctime)s - %(levelname)s - '
                                     '%(funcName)s() - %(message)s ',
@@ -105,7 +106,7 @@ class HEPscore(object):
 
         return jscore
 
-    def _proc_results(self, benchmark):
+    def _proc_results(self, benchmark, mock):
 
         results = {}
         fail = False
@@ -180,11 +181,12 @@ class HEPscore(object):
             fail = True
             logging.error("missing json score file for one or more runs")
 
-        try:
-            self._cleanup_fs(benchmark_glob)
-        except Exception:
-            logging.warning("Failed to clean up container scratch working "
-                            "directory")
+        if mock is False:
+            try:
+                self._cleanup_fs(benchmark_glob)
+            except Exception:
+                logging.warning("Failed to clean up container scratch working "
+                                "directory")
 
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
@@ -435,7 +437,7 @@ class HEPscore(object):
                     bench_conf['run' + str(i)]['end_at'] = \
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
-                    self._proc_results(benchmark)
+                    self._proc_results(benchmark, mock)
                     if i == (runs - 1):
                         self._docker_rm(benchmark_name)
                     return(-1)
@@ -480,14 +482,14 @@ class HEPscore(object):
                 if 'allow_fail' not in self.confobj['settings'].keys() or \
                         self.confobj['settings']['allow_fail'] is False:
                     lfile.close()
-                    self._proc_results(benchmark)
+                    self._proc_results(benchmark, mock)
                     return(-1)
 
         lfile.close()
 
         print("")
 
-        result = self._proc_results(benchmark)
+        result = self._proc_results(benchmark, mock)
         return(result)
 
     def _check_rc(self, rc):
@@ -667,7 +669,7 @@ class HEPscore(object):
 
         # check rundir is empty
         if os.listdir(self.resultsdir) and not mock:
-            logging.error("Running directory is not empty!")
+            logging.error("Results directory is not empty!")
             sys.exit(2)
 
         # Creating a hash representation of the configuration object
@@ -698,17 +700,7 @@ class HEPscore(object):
         self.confobj['wl-scores'] = {}
         self.confobj['app_info']['hepscore_ver'] = self.VER
 
-        if not mock:
-            # python2 workaround, exists_ok flag not yet implemented
-            if os.path.exists(self.resultsdir):
-                logging.warning("Found existing results directory")
-            else:
-                try:
-                    os.makedirs(self.resultsdir)
-                except Exception:
-                    logging.error("failed to create " + self.resultsdir)
-                    sys.exit(2)
-        else:
+        if mock is True:
             logging.info("NOTE: Replaying prior results")
 
         res = 0
