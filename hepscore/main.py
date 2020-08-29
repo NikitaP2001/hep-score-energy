@@ -103,7 +103,7 @@ def main():
         print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
-    
+
     # Read config yaml
     try:
         with open(conffile, 'r') as yam:
