@@ -19,6 +19,7 @@ cover/
 .tox
 .stestr/
 .venv
+.python-version
 
 # Editors
 *~

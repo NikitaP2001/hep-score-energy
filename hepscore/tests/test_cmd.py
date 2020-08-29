@@ -8,15 +8,19 @@ import hepscore.main
 import json
 import logging
 import os
+import oyaml as yaml
 # from parameterized import parameterized
 import sys
 import unittest
 
+
 # Import mock compatible with Python2 and Python3
 try:
-    import mock
+    from mock import mock
+    from mock import patch
 except ImportError:
     from unittest.mock import mock
+    from unittest.mock import patch
 
 
 class TestArguments(unittest.TestCase):
@@ -34,25 +38,39 @@ class TestArguments(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
 
 
-class TestConf(unittest.TestCase):
+class Test_Constructor(unittest.TestCase):
 
-    def setUp(self):
-        head, _ = os.path.split(__file__)
-        self.path = os.path.normpath(
-            os.path.join(head, 'etc/hepscore_conf.yaml'))
+    def test_fail_no_conf(self):
+        with self.assertRaises(TypeError):
+            hepscore.HEPscore(resultsdir="/tmp")
 
     def test_fail_read_conf(self):
-        with self.assertRaises(SystemExit) as cm:
-            hs = hepscore.HEPscore(conffile="")
-            hs.read_conf('does_not_exist')
-            self.assertEqual(cm.exception.code, 1)
+        with self.assertRaises(KeyError):
+            hepscore.HEPscore(dict(), "/tmp")
 
-    def test_succeed_read_conf(self):
-        hs = hepscore.HEPscore()
-        hs.read_conf(conffile=self.path)
-        with open(self.path) as f:
-            test_conf = f.read()
-        self.assertEqual(hs.confstr, test_conf)
+    @patch.object(hepscore.HEPscore, 'validate_conf')
+    def test_succeed_read_set_defaults(self, mock_validate):
+        standard = {'hepscore_benchmark': {'settings': {}}}
+        test_config = standard.copy()
+
+        hs = hepscore.HEPscore(test_config, "/tmp")
+
+        self.assertEqual(hs.cec, "docker")
+        self.assertEqual(hs.resultsdir, "/tmp")
+        self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
+
+    @patch.object(hepscore.HEPscore, 'validate_conf')
+    def test_succeed_override_defaults(self, mock_validate):
+        standard = {'hepscore_benchmark':
+                    {'settings':
+                        {'container_exec': "singularity"}}}
+        test_config = standard.copy()
+
+        hs = hepscore.HEPscore(test_config, "/tmp1")
+
+        self.assertEqual(hs.cec, "singularity")
+        self.assertEqual(hs.resultsdir, "/tmp1")
+        self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
 
 class TestRun(unittest.TestCase):
@@ -70,11 +88,10 @@ class TestRun(unittest.TestCase):
         if not os.path.exists('/tmp/test_run_empty_cfg'):
             os.mkdir('/tmp/test_run_empty_cfg')
 
-        hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'outdir': '/tmp/test_run_empty_cfg'}
+        with open(self.emptyPath, 'r') as yam:
+            test_config = yaml.full_load(yam)
 
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=self.emptyPath)
+        hs = hepscore.HEPscore(test_config, "/tmp/test_run_empty_cfg")
         if hs.run(False) >= 0:
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
@@ -92,21 +109,23 @@ class testOutput(unittest.TestCase):
 
         resDir = os.path.join(head, "data/HEPscore_ci_allWLs")
 
-        conf = os.path.normpath(
-            os.path.join(head, "etc/hepscore_conf.yaml"))
+        conf = os.path.normpath(os.path.join(head, "etc/hepscore_conf.yaml"))
 
-        hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True, 'clean_files': False,
-                  'resultsdir': resDir}
+        with open(conf, 'r') as yam:
+            test_config = yaml.full_load(yam)
+
+        test_config['hepscore_benchmark']['options'] = {}
+        test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['options']['clean'] = True
+        test_config['hepscore_benchmark']['options']['clean_files'] = False
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=conf)
+        hs = hepscore.HEPscore(test_config, resDir)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
-                        'app_info.hepscore_ver', 'score_per_core']
+                        'app_info.hepscore_ver', 'score_per_core', 'score']
 
         for benchmark in benchmarks:
             ignored_keys.append("benchmarks." + benchmark + ".run0")
@@ -117,8 +136,8 @@ class testOutput(unittest.TestCase):
         hs.gen_score()
         hs.write_output(outtype, outfile)
 
-        expected_res = json.load(open(resDir +
-                                      "/hepscore_result_expected_output.json"))
+        expected_res = json.load(
+            open(resDir + "/hepscore_result_expected_output.json"))
         actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
         result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
@@ -142,15 +161,17 @@ class testOutput(unittest.TestCase):
         conf = os.path.normpath(
             os.path.join(head, "etc/hepscore_conf.yaml"))
 
-        hsargs = {'level': 'DEBUG', 'cec': 'docker',
-                  'clean': True,
-                  'resultsdir': resDir}
+        with open(conf, 'r') as yam:
+            test_config = yaml.full_load(yam)
+
+        test_config['hepscore_benchmark']['options'] = {}
+        test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
+        test_config['hepscore_benchmark']['options']['clean'] = True
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(**hsargs)
-        hs.read_and_parse_conf(conffile=conf)
+        hs = hepscore.HEPscore(test_config, resDir)
 
         if hs.run(True) >= 0:
             hs.gen_score()
