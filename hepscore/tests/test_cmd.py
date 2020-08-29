@@ -42,11 +42,11 @@ class Test_Constructor(unittest.TestCase):
 
     def test_fail_no_conf(self):
         with self.assertRaises(TypeError):
-            hepscore.HEPscore()
+            hepscore.HEPscore(resultsdir="/tmp")
 
     def test_fail_read_conf(self):
         with self.assertRaises(KeyError):
-            hepscore.HEPscore(dict())
+            hepscore.HEPscore(dict(), "/tmp")
 
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_read_set_defaults(self, mock_validate):
@@ -56,23 +56,20 @@ class Test_Constructor(unittest.TestCase):
         hs = hepscore.HEPscore(test_config, "/tmp")
 
         self.assertEqual(hs.cec, "docker")
-        self.assertEqual(hs.outdir, "/tmp")
-        self.assertIn('/tmp/HEPscore_', hs.resultsdir)
+        self.assertEqual(hs.resultsdir, "/tmp")
         self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_override_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
                     {'settings':
-                        {'container_exec': "singularity",
-                         'resultsdir': "/tmp1"}}}
+                        {'container_exec': "singularity"}}}
         test_config = standard.copy()
 
-        hs = hepscore.HEPscore(test_config, "/tmp")
+        hs = hepscore.HEPscore(test_config, "/tmp1")
 
         self.assertEqual(hs.cec, "singularity")
-        self.assertEqual(hs.outdir, "/tmp")
-        self.assertEqual(hs.settings['resultsdir'], "/tmp1")
+        self.assertEqual(hs.resultsdir, "/tmp1")
         self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
 
@@ -121,12 +118,11 @@ class testOutput(unittest.TestCase):
         test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
         test_config['hepscore_benchmark']['options']['clean'] = True
         test_config['hepscore_benchmark']['options']['clean_files'] = False
-        test_config['hepscore_benchmark']['options']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(test_config)
+        hs = hepscore.HEPscore(test_config, resDir)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
                         'app_info.hepscore_ver', 'score_per_core', 'score']
@@ -140,8 +136,8 @@ class testOutput(unittest.TestCase):
         hs.gen_score()
         hs.write_output(outtype, outfile)
 
-        expected_res = json.load(open(resDir +
-                                      "/hepscore_result_expected_output.json"))
+        expected_res = json.load(open(resDir
+                                      + "/hepscore_result_expected_output.json"))
         actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
         result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
@@ -171,12 +167,11 @@ class testOutput(unittest.TestCase):
         test_config['hepscore_benchmark']['options'] = {}
         test_config['hepscore_benchmark']['options']['level'] = 'DEBUG'
         test_config['hepscore_benchmark']['options']['clean'] = True
-        test_config['hepscore_benchmark']['options']['resultsdir'] = resDir
 
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(test_config)
+        hs = hepscore.HEPscore(test_config, resDir)
 
         if hs.run(True) >= 0:
             hs.gen_score()
