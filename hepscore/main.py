@@ -14,6 +14,7 @@ from hepscore import HEPscore
 import os
 import oyaml as yaml
 import sys
+import time
 
 
 def help(progname):
@@ -99,20 +100,23 @@ def main():
                 hsargs['container_exec'] = "docker"
 
     if len(args) < 1 and not printconf_and_exit:
+        print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
-    elif len(args) >= 1:
-        if replay:
-            if not os.path.isdir(args[0]):
-                print("\nError: output directory must exist")
-                sys.exit(1)
-            hsargs['resultsdir'] = args[0]
 
+    # check passed dir
+    if replay:
+        if not os.path.isdir(args[0]):
+            print("Replay mode requires valid directory!")
+            sys.exit(1)
         else:
-            if not os.path.isdir(args[0]):
-                os.makedirs(args[0])
-                print("Creating output directory {}".format(args[0]))
-            outdir = args[0]
+            resultsdir = args[0]
+    else:
+        resultsdir = os.path.join(
+            args[0],
+            hepscore.HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+        print("Creating output directory {}".format(args[0]))
+        os.makedirs(resultsdir)
 
     # Read config yaml
     try:
@@ -135,7 +139,7 @@ def main():
     active_config['hepscore_benchmark']['options'] = option_args
     print(active_config)
 
-    hs = HEPscore(active_config, outdir)
+    hs = HEPscore(active_config, resultsdir)
 
     if printconf_and_exit:
         yaml.safe_dump(hs.confobj)

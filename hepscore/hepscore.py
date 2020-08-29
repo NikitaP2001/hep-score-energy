@@ -42,10 +42,10 @@ class HEPscore(object):
     results = []
     score = -1
 
-    def __init__(self, config, outdir=None):
+    def __init__(self, config, resultsdir):
         """Set & validate config, enable logging."""
         try:
-            self.outdir = outdir
+            self.resultsdir = resultsdir
             self.confobj = config['hepscore_benchmark']
             self.settings = self.confobj['settings']
             if 'container_exec' in self.settings:
@@ -80,18 +80,6 @@ class HEPscore(object):
             self.clean = self.confobj['options']['clean']
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
-
-        # hepscore creates some subdirectories in 'outdir'
-        # unless told otherwise via passed 'resultsdir'
-        if 'resultsdir' not in self.confobj.get('options', {}):
-            if self.outdir is None:
-                logging.error("No outdir or results dir specified.")
-                sys.exit(1)
-            self.resultsdir = os.path.join(
-                self.outdir,
-                self.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
-        else:
-            self.resultsdir = self.confobj['options']['resultsdir']
 
         self.confobj.pop('options', None)
         self.validate_conf()
