@@ -136,8 +136,8 @@ class testOutput(unittest.TestCase):
         hs.gen_score()
         hs.write_output(outtype, outfile)
 
-        expected_res = json.load(open(resDir
-                                      + "/hepscore_result_expected_output.json"))
+        expected_res = json.load(
+            open(resDir + "/hepscore_result_expected_output.json"))
         actual_res = json.load(open(resDir + "/HEPscore19.json"))
 
         result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
