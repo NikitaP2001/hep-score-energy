@@ -663,6 +663,11 @@ class HEPscore(object):
 
     def run(self, mock=False):
 
+        # check rundir is empty
+        if os.listdir(self.resultsdir) and not mock:
+            logging.error("Running directory is not empty!")
+            sys.exit(2)
+
         # Creating a hash representation of the configuration object
         # to be included in the final report
         m = hashlib.sha256()
