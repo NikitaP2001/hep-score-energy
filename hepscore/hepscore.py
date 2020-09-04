@@ -67,48 +67,61 @@ class HEPscore(object):
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
-    conffile = '/'.join(os.path.split(__file__)[:-1]) + \
-        "/etc/hepscore-default.yaml"
     level = "INFO"
     scorekey = 'wl-scores'
-    confstr = ""
-    outdir = ""
-    resultsdir = ""
-    cec = ""
+    cec = "docker"
     clean = False
     clean_files = False
     userns = False
 
-    confobj = {}
     results = []
     weights = []
     score = -1
 
-    def __init__(self, **kwargs):
+    def __init__(self, config, resultsdir):
+        """Set & validate config, enable logging."""
+        try:
+            self.resultsdir = resultsdir
+            self.confobj = config['hepscore_benchmark']
+            self.settings = self.confobj['settings']
+            if 'container_exec' in self.settings:
+                if self.settings['container_exec'] in (
+                        "singularity", "docker"):
+                    self.cec = self.settings['container_exec']
+                else:
+                    logging.error(self.settings['container_exec']
+                                  + "not understood. Stopping")
+                    sys.exit(1)
+            else:
+                logging.warning("Run type not specified on commandline or"
+                                " in config - assuming docker")
+        except (TypeError, KeyError):
+            # log.exception("hepscore expects a dict containing master key"
+            #              "'hepscore_benchmark'")
+            raise
 
-        unsettable = ['NAME', 'VER', 'confstr', 'confobj', 'results', 'score']
+        if self.confobj.get('options', {}).get('level') in \
+                ("VERBOSE", "DEBUG"):
+            self.level = self.confobj['options']['level']
 
-        for vn in unsettable:
-            if vn in kwargs.keys():
-                raise ValueError("Not permitted to set variable specified in "
-                                 "constructor")
-
-        for var in kwargs.keys():
-            if var not in vars(HEPscore):
-                raise ValueError("Invalid argument to constructor")
-
-        vars(self).update(kwargs)
-
-        if self.level == 'DEBUG':
-            logging.basicConfig(level=logging.DEBUG,
-                                format='%(asctime)s - %(levelname)s - '
-                                '%(funcName)s() - %(message)s ',
-                                stream=sys.stdout)
+        if self.level == "DEBUG":
+                logging.basicConfig(level=logging.DEBUG,
+                                    format='%(asctime)s - %(levelname)s - '
+                                    '%(funcName)s() - %(message)s ',
+                                    stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s',
                                 stream=sys.stdout)
+
+        if 'clean' in self.confobj.get('options', {}):
+            self.clean = self.confobj['options']['clean']
+        if 'clean_files' in self.confobj.get('options', {}):
+            self.clean_files = self.confobj['options']['clean_files']
+
+        self.confobj.pop('options', None)
+        self.validate_conf()
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
         bench_conf['app'] = jscore['app']
@@ -129,7 +142,7 @@ class HEPscore(object):
 
         return jscore
 
-    def _proc_results(self, benchmark):
+    def _proc_results(self, benchmark, mock):
 
         results = {}
         fail = False
@@ -143,9 +156,9 @@ class HEPscore(object):
             benchmark_glob = benchmark.split('-')[:-1]
             benchmark_glob = '-'.join(benchmark_glob)
 
-        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob +
-                                  "/run*/" + benchmark_glob + "*/" +
-                                  benchmark_glob + "_summary.json"))
+        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob
+                                  + "/run*/" + benchmark_glob + "*/"
+                                  + benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
         i = 0
         for gpath in gpaths:
@@ -204,11 +217,12 @@ class HEPscore(object):
             fail = True
             logging.error("missing json score file for one or more runs")
 
-        try:
-            self._cleanup_fs(benchmark_glob)
-        except Exception:
-            logging.warning("Failed to clean up container scratch working "
-                            "directory")
+        if mock is False:
+            try:
+                self._cleanup_fs(benchmark_glob)
+            except Exception:
+                logging.warning("Failed to clean up container scratch working "
+                                "directory")
 
         if fail:
             if 'allow_fail' not in self.confobj.keys() or \
@@ -247,8 +261,7 @@ class HEPscore(object):
         return(final_result)
 
     def _docker_rm(self, image):
-        if self.clean and \
-                self.confobj['settings']['container_exec'] == 'docker':
+        if self.clean and self.cec == 'docker':
             logging.info("Deleting Docker image %s", image)
             command = "docker rmi -f " + image
             logging.debug(command)
@@ -258,7 +271,7 @@ class HEPscore(object):
             ret.wait()
 
     def root_filter(self, f):
-        if re.match('.*\.root$', f.name):
+        if re.match(r'.*\.root$', f.name):
             logging.debug("Skipping " + f.name)
             return None
         else:
@@ -288,8 +301,8 @@ class HEPscore(object):
                         if re.match("^" + benchmark + ".*", resdir) and \
                                 os.path.islink(resdir_path) is False and \
                                 os.path.isdir(resdir_path) is True:
-                            with tarfile.open(resdir_path +
-                                              "_benchmark.tar", "w") as tar:
+                            with tarfile.open(resdir_path
+                                              + "_benchmark.tar", "w") as tar:
                                 logging.info("Tarring up " + resdir_path)
                                 tar.add(resdir_path,
                                         arcname=os.path.basename(resdir_path),
@@ -432,11 +445,11 @@ class HEPscore(object):
             if self.confobj['settings']['replay'] is False:
                 os.makedirs(runDir)
 
-            commands = {'docker': "docker run --rm --network=host -v " +
-                        runDir + ":/results ",
-                        'singularity': "singularity run -C -B " + runDir +
-                        ":/results -B " + "/tmp:/tmp " +
-                        self._get_usernamespace_flag() + "docker://"}
+            commands = {'docker': "docker run --rm --network=host -v "
+                        + runDir + ":/results ",
+                        'singularity': "singularity run -C -B " + runDir
+                        + ":/results -B " + "/tmp:/tmp "
+                        + self._get_usernamespace_flag() + "docker://"}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
@@ -461,7 +474,7 @@ class HEPscore(object):
                     bench_conf['run' + str(i)]['end_at'] = \
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
-                    self._proc_results(benchmark)
+                    self._proc_results(benchmark, mock)
                     if i == (runs - 1):
                         self._docker_rm(benchmark_name)
                     return(-1)
@@ -506,14 +519,14 @@ class HEPscore(object):
                 if 'allow_fail' not in self.confobj['settings'].keys() or \
                         self.confobj['settings']['allow_fail'] is False:
                     lfile.close()
-                    self._proc_results(benchmark)
+                    self._proc_results(benchmark, mock)
                     return(-1)
 
         lfile.close()
 
         print("")
 
-        result = self._proc_results(benchmark)
+        result = self._proc_results(benchmark, mock)
         return(result)
 
     def _check_rc(self, rc):
@@ -524,30 +537,6 @@ class HEPscore(object):
             logging.error(self.cec + " returned code " + str(rc))
         else:
             logging.debug(self.cec + " terminated without errors")
-
-    def read_conf(self, conffile=""):
-
-        if conffile:
-            self.conffile = conffile
-            logging.info("Using custom configuration: " + self.conffile)
-
-        try:
-            yfile = open(self.conffile, mode='r')
-            self.confstr = yfile.read()
-            yfile.close()
-        except Exception:
-            logging.error("cannot open/read from " + self.conffile + "\n")
-            sys.exit(1)
-
-        return self.confstr
-
-    def print_conf(self):
-        full_conf = {'hepscore_benchmark': self.confobj}
-        print(yaml.safe_dump(full_conf))
-
-    def read_and_parse_conf(self, conffile=""):
-        self.read_conf(conffile)
-        self.parse_conf()
 
     def gen_score(self):
 
@@ -598,60 +587,45 @@ class HEPscore(object):
                 jfile.write(json.dumps(outobj))
             jfile.close()
         except Exception:
-            logging.error("Failed to create summary output " + outfile +
-                          "\n")
+            logging.error("Failed to create summary output " + outfile)
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
             sys.exit(2)
 
-    def parse_conf(self, confstr=""):
+    def validate_conf(self):
 
         hep_settings = ['settings', 'app_info', 'benchmarks']
 
-        if confstr:
-            self.confstr = confstr
-
-        try:
-            dat = yaml.safe_load(self.confstr)
-        except Exception:
-            logging.error("problem parsing YAML configuration\n")
-            sys.exit(1)
-
-        if 'hepscore_benchmark' not in dat.keys():
-            logging.error("Configuration: missing root hepscore_benchmark"
-                          " specification")
-            sys.exit(1)
-
         for k in hep_settings:
-            if k not in dat['hepscore_benchmark'].keys():
-                logging.error("Configuration: " + k + " section must be"
-                              " defined")
+            if k not in self.confobj:
+                logging.error("Configuration: {} section must be"
+                              " defined".format(k))
                 sys.exit(1)
             try:
                 if k == 'settings':
-                    for j in dat['hepscore_benchmark'][k]:
+                    for j in self.confobj[k]:
                         if j == 'method':
-                            val = dat['hepscore_benchmark'][k][j]
+                            val = self.confobj[k][j]
                             if val != 'geometric_mean':
                                 logging.error("Configuration: only "
                                               "'geometric_mean' method is"
-                                              " currently supported\n")
+                                              " currently supported")
                                 sys.exit(1)
                         if j == 'repetitions':
-                            val = dat['hepscore_benchmark'][k][j]
+                            val = self.confobj[k][j]
                             if not type(val) is int:
                                 logging.error("Configuration: 'repititions' "
                                               "configuration parameter must "
-                                              "be an integer\n")
+                                              "be an integer")
                                 sys.exit(1)
                 if k == 'app_info':
-                    for j in dat['hepscore_benchmark'][k]:
+                    for j in self.confobj[k]:
                         if j == 'registry':
                             reg_string = \
-                                dat['hepscore_benchmark'][k][j]
+                                self.confobj[k][j]
                             if not reg_string[0].isalpha() or \
-                                    re.match('^[a-zA-Z0-9:/\-_\.~]*$',
+                                    re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
                                              reg_string) is None:
                                 logging.error("Configuration: illegal "
                                               "character in registry")
@@ -661,28 +635,28 @@ class HEPscore(object):
                               "specified")
                 sys.exit(1)
 
-        if 'scaling' in dat['hepscore_benchmark']['settings']:
+        if 'scaling' in self.confobj['settings']:
             try:
-                float(dat['hepscore_benchmark']['settings']['scaling'])
+                float(self.confobj['settings']['scaling'])
             except ValueError:
                 logging.error("Configuration: 'scaling' configuration "
-                              "parameter must be an float\n")
+                              "parameter must be an float")
                 sys.exit(1)
 
         bcount = 0
-        for benchmark in list(dat['hepscore_benchmark']['benchmarks']):
-            bmark_conf = dat['hepscore_benchmark']['benchmarks'][benchmark]
+        for benchmark in list(self.confobj['benchmarks']):
+            bmark_conf = self.confobj['benchmarks'][benchmark]
             bcount = bcount + 1
 
             if benchmark[0] == ".":
-                logging.info("the config has a commented entry " + benchmark +
-                             " : Skipping this benchmark!\n")
-                dat['hepscore_benchmark']['benchmarks'].pop(benchmark, None)
+                logging.info("the config has a commented entry " + benchmark
+                             + " : Skipping this benchmark!")
+                self.confobj['benchmarks'].pop(benchmark, None)
                 continue
 
-            if re.match('^[a-zA-Z0-9\-_]*$', benchmark) is None:
+            if re.match(r'^[a-zA-Z0-9\-_]*$', benchmark) is None:
                 logging.error("Configuration: illegal character in benchmark"
-                              + "name " + benchmark + "\n")
+                              + "name " + benchmark)
                 sys.exit(1)
 
             if benchmark.find('-') == -1:
@@ -711,17 +685,18 @@ class HEPscore(object):
                     try:
                         float(bmark_conf['ref_scores'][score])
                     except ValueError:
-                        logging.error("Configuration: ref_score " + score +
-                                      " is not a float for " + benchmark)
+                        logging.error("Configuration: ref_score " + score
+                                      + " is not a float for " + benchmark)
                         sys.exit(1)
             else:
-                logging.error("Configuration: ref_scores missing for " +
-                              benchmark)
+                logging.error("Configuration: ref_scores missing for "
+                              + benchmark)
                 sys.exit(1)
 
             if 'registry' in bmark_conf.keys():
                 if not reg_string[0].isalpha() or \
-                        re.match('^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
+                        re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
+                                 reg_string) is None:
                     logging.error("Configuration: illegal "
                                   "character in registry")
                     sys.exit(1)
@@ -730,36 +705,24 @@ class HEPscore(object):
             logging.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logging.debug("The parsed config is:\n" +
-                      yaml.safe_dump(dat['hepscore_benchmark']))
-
-        self.confobj = dat['hepscore_benchmark']
+        logging.debug("The parsed config is: {}".format(
+                      yaml.safe_dump(self.confobj)))
 
         return self.confobj
 
     def run(self, mock=False):
 
-        if self.cec and 'container_exec' in self.confobj:
-            logging.info("Overiding container_exec parameter on the "
-                         "commandline\n")
-        elif not self.cec:
-            if 'container_exec' in self.confobj:
-                if self.confobj['container_exec'] == 'singularity' or \
-                        self.confobj['container_exec'] == 'docker':
-                    self.cec = self.confobj['container_exec']
-                else:
-                    logging.error("container_exec config parameter must "
-                                  "be 'singularity' or 'docker'\n")
-                    sys.exit(1)
-            else:
-                logging.warning("Run type not specified on commandline or"
-                                " in config - assuming singularity\n")
-                self.cec = "singularity"
+        # check rundir is empty
+        if os.listdir(self.resultsdir) and not mock:
+            logging.error("Results directory is not empty!")
+            sys.exit(2)
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
         m = hashlib.sha256()
-        m.update(json.dumps(self.confobj, sort_keys=True).encode('utf-8'))
+        hashable_conf = {k: v for k, v in self.confobj.items() if
+                         k not in 'options'}
+        m.update(json.dumps(hashable_conf, sort_keys=True).encode('utf-8'))
         self.confobj['app_info']['hash'] = m.hexdigest()
 
         sysname = ' '.join(os.uname())
@@ -771,15 +734,8 @@ class HEPscore(object):
         self.confobj['environment'] = {'system': sysname, 'date': curtime,
                                        exec_ver: ver}
 
-        if self.resultsdir != "" and self.outdir != "":
-            return(-1)
-
-        if self.resultsdir == "":
-            self.resultsdir = self.outdir + '/' + self.NAME + '_' + \
-                time.strftime("%d%b%Y_%H%M%S")
-
         print(self.confobj['app_info']['name'] + " Benchmark")
-        print("Version Hash:         " + self.confobj['app_info']['hash'])
+        print("Config Hash:          " + self.confobj['app_info']['hash'])
         print("System:               " + sysname)
         print("Container Execution:  " + self.cec)
         print("Registry:             " + self.confobj['app_info']['registry'])
@@ -789,13 +745,7 @@ class HEPscore(object):
         self.confobj['wl-scores'] = {}
         self.confobj['app_info']['hepscore_ver'] = self.VER
 
-        if not mock:
-            try:
-                os.mkdir(self.resultsdir)
-            except Exception:
-                logging.error("failed to create " + self.resultsdir)
-                sys.exit(2)
-        else:
+        if mock is True:
             logging.info("NOTE: Replaying prior results")
 
         res = 0

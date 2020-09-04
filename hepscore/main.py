@@ -9,9 +9,12 @@
 #
 
 import getopt
+import hepscore
 from hepscore import HEPscore
 import os
+import oyaml as yaml
 import sys
+import time
 
 
 def help(progname):
@@ -28,8 +31,6 @@ def help(progname):
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
-    print("-S           Run benchmark containers in Singularity, forcing"
-          " userns if supported")
     print("-r           Replay output using existing results directory")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
@@ -52,15 +53,16 @@ def help(progname):
 
 def main():
 
-    hsargs = {'outdir': ""}
+    hsargs = {}
     replay = False
     printconf_and_exit = False
     outtype = "json"
-    conffile = ""
+    conffile = '/'.join(os.path.split(hepscore.__file__)[:-1]) + \
+        "/etc/hepscore-default.yaml"
     outfile = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsSyrf:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsyrf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help(sys.argv[0])
@@ -89,39 +91,68 @@ def main():
         elif opt == '-C':
             hsargs['clean_files'] = True
         elif opt in ['-s', '-S', '-d']:
-            if 'cec' in hsargs:
+            if 'container_exec' in hsargs:
                 print("\nError: -s, -d and -S are exclusive\n")
                 sys.exit(1)
             if opt == '-d':
-                hsargs['cec'] = "docker"
+                hsargs['container_exec'] = "docker"
             else:
-                hsargs['cec'] = "singularity"
+                hsargs['container_exec'] = "singularity"
                 if opt == '-S':
                     hsargs['userns'] = True
 
     if len(args) < 1 and not printconf_and_exit:
+        print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
-    elif len(args) >= 1:
-        if replay:
-            hsargs['resultsdir'] = args[0]
-        else:
-            hsargs['outdir'] = args[0]
 
-        if not os.path.isdir(args[0]):
-            print("\nError: output directory must exist")
-            sys.exit(1)
-
-    hs = HEPscore(**hsargs)
-    hs.read_and_parse_conf(conffile)
+    # Read config yaml
+    try:
+        with open(conffile, 'r') as yam:
+            active_config = yaml.safe_load(yam)
+    except Exception:
+        print("Error reading/parsing YAML configuration file " + conffile)
+        sys.exit(1)
 
     if printconf_and_exit:
-        hs.print_conf()
+        print(str(yaml.safe_dump(active_config)))
         sys.exit(0)
+
+    # check passed dir
+    if replay:
+        if not os.path.isdir(args[0]):
+            print("Replay mode requires valid directory!")
+            sys.exit(1)
+        else:
+            resultsdir = args[0]
     else:
-        if hs.run(replay) >= 0:
-            hs.gen_score()
-        hs.write_output(outtype, outfile)
+        resultsdir = os.path.join(
+            args[0],
+            hepscore.HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+        try:
+            os.makedirs(resultsdir)
+        except Exception:
+            print("Error creating output directory " + resultsdir)
+            sys.exit(1)
+
+    if 'container_exec' in hsargs:
+        active_config['hepscore_benchmark']['settings']['container_exec'] \
+            = hsargs['container_exec']
+        hsargs.pop('container_exec', None)
+
+    option_args = dict()
+    # Populate active config with cli override
+    for k, v in hsargs.items():
+        if v != "":
+            option_args[k] = v
+
+    active_config['hepscore_benchmark']['options'] = option_args
+
+    hs = HEPscore(active_config, resultsdir)
+
+    if hs.run(replay) >= 0:
+        hs.gen_score()
+    hs.write_output(outtype, outfile)
 
 
 if __name__ == '__main__':

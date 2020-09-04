@@ -54,3 +54,7 @@ hepscore_benchmark:
     method: geometric_mean
     container_exec: docker
     repetitions: 1
+  options:  
+    level: DEBUG
+    clean: True
+    outdir: /tmp/test_run_empty_cfg
