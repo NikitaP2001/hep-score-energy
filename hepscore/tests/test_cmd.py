@@ -55,7 +55,7 @@ class Test_Constructor(unittest.TestCase):
 
         hs = hepscore.HEPscore(test_config, "/tmp")
 
-        self.assertEqual(hs.cec, "docker")
+        self.assertEqual(hs.cec, "singularity")
         self.assertEqual(hs.resultsdir, "/tmp")
         self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
