@@ -31,6 +31,8 @@ def help(progname):
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
+    print("-S           Run benchmark containers in Singularity, forcing"
+          " userns if supported")
     print("-r           Replay output using existing results directory")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
