@@ -69,7 +69,7 @@ class HEPscore(object):
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
     level = "INFO"
     scorekey = 'wl-scores'
-    cec = "docker"
+    cec = "singularity"
     clean = False
     clean_files = False
     userns = False
@@ -677,7 +677,7 @@ class HEPscore(object):
                     float(bmark_conf['weight'])
                 except ValueError:
                     logging.error("Configuration: invalid 'weight' specified:"
-                                  "'" + bmark_conf['weight'] + "."
+                                  "'" + bmark_conf['weight'] + "'."
                                   "  Must be a float")
 
             if 'ref_scores' in bmark_conf.keys():
