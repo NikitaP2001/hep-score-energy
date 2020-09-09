@@ -19,7 +19,6 @@ import os
 import oyaml as yaml
 import pbr.version
 import re
-import scipy.stats
 import shutil
 import subprocess
 import sys
@@ -41,10 +40,19 @@ def median_tuple(vals):
                                        sorted_vals[med_ind][0]))
 
 
-def weighted_geometric_mean(vals, weights):
+def weighted_geometric_mean(vals, weights=None):
+
+    if weights is None:
+        weights = []
+        for i in vals:
+            weights.append(1.0)
 
     if len(vals) != len(weights):
         return(0)
+
+    # Ensure we're dealing with floats
+    vals = [float(x) for x in vals]
+    weights = [float(x) for x in weights]
 
     total_weight = sum(weights)
     if total_weight == 0:
@@ -56,7 +64,7 @@ def weighted_geometric_mean(vals, weights):
     for val in weighted_vals:
         total_val *= val
 
-    weighted_gmean = total_val ** (1 / total_weight)
+    weighted_gmean = total_val ** (1.0 / total_weight)
 
     return(weighted_gmean)
 
@@ -84,17 +92,6 @@ class HEPscore(object):
             self.resultsdir = resultsdir
             self.confobj = config['hepscore_benchmark']
             self.settings = self.confobj['settings']
-            if 'container_exec' in self.settings:
-                if self.settings['container_exec'] in (
-                        "singularity", "docker"):
-                    self.cec = self.settings['container_exec']
-                else:
-                    logging.error(self.settings['container_exec']
-                                  + "not understood. Stopping")
-                    sys.exit(1)
-            else:
-                logging.warning("Run type not specified on commandline or"
-                                " in config - assuming docker")
         except (TypeError, KeyError):
             # log.exception("hepscore expects a dict containing master key"
             #              "'hepscore_benchmark'")
@@ -105,15 +102,27 @@ class HEPscore(object):
             self.level = self.confobj['options']['level']
 
         if self.level == "DEBUG":
-                logging.basicConfig(level=logging.DEBUG,
-                                    format='%(asctime)s - %(levelname)s - '
-                                    '%(funcName)s() - %(message)s ',
-                                    stream=sys.stdout)
+            logging.basicConfig(level=logging.DEBUG,
+                                format='%(asctime)s - %(levelname)s - '
+                                '%(funcName)s() - %(message)s ',
+                                stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s',
                                 stream=sys.stdout)
+
+        if 'container_exec' in self.settings:
+            if self.settings['container_exec'] in (
+                    "singularity", "docker"):
+                self.cec = self.settings['container_exec']
+            else:
+                logging.error(self.settings['container_exec']
+                              + "not understood. Stopping")
+                sys.exit(1)
+        else:
+            logging.warning("Run type not specified on commandline or"
+                            " in config - assuming " + self.cec)
 
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
@@ -191,7 +200,7 @@ class HEPscore(object):
                         bench_conf['ref_scores'][sub_bmk]
                     sub_score = round(sub_score, 4)
                     sub_results.append(sub_score)
-                    score = scipy.stats.gmean(sub_results)
+                    score = weighted_geometric_mean(sub_results)
 
             except (Exception):
                 if not fail:
