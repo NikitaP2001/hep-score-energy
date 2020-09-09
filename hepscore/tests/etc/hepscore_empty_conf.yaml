@@ -46,7 +46,7 @@ hepscore_benchmark:
       args:
         -e: 5
   app_info:
-    name: HEPscore19
+    name: HEPscore20EMPTY
     reference_machine: "An undefined machine"
     registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:

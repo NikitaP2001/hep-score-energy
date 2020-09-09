@@ -177,12 +177,12 @@ class testOutput(unittest.TestCase):
             hs.gen_score()
         hs.write_output(outtype, outfile)
 
-        actual_res = json.load(open(resDir + "/HEPscore19.json"))
+        actual_res = json.load(open(resDir + "/HEPscore20EMPTY.json"))
 
         self.assertEqual(actual_res['score'], -1)
         self.assertEqual(actual_res['status'], "failed")
 
-        os.remove(resDir + "/HEPscore19.json")
+        os.remove(resDir + "/HEPscore20EMPTY.json")
 
 
 if __name__ == '__main__':
