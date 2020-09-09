@@ -53,4 +53,4 @@ hepscore_benchmark:
     method: geometric_mean
     repetitions: 3
     scaling: 355
-    container_exec: docker
+    container_exec: singularity
