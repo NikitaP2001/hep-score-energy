@@ -138,7 +138,7 @@ class testOutput(unittest.TestCase):
 
         expected_res = json.load(
             open(resDir + "/hepscore_result_expected_output.json"))
-        actual_res = json.load(open(resDir + "/HEPscore19.json"))
+        actual_res = json.load(open(resDir + "/HEPscore20.json"))
 
         result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
 
@@ -151,7 +151,7 @@ class testOutput(unittest.TestCase):
 
         self.assertEqual(len(result), 0)
 
-        os.remove(resDir + "/HEPscore19.json")
+        os.remove(resDir + "/HEPscore20.json")
 
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
