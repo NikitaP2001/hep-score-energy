@@ -103,10 +103,15 @@ def main():
                 if opt == '-S':
                     hsargs['userns'] = True
 
-    if len(args) < 1 and not printconf_and_exit:
-        print("Must specify OUTDIR.\n")
+    goodlen = 1
+    if printconf_and_exit:
+        goodlen = 0   
+    if len(args) != goodlen:
+        if not printconf_and_exit:
+            print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
+        
 
     # Read config yaml
     try:
