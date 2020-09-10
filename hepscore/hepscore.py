@@ -129,6 +129,9 @@ class HEPscore(object):
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
 
+        if 'userns' in self.confobj.get('options', {}):
+            self.userns = self.confobj['options']['userns']
+
         self.confobj.pop('options', None)
         self.validate_conf()
 
