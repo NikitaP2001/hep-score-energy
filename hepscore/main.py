@@ -64,7 +64,7 @@ def main():
     outfile = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsyrf:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsSyrf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help(sys.argv[0])
