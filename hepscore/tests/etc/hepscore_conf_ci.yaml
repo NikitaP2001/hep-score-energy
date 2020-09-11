@@ -1,6 +1,6 @@
 hepscore_benchmark:
   app_info:
-    name: HEPscore19
+    name: HEPscoreCI
     reference_machine: 'Unknown'
     registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:

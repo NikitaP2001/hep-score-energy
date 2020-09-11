@@ -19,7 +19,6 @@ import os
 import oyaml as yaml
 import pbr.version
 import re
-import scipy.stats
 import shutil
 import subprocess
 import sys
@@ -27,19 +26,64 @@ import tarfile
 import time
 
 
+def median_tuple(vals):
+
+    sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
+
+    med_ind = int(len(sorted_vals) / 2)
+    if len(sorted_vals) % 2 == 1:
+        return(sorted_vals[med_ind][::-1])
+    else:
+        val1 = sorted_vals[med_ind - 1][1]
+        val2 = sorted_vals[med_ind][1]
+        return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
+                                       sorted_vals[med_ind][0]))
+
+
+def weighted_geometric_mean(vals, weights=None):
+
+    if weights is None:
+        weights = []
+        for i in vals:
+            weights.append(1.0)
+
+    if len(vals) != len(weights):
+        return(0)
+
+    # Ensure we're dealing with floats
+    vals = [float(x) for x in vals]
+    weights = [float(x) for x in weights]
+
+    total_weight = sum(weights)
+    if total_weight == 0:
+        return(0)
+
+    weighted_vals = [vals[i] ** weights[i] for i in range(len(vals))]
+
+    total_val = 1
+    for val in weighted_vals:
+        total_val *= val
+
+    weighted_gmean = total_val ** (1.0 / total_weight)
+
+    return(weighted_gmean)
+
+
 class HEPscore(object):
 
     NAME = "HEPscore"
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
-    allowed_methods = {'geometric_mean': scipy.stats.gmean}
+    allowed_methods = {'geometric_mean': weighted_geometric_mean}
     level = "INFO"
     scorekey = 'wl-scores'
-    cec = "docker"
+    cec = "singularity"
     clean = False
     clean_files = False
+    userns = False
 
     results = []
+    weights = []
     score = -1
 
     def __init__(self, config, resultsdir):
@@ -48,17 +92,6 @@ class HEPscore(object):
             self.resultsdir = resultsdir
             self.confobj = config['hepscore_benchmark']
             self.settings = self.confobj['settings']
-            if 'container_exec' in self.settings:
-                if self.settings['container_exec'] in (
-                        "singularity", "docker"):
-                    self.cec = self.settings['container_exec']
-                else:
-                    logging.error(self.settings['container_exec']
-                                  + "not understood. Stopping")
-                    sys.exit(1)
-            else:
-                logging.warning("Run type not specified on commandline or"
-                                " in config - assuming docker")
         except (TypeError, KeyError):
             # log.exception("hepscore expects a dict containing master key"
             #              "'hepscore_benchmark'")
@@ -69,20 +102,35 @@ class HEPscore(object):
             self.level = self.confobj['options']['level']
 
         if self.level == "DEBUG":
-                logging.basicConfig(level=logging.DEBUG,
-                                    format='%(asctime)s - %(levelname)s - '
-                                    '%(funcName)s() - %(message)s ',
-                                    stream=sys.stdout)
+            logging.basicConfig(level=logging.DEBUG,
+                                format='%(asctime)s - %(levelname)s - '
+                                '%(funcName)s() - %(message)s ',
+                                stream=sys.stdout)
         else:
             logging.basicConfig(level=logging.INFO,
                                 format='%(asctime)s - %(levelname)s - '
                                 '%(message)s',
                                 stream=sys.stdout)
 
+        if 'container_exec' in self.settings:
+            if self.settings['container_exec'] in (
+                    "singularity", "docker"):
+                self.cec = self.settings['container_exec']
+            else:
+                logging.error(self.settings['container_exec']
+                              + "not understood. Stopping")
+                sys.exit(1)
+        else:
+            logging.warning("Run type not specified on commandline or"
+                            " in config - assuming " + self.cec)
+
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
+
+        if 'userns' in self.confobj.get('options', {}):
+            self.userns = self.confobj['options']['userns']
 
         self.confobj.pop('options', None)
         self.validate_conf()
@@ -155,7 +203,7 @@ class HEPscore(object):
                         bench_conf['ref_scores'][sub_bmk]
                     sub_score = round(sub_score, 4)
                     sub_results.append(sub_score)
-                    score = scipy.stats.gmean(sub_results)
+                    score = weighted_geometric_mean(sub_results)
 
             except (Exception):
                 if not fail:
@@ -317,7 +365,7 @@ class HEPscore(object):
 
     # User namespace flag needed to support nested singularity
     def _get_usernamespace_flag(self):
-        if self.cec == "singularity":
+        if self.cec == "singularity" and self.userns is True:
             if self.check_userns():
                 if self.level != 'INFO':
                     logging.info("System supports user namespaces, enabling in"
@@ -340,6 +388,7 @@ class HEPscore(object):
 
         try:
             line = cmdf.stdout.readline()
+            line = line.decode('utf-8')
 
             while line:
                 version = line
@@ -347,7 +396,7 @@ class HEPscore(object):
                     version = version[:-1]
                 line = cmdf.stdout.readline()
 
-            return version.encode('utf-8')
+            return version
         except Exception:
             return "error"
 
@@ -504,7 +553,7 @@ class HEPscore(object):
     def gen_score(self):
 
         method = self.allowed_methods[self.confobj['settings']['method']]
-        fres = method(self.results)
+        fres = method(self.results, self.weights)
         if 'scaling' in self.confobj['settings'].keys():
             fres = fres * self.confobj['settings']['scaling']
 
@@ -635,6 +684,14 @@ class HEPscore(object):
                                   "option for " + benchmark + " - " + k)
                     sys.exit(1)
 
+            if 'weight' in bmark_conf.keys():
+                try:
+                    float(bmark_conf['weight'])
+                except ValueError:
+                    logging.error("Configuration: invalid 'weight' specified:"
+                                  "'" + bmark_conf['weight'] + "'."
+                                  "  Must be a float")
+
             if 'ref_scores' in bmark_conf.keys():
                 for score in bmark_conf['ref_scores']:
                     try:
@@ -709,6 +766,11 @@ class HEPscore(object):
             if res < 0:
                 break
             self.results.append(res)
+            bench_conf = self.confobj['benchmarks'][benchmark]
+            if 'weight' in bench_conf:
+                self.weights.append(bench_conf['weight'])
+            else:
+                self.weights.append(1.0)
 
         if res < 0:
             self.confobj['error'] = benchmark
@@ -717,17 +779,3 @@ class HEPscore(object):
 
         return res
 # End of HEPscore class
-
-
-def median_tuple(vals):
-
-    sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
-
-    med_ind = int(len(sorted_vals) / 2)
-    if len(sorted_vals) % 2 == 1:
-        return(sorted_vals[med_ind][::-1])
-    else:
-        val1 = sorted_vals[med_ind - 1][1]
-        val2 = sorted_vals[med_ind][1]
-        return(((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
-                                       sorted_vals[med_ind][0]))

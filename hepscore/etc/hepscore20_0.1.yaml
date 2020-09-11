@@ -9,15 +9,6 @@ hepscore_benchmark:
         -t: 1
         # events
         -e: 200
-    .atlas-sim-bmk:
-      ref_scores:
-        sim: 0.0641
-      version: v1.1
-      args:
-        # threads
-        -t: 4
-        # events
-        -e: 10
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.726
@@ -55,11 +46,11 @@ hepscore_benchmark:
         # events
         -e: 5
   app_info:
-    name: HEPscore19
+    name: HEPscore20
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
     registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:
     method: geometric_mean
     repetitions: 3
     scaling: 355
-    container_exec: docker
+    container_exec: singularity

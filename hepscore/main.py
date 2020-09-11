@@ -31,6 +31,8 @@ def help(progname):
           "benchmark scores")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
+    print("-S           Run benchmark containers in Singularity, forcing"
+          " userns if supported")
     print("-r           Replay output using existing results directory")
     print("-f           Use specified YAML configuration file (instead of "
           "built-in)")
@@ -62,7 +64,7 @@ def main():
     outfile = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsyrf:o:')
+        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsSyrf:o:')
     except getopt.GetoptError as err:
         print("\nError: " + str(err) + "\n")
         help(sys.argv[0])
@@ -90,17 +92,23 @@ def main():
             hsargs['clean'] = True
         elif opt == '-C':
             hsargs['clean_files'] = True
-        elif opt == '-s' or opt == '-d':
+        elif opt in ['-s', '-S', '-d']:
             if 'container_exec' in hsargs:
-                print("\nError: -s and -d are exclusive\n")
+                print("\nError: -s, -d and -S are exclusive\n")
                 sys.exit(1)
-            if opt == '-s':
-                hsargs['container_exec'] = "singularity"
-            else:
+            if opt == '-d':
                 hsargs['container_exec'] = "docker"
+            else:
+                hsargs['container_exec'] = "singularity"
+                if opt == '-S':
+                    hsargs['userns'] = True
 
-    if len(args) < 1 and not printconf_and_exit:
-        print("Must specify OUTDIR.\n")
+    goodlen = 1
+    if printconf_and_exit:
+        goodlen = 0
+    if len(args) != goodlen:
+        if not printconf_and_exit:
+            print("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
 
