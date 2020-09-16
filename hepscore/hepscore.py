@@ -212,12 +212,12 @@ class HEPscore(object):
                         logging.error("The retrieved json report contains\n%s"
                                       % jscore)
                     fail = True
+                continue
 
-            if not fail:
-                results[i] = round(score, 4)
+            results[i] = round(score, 4)
 
-                if self.level != "INFO":
-                    logging.info(" " + str(results[i]))
+            if self.level != "INFO":
+                logging.info(" " + str(results[i]))
 
             i = i + 1
 
@@ -235,9 +235,8 @@ class HEPscore(object):
             except Exception:
                 logging.warning("Failed to clean up container scratch working "
                                 "directory")
-
         if fail:
-            if 'allow_fail' not in self.confobj.keys() or \
+            if 'allow_fail' not in self.confobj['settings'].keys() or \
                     self.confobj['settings']['allow_fail'] is False:
                 return(-1)
 
@@ -761,10 +760,19 @@ class HEPscore(object):
             logging.info("NOTE: Replaying prior results")
 
         res = 0
+        have_failure = False
         for benchmark in self.confobj['benchmarks']:
             res = self._run_benchmark(benchmark, mock)
             if res < 0:
-                break
+                have_failure = True
+                # set error to first benchmark encountered
+                if 'error' not in self.confobj.keys():
+                    self.confobj['error'] = benchmark
+                if 'continue_fail' not in \
+                        self.confobj['settings'].keys() \
+                        or self.confobj['settings']['continue_fail'] == False:
+                    print "FAILURE"
+                    break
             self.results.append(res)
             bench_conf = self.confobj['benchmarks'][benchmark]
             if 'weight' in bench_conf:
@@ -772,10 +780,10 @@ class HEPscore(object):
             else:
                 self.weights.append(1.0)
 
-        if res < 0:
-            self.confobj['error'] = benchmark
+        if have_failure:
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
+            return(-1)
 
         return res
 # End of HEPscore class
