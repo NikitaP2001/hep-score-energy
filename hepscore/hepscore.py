@@ -770,8 +770,7 @@ class HEPscore(object):
                     self.confobj['error'] = benchmark
                 if 'continue_fail' not in \
                         self.confobj['settings'].keys() \
-                        or self.confobj['settings']['continue_fail'] == False:
-                    print "FAILURE"
+                        or self.confobj['settings']['continue_fail'] is False:
                     break
             self.results.append(res)
             bench_conf = self.confobj['benchmarks'][benchmark]
