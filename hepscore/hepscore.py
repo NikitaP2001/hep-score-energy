@@ -780,6 +780,7 @@ class HEPscore(object):
                 self.weights.append(1.0)
 
         if have_failure:
+            logging.error("BENCHMARK FAILURE")
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
             return(-1)
