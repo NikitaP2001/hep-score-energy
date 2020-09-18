@@ -10,7 +10,7 @@ hepscore_benchmark:
   app_info:
     name: HEPscore20CMS
     reference_machine: "An undefined machine"
-    registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:
     method: geometric_mean
     repetitions: 1

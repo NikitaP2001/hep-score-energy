@@ -82,6 +82,7 @@ class HEPscore(object):
     clean_files = False
     userns = False
 
+    registry = ""
     results = []
     weights = []
     score = -1
@@ -134,6 +135,35 @@ class HEPscore(object):
 
         self.confobj.pop('options', None)
         self.validate_conf()
+        self.registry = self._gen_reg_path()
+
+    def _gen_reg_path(self, reg_url=None):
+
+        valid_uris = ['docker', 'shub', 'dir']
+        if reg_url is None:
+            reg_url = self.confobj['app_info']['registry']
+
+        found_valid = False
+        for uri in valid_uris:
+            if reg_url.find(uri + '://') == 0:
+                found_valid = True
+                reg_path = reg_url[len(uri) + 3:]
+                break
+
+        if not found_valid:
+            logging.error("Invalid URI specification in registry path: "
+                          + reg_url)
+            sys.exit(1)
+
+        if self.cec == 'docker' and uri != 'docker':
+            logging.error("Only docker registry URI (docker://) supported for"
+                          " Docker runs.")
+            sys.exit(1)
+
+        if self.cec == 'docker' or uri == 'dir':
+            return(reg_path)
+        else:
+            return(reg_url)
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
         bench_conf['app'] = jscore['app']
@@ -405,7 +435,8 @@ class HEPscore(object):
         options_string = ""
         output_logs = ['']
         bmark_keys = ''
-        bmark_registry = self.confobj['app_info']['registry']
+        bmark_registry = self.registry
+        bmark_reg_url = self.confobj['app_info']['registry']
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['app_info']['name'] + ".log"
@@ -420,9 +451,10 @@ class HEPscore(object):
 
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
-            bmark_registry = bench_conf['registry']
+            bmark_reg_url = bench_conf['registry']
+            bmark_registry = _gen_reg_path(bench_conf['registry'])
             logging.info("Overriding registry for this container: "
-                         + bmark_registry)
+                         + bmark_reg_url)
 
         for option in bmark_keys:
             if len(option) != 2 or option[0] != '-' or \
@@ -460,7 +492,7 @@ class HEPscore(object):
                         + runDir + ":/results ",
                         'singularity': "singularity run -C -B " + runDir
                         + ":/results -B " + "/tmp:/tmp "
-                        + self._get_usernamespace_flag() + "docker://"}
+                        + self._get_usernamespace_flag()}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
