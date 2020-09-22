@@ -639,52 +639,57 @@ class HEPscore(object):
     def validate_conf(self):
 
         hep_settings = ['settings', 'app_info', 'benchmarks']
+        rsf = {'settings': ['method', 'repetitions'],
+               'app_info': ['name', 'registry', 'reference_machine'],
+               'benchmarks': []}
 
         for k in hep_settings:
             if k not in self.confobj:
                 logging.error("Configuration: {} section must be"
                               " defined".format(k))
                 sys.exit(1)
-            try:
-                if k == 'settings':
-                    for j in self.confobj[k]:
-                        if j == 'method':
-                            val = self.confobj[k][j]
-                            if val != 'geometric_mean':
-                                logging.error("Configuration: only "
-                                              "'geometric_mean' method is"
-                                              " currently supported")
-                                sys.exit(1)
-                        if j == 'repetitions':
-                            val = self.confobj[k][j]
-                            if not type(val) is int:
-                                logging.error("Configuration: 'repititions' "
-                                              "configuration parameter must "
-                                              "be an integer")
-                                sys.exit(1)
-                if k == 'app_info':
-                    for j in self.confobj[k]:
-                        if j == 'registry':
-                            reg_string = \
-                                self.confobj[k][j]
-                            if not reg_string[0].isalpha() or \
-                                    re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
-                                             reg_string) is None:
-                                logging.error("Configuration: illegal "
-                                              "character in registry")
-                                sys.exit(1)
-            except KeyError:
-                logging.error("Configuration: " + k + " parameter must be "
-                              "specified")
-                sys.exit(1)
 
-        if 'scaling' in self.confobj['settings']:
-            try:
-                float(self.confobj['settings']['scaling'])
-            except ValueError:
-                logging.error("Configuration: 'scaling' configuration "
-                              "parameter must be an float")
-                sys.exit(1)
+            for f in rsf[k]:
+                if f not in self.confobj[k]:
+                    logging.error("Configuration: " + f + " must be "
+                                  "specified in " + k)
+                    sys.exit(1)
+
+            if k == 'settings':
+                for j in self.confobj[k]:
+                    if j == 'method':
+                        val = self.confobj[k][j]
+                        if val != 'geometric_mean':
+                            logging.error("Configuration: only "
+                                          "'geometric_mean' method is"
+                                          " currently supported")
+                            sys.exit(1)
+                    if j == 'repetitions':
+                        val = self.confobj[k][j]
+                        if not type(val) is int:
+                            logging.error("Configuration: 'repititions' "
+                                          "configuration parameter must "
+                                          "be an integer")
+                            sys.exit(1)
+                    if j == 'scaling':
+                        try:
+                            float(self.confobj[k][j])
+                        except ValueError:
+                            logging.error("Configuration: 'scaling' "
+                                          "configuration parameter must be a "
+                                          "float")
+                            sys.exit(1)
+            if k == 'app_info':
+                for j in self.confobj[k]:
+                    if j == 'registry':
+                        reg_string = \
+                            self.confobj[k][j]
+                        if not reg_string[0].isalpha() or \
+                                re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
+                                         reg_string) is None:
+                            logging.error("Configuration: illegal "
+                                          "character in registry")
+                            sys.exit(1)
 
         bcount = 0
         for benchmark in list(self.confobj['benchmarks']):
