@@ -50,7 +50,11 @@ class Test_Constructor(unittest.TestCase):
 
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_read_set_defaults(self, mock_validate):
-        standard = {'hepscore_benchmark': {'settings': {}}}
+        standard = {'hepscore_benchmark':
+                    {'app_info': {'name': 'test', 'registry': 'docker://',
+                     'reference_machines': 'unknown'},
+                     'settings': {'method': 'geometric_mean',
+                                  'repetitions': 1}}}
         test_config = standard.copy()
 
         hs = hepscore.HEPscore(test_config, "/tmp")
@@ -62,8 +66,11 @@ class Test_Constructor(unittest.TestCase):
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_override_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
-                    {'settings':
-                        {'container_exec': "singularity"}}}
+                    {'app_info': {'name': 'test', 'registry': 'docker://',
+                     'reference_machines': 'unknown'},
+                     'settings': {'method': 'geometric_mean',
+                                  'repetitions': 1,
+                                  'container_exec': 'singularity'}}}
         test_config = standard.copy()
 
         hs = hepscore.HEPscore(test_config, "/tmp1")
