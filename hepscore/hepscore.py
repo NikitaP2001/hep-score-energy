@@ -456,7 +456,7 @@ class HEPscore(object):
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
             bmark_reg_url = bench_conf['registry']
-            bmark_registry = _gen_reg_path(bench_conf['registry'])
+            bmark_registry = self._gen_reg_path(bench_conf['registry'])
             logging.info("Overriding registry for this container: "
                          + bmark_reg_url)
 
