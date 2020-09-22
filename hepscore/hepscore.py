@@ -141,7 +141,11 @@ class HEPscore(object):
 
         valid_uris = ['docker', 'shub', 'dir']
         if reg_url is None:
-            reg_url = self.confobj['app_info']['registry']
+            try:
+                reg_url = self.confobj['app_info']['registry']
+            except KeyError:
+                logging.error("Registry undefined")
+                system.exit(1)
 
         found_valid = False
         for uri in valid_uris:
