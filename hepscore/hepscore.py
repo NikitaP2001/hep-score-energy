@@ -82,6 +82,7 @@ class HEPscore(object):
     clean_files = False
     userns = False
 
+    registry = ""
     results = []
     weights = []
     score = -1
@@ -134,6 +135,39 @@ class HEPscore(object):
 
         self.confobj.pop('options', None)
         self.validate_conf()
+        self.registry = self._gen_reg_path()
+
+    def _gen_reg_path(self, reg_url=None):
+
+        valid_uris = ['docker', 'shub', 'dir']
+        if reg_url is None:
+            try:
+                reg_url = self.confobj['app_info']['registry']
+            except KeyError:
+                logging.error("Registry undefined")
+                sys.exit(1)
+
+        found_valid = False
+        for uri in valid_uris:
+            if reg_url.find(uri + '://') == 0:
+                found_valid = True
+                reg_path = reg_url[len(uri) + 3:]
+                break
+
+        if not found_valid:
+            logging.error("Invalid URI specification in registry path: "
+                          + reg_url)
+            sys.exit(1)
+
+        if self.cec == 'docker' and uri != 'docker':
+            logging.error("Only docker registry URI (docker://) supported for"
+                          " Docker runs.")
+            sys.exit(1)
+
+        if self.cec == 'docker' or uri == 'dir':
+            return(reg_path)
+        else:
+            return(reg_url)
 
     def _set_run_metadata(self, bench_conf, jscore, benchmark):
         bench_conf['app'] = jscore['app']
@@ -405,7 +439,8 @@ class HEPscore(object):
         options_string = ""
         output_logs = ['']
         bmark_keys = ''
-        bmark_registry = self.confobj['app_info']['registry']
+        bmark_registry = self.registry
+        bmark_reg_url = self.confobj['app_info']['registry']
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['app_info']['name'] + ".log"
@@ -420,9 +455,10 @@ class HEPscore(object):
 
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
-            bmark_registry = bench_conf['registry']
+            bmark_reg_url = bench_conf['registry']
+            bmark_registry = self._gen_reg_path(bench_conf['registry'])
             logging.info("Overriding registry for this container: "
-                         + bmark_registry)
+                         + bmark_reg_url)
 
         for option in bmark_keys:
             if len(option) != 2 or option[0] != '-' or \
@@ -460,7 +496,7 @@ class HEPscore(object):
                         + runDir + ":/results ",
                         'singularity': "singularity run -C -B " + runDir
                         + ":/results -B " + "/tmp:/tmp "
-                        + self._get_usernamespace_flag() + "docker://"}
+                        + self._get_usernamespace_flag()}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
@@ -607,52 +643,57 @@ class HEPscore(object):
     def validate_conf(self):
 
         hep_settings = ['settings', 'app_info', 'benchmarks']
+        rsf = {'settings': ['method', 'repetitions'],
+               'app_info': ['name', 'registry', 'reference_machine'],
+               'benchmarks': []}
 
         for k in hep_settings:
             if k not in self.confobj:
                 logging.error("Configuration: {} section must be"
                               " defined".format(k))
                 sys.exit(1)
-            try:
-                if k == 'settings':
-                    for j in self.confobj[k]:
-                        if j == 'method':
-                            val = self.confobj[k][j]
-                            if val != 'geometric_mean':
-                                logging.error("Configuration: only "
-                                              "'geometric_mean' method is"
-                                              " currently supported")
-                                sys.exit(1)
-                        if j == 'repetitions':
-                            val = self.confobj[k][j]
-                            if not type(val) is int:
-                                logging.error("Configuration: 'repititions' "
-                                              "configuration parameter must "
-                                              "be an integer")
-                                sys.exit(1)
-                if k == 'app_info':
-                    for j in self.confobj[k]:
-                        if j == 'registry':
-                            reg_string = \
-                                self.confobj[k][j]
-                            if not reg_string[0].isalpha() or \
-                                    re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
-                                             reg_string) is None:
-                                logging.error("Configuration: illegal "
-                                              "character in registry")
-                                sys.exit(1)
-            except KeyError:
-                logging.error("Configuration: " + k + " parameter must be "
-                              "specified")
-                sys.exit(1)
 
-        if 'scaling' in self.confobj['settings']:
-            try:
-                float(self.confobj['settings']['scaling'])
-            except ValueError:
-                logging.error("Configuration: 'scaling' configuration "
-                              "parameter must be an float")
-                sys.exit(1)
+            for f in rsf[k]:
+                if f not in self.confobj[k]:
+                    logging.error("Configuration: " + f + " must be "
+                                  "specified in " + k)
+                    sys.exit(1)
+
+            if k == 'settings':
+                for j in self.confobj[k]:
+                    if j == 'method':
+                        val = self.confobj[k][j]
+                        if val != 'geometric_mean':
+                            logging.error("Configuration: only "
+                                          "'geometric_mean' method is"
+                                          " currently supported")
+                            sys.exit(1)
+                    if j == 'repetitions':
+                        val = self.confobj[k][j]
+                        if not type(val) is int:
+                            logging.error("Configuration: 'repititions' "
+                                          "configuration parameter must "
+                                          "be an integer")
+                            sys.exit(1)
+                    if j == 'scaling':
+                        try:
+                            float(self.confobj[k][j])
+                        except ValueError:
+                            logging.error("Configuration: 'scaling' "
+                                          "configuration parameter must be a "
+                                          "float")
+                            sys.exit(1)
+            if k == 'app_info':
+                for j in self.confobj[k]:
+                    if j == 'registry':
+                        reg_string = \
+                            self.confobj[k][j]
+                        if not reg_string[0].isalpha() or \
+                                re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
+                                         reg_string) is None:
+                            logging.error("Configuration: illegal "
+                                          "character in registry")
+                            sys.exit(1)
 
         bcount = 0
         for benchmark in list(self.confobj['benchmarks']):

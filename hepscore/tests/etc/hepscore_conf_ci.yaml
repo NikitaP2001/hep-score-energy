@@ -2,7 +2,7 @@ hepscore_benchmark:
   app_info:
     name: HEPscoreCI
     reference_machine: 'Unknown'
-    registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:
     scaling: 10
     repetitions: 2  #number of repetitions of the same benchmark

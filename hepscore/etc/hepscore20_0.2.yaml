@@ -48,7 +48,7 @@ hepscore_benchmark:
   app_info:
     name: HEPscore20
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
-    registry: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
   settings:
     method: geometric_mean
     repetitions: 3
