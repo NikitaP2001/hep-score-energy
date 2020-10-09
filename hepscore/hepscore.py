@@ -20,8 +20,8 @@ import oyaml as yaml
 import pbr.version
 import re
 import shutil
-import subprocess
 import stat
+import subprocess
 import sys
 import tarfile
 import time
