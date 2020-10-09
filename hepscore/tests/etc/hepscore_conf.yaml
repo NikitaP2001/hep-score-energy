@@ -1,1 +1,56 @@
-../../etc/hepscore-default.yaml
+hepscore_benchmark:
+  benchmarks:
+    atlas-gen-bmk:
+      ref_scores:
+        gen: 384
+      version: v1.2
+      args:
+        # threads
+        -t: 1
+        # events
+        -e: 200
+    cms-gen-sim-bmk:
+      ref_scores:
+        gen-sim: 0.726
+      version: v1.2
+      args:
+        # threads
+        -t: 4
+        # events
+        -e: 20
+    cms-digi-bmk:
+      ref_scores:
+        digi: 3.58
+      version: v1.3
+      args:
+        # threads
+        -t: 4
+        # events
+        -e: 50
+    cms-reco-bmk:
+      ref_scores:
+        reco: 2.196
+      version: v1.2
+      args:
+        # threads
+        -t: 4
+        # events
+        -e: 50
+    lhcb-gen-sim-bmk:
+      ref_scores:
+        gen-sim: 90.29
+      version: v0.15
+      args:
+        # threads
+        -t: 1
+        # events
+        -e: 5
+  app_info:
+    name: HEPscore20
+    reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+  settings:
+    method: geometric_mean
+    repetitions: 3
+    scaling: 355
+    container_exec: singularity

@@ -3,16 +3,25 @@ hepscore_benchmark:
     atlas-gen-bmk:
       ref_scores:
         gen: 384
-      version: v1.2
+      version: v1.5
       args:
         # threads
         -t: 1
         # events
         -e: 200
+    atlas-sim-bmk:
+      ref_scores:
+        sim: 0.0641
+      version: ci-v1.5
+      args:
+        # threads
+        -t: 4
+        # events
+        -e: 10
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.726
-      version: v1.2
+      version: v1.6
       args:
         # threads
         -t: 4
@@ -21,7 +30,7 @@ hepscore_benchmark:
     cms-digi-bmk:
       ref_scores:
         digi: 3.58
-      version: v1.3
+      version: v1.6
       args:
         # threads
         -t: 4
@@ -30,7 +39,7 @@ hepscore_benchmark:
     cms-reco-bmk:
       ref_scores:
         reco: 2.196
-      version: v1.2
+      version: v1.6
       args:
         # threads
         -t: 4
@@ -39,7 +48,7 @@ hepscore_benchmark:
     lhcb-gen-sim-bmk:
       ref_scores:
         gen-sim: 90.29
-      version: v0.15
+      version: v1.1
       args:
         # threads
         -t: 1

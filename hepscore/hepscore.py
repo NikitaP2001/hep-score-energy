@@ -21,6 +21,7 @@ import pbr.version
 import re
 import shutil
 import subprocess
+import stat
 import sys
 import tarfile
 import time
@@ -491,6 +492,9 @@ class HEPscore(object):
 
             if self.confobj['settings']['replay'] is False:
                 os.makedirs(runDir)
+                if self.cec == 'docker':
+                    os.chmod(runDir, stat.S_ISVTX | stat.S_IRWXU |
+                             stat.S_IRWXG | stat.S_IRWXO)
 
             commands = {'docker': "docker run --rm --network=host -v "
                         + runDir + ":/results ",

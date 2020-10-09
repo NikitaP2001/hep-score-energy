@@ -30,6 +30,7 @@ development state, and consists of the following workloads from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
 atlas-gen-bmk   
+atlas-sim-bmk
 cms-gen-sim-bmk  
 cms-digi-bmk  
 cms-reco-bmk  
