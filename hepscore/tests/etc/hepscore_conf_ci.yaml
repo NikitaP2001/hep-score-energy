@@ -9,7 +9,7 @@ hepscore_benchmark:
     method: geometric_mean #or any other algorithm
   benchmarks:
     atlas-kv-bmk:
-      version: ci1.1
+      version: ci1.3
       ref_scores:
         sim: 1
       args:
