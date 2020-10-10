@@ -211,13 +211,12 @@ class HEPscore(object):
         for gpath in gpaths:
             logging.debug("Opening file " + gpath)
 
-            jfile = open(gpath, mode='r')
-            line = jfile.readline()
-            jfile.close()
+            with open(gpath, mode='r') as jfile:
+                lines = jfile.read()
 
             try:
                 jscore = ""
-                jscore = json.loads(line)
+                jscore = json.loads(lines)
                 runstr = 'run' + str(i)
                 if runstr not in bench_conf:
                     bench_conf[runstr] = {}
