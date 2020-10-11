@@ -38,7 +38,7 @@ lhcb-gen-sim-bmk
 You can view the YAML HEPscore configuration for HEPscore20 by
 executing ```hep-score -p```.
 
-The benchmark will take 3+ hours to execute on modern hardware.
+The benchmark will take 5+ hours to execute on modern hardware.
 
 **NOTE**: ~20 GB of free disk space in your Singularity or Docker
 cache area, and ~40 GB of free space in the specified

@@ -12,7 +12,7 @@ hepscore_benchmark:
     atlas-sim-bmk:
       ref_scores:
         sim: 0.0641
-      version: ci-v1.5
+      version: v1.5
       args:
         # threads
         -t: 4
