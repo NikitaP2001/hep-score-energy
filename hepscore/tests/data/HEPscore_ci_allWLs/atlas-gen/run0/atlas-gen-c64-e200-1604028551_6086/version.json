@@ -1,0 +1,8 @@
+{
+  "containment": "singularity",
+  "bmk_checksum": "246caa83eb8b6e65e253500b86f39bcb",
+  "bmkdata_checksum": "4af9ca3be760f419f90e951c3fc053f5",
+  "cvmfs_checksum": "ece1c43d11c670679129d3808af1c9a5",
+  "description": "ATLAS Event Generation based on athena version 19.2.5.5",
+  "version": "v2.0"
+}
