@@ -1,0 +1,11 @@
+{
+    "run_info": {"copies":64 , "threads_per_copy":1 , "events_per_thread" : 5 }, 
+    "report": {"wl-scores" : {"gen-sim": 238.9317, "gen": 1186.6085, "sim": 308.2267} , "wl-stats" : {"gen-sim": {"median": 3.7305, "min": 3.6717, "max": 3.7883, "avg": 3.7333}, "gen": {"median": 18.5689, "min": 17.8619, "max": 18.742, "avg": 18.5408}, "sim": {"median": 4.8086, "min": 4.7293, "max": 4.9165, "avg": 4.816}}  , "log": "ok"}, 
+    "app":{
+  "containment": "singularity",
+  "bmk_checksum": "9a747359dd1e9b6bdc89b01090e7ebb3",
+  "bmkdata_checksum": "4af9ca3be760f419f90e951c3fc053f5",
+  "cvmfs_checksum": "af13e3ddd732e1f7265f3af72ef19a53",
+  "description": "LHCb GEN-SIM benchmark",
+  "version": "v2.0"
+} }

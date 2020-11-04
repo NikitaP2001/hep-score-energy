@@ -1,4 +1,3 @@
-#!/usr/bin/python
 ###############################################################################
 # Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
 # of this distribution. For licensing information, see the COPYING file at
@@ -146,13 +145,13 @@ def main():
             = hsargs['container_exec']
         hsargs.pop('container_exec', None)
 
-    option_args = dict()
+    if 'options' not in active_config['hepscore_benchmark']:
+        active_config['hepscore_benchmark']['options'] = {}
+
     # Populate active config with cli override
     for k, v in hsargs.items():
         if v != "":
-            option_args[k] = v
-
-    active_config['hepscore_benchmark']['options'] = option_args
+            active_config['hepscore_benchmark']['options'][k] = v
 
     hs = HEPscore(active_config, resultsdir)
 

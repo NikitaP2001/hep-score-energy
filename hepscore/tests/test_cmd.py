@@ -51,9 +51,9 @@ class Test_Constructor(unittest.TestCase):
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_read_set_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
-                    {'app_info': {'name': 'test', 'registry': 'docker://',
-                     'reference_machines': 'unknown'},
-                     'settings': {'method': 'geometric_mean',
+                    {'settings': {'name': 'test', 'registry': 'docker://',
+                                  'reference_machine': 'unknown',
+                                  'method': 'geometric_mean',
                                   'repetitions': 1}}}
         test_config = standard.copy()
 
@@ -66,9 +66,9 @@ class Test_Constructor(unittest.TestCase):
     @patch.object(hepscore.HEPscore, 'validate_conf')
     def test_succeed_override_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
-                    {'app_info': {'name': 'test', 'registry': 'docker://',
-                     'reference_machines': 'unknown'},
-                     'settings': {'method': 'geometric_mean',
+                    {'settings': {'name': 'test', 'registry': 'docker://',
+                                  'reference_machine': 'unknown',
+                                  'method': 'geometric_mean',
                                   'repetitions': 1,
                                   'container_exec': 'singularity'}}}
         test_config = standard.copy()
@@ -182,7 +182,9 @@ class testOutput(unittest.TestCase):
 
         if hs.run(True) >= 0:
             hs.gen_score()
-        hs.write_output(outtype, outfile)
+        with self.assertRaises(SystemExit) as ec:
+            hs.write_output(outtype, outfile)
+        self.assertEqual(ec.exception.code, 2)
 
         actual_res = json.load(open(resDir + "/HEPscore20.json"))
 
