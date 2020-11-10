@@ -176,7 +176,6 @@ class HEPscore(object):
     def _proc_results(self, benchmark, mock):
 
         results = {}
-        fail = False
         bench_conf = self.confobj['benchmarks'][benchmark]
         runs = int(self.confobj['settings']['repetitions'])
 
@@ -194,17 +193,15 @@ class HEPscore(object):
             try:
                 with open(gpath, mode='r') as jfile:
                     lines = jfile.read()
-            except:
+            except Exception:
                 logging.error("Failure reading from %s\n" % gpath)
-                fail = True
                 continue
 
             try:
                 jscore = ""
                 jscore = json.loads(lines)
-            except:
+            except Exception:
                 logging.error("Malformed JSON in %s\n" % gpath)
-                fail = True
                 continue
 
             json_required_keys = ['app', 'run_info', 'report']
@@ -222,7 +219,6 @@ class HEPscore(object):
                     logging.error("Required key %s not in JSON!" % kstr)
 
             if key_issue:
-                fail = True
                 continue
 
             runstr = 'run' + str(i)
@@ -389,7 +385,6 @@ class HEPscore(object):
             retries = int(self.confobj['settings']['retries'])
         else:
             retries = 0
-        retry_count = 0
         successful_runs = 0
 
         tmp = "Executing " + str(runs) + " run"
@@ -438,7 +433,7 @@ class HEPscore(object):
             logging.info("Creating singularity cache %s", self.scache)
             try:
                 os.makedirs(self.scache)
-            except:
+            except Exception:
                 logging.error("Failed to create Singularity cache dir " +
                               self.scache)
             os.environ['SINGULARITY_CACHEDIR'] = self.scache
