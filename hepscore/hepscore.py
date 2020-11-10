@@ -502,7 +502,7 @@ class HEPscore(object):
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                
+
                 if self.cec == 'docker':
                     os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
                              stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
