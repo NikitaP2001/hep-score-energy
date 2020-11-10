@@ -492,10 +492,6 @@ class HEPscore(object):
                         self._container_rm(benchmark_name)
                     return(-1)
 
-                if self.cec == 'docker':
-                    os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
-                             stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-
                 line = cmdf.stdout.readline()
                 while line:
                     output_logs.insert(0, line)
@@ -506,8 +502,12 @@ class HEPscore(object):
                         logging.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                self._check_rc(cmdf.returncode)
+                
+                if self.cec == 'docker':
+                    os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
+                             stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
+                self._check_rc(cmdf.returncode)
                 if cmdf.returncode > 0:
                     logging.error(self.cec + " output logs:")
                     for line in list(reversed(output_logs))[-10:]:
