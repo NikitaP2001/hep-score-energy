@@ -83,6 +83,7 @@ class HEPscore(object):
     clean_files = False
     userns = False
 
+    scache = ""
     registry = ""
     results = []
     weights = []
@@ -128,6 +129,8 @@ class HEPscore(object):
 
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
+            if self.cec == 'singularity':
+                self.scache = resultsdir + '/scache'
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
 
@@ -188,38 +191,57 @@ class HEPscore(object):
         for gpath in gpaths:
             logging.debug("Opening file " + gpath)
 
-            with open(gpath, mode='r') as jfile:
-                lines = jfile.read()
+            try:
+                with open(gpath, mode='r') as jfile:
+                    lines = jfile.read()
+            except:
+                logging.error("Failure reading from %s\n" % gpath)
+                fail = True
+                continue
 
             try:
                 jscore = ""
                 jscore = json.loads(lines)
-                runstr = 'run' + str(i)
-                if runstr not in bench_conf:
-                    bench_conf[runstr] = {}
-                bench_conf[runstr]['report'] = jscore['report']
-
-                if i == 0:
-                    bench_conf['app'] = jscore['app']
-                    bench_conf['run_info'] = jscore['run_info']
-
-                sub_results = []
-                for sub_bmk in bench_conf['ref_scores'].keys():
-                    sub_score = float(jscore['report'][self.scorekey][sub_bmk])
-                    sub_score = sub_score / \
-                        bench_conf['ref_scores'][sub_bmk]
-                    sub_score = round(sub_score, 4)
-                    sub_results.append(sub_score)
-                    score = weighted_geometric_mean(sub_results)
-
-            except (Exception):
-                if not fail:
-                    logging.error("score not reported for one or more runs.")
-                    if jscore != "":
-                        logging.error("The retrieved json report contains\n%s"
-                                      % jscore)
-                    fail = True
+            except:
+                logging.error("Malformed JSON in %s\n" % gpath)
+                fail = True
                 continue
+
+            json_required_keys = ['app', 'run_info', 'report']
+            key_issue = False
+            for k in json_required_keys:
+                kstr = k
+                if k not in jscore.keys():
+                    key_issue = True
+                elif k == 'report':
+                    if type(jscore[k]) != dict or self.scorekey not in \
+                            jscore[k].keys():
+                        key_issue = True
+                        kstr = k + '[' + self.scorekey + ']'
+                if key_issue:
+                    logging.error("Required key %s not in JSON!" % kstr)
+
+            if key_issue:
+                fail = True
+                continue
+
+            runstr = 'run' + str(i)
+            if runstr not in bench_conf:
+                bench_conf[runstr] = {}
+            bench_conf[runstr]['report'] = jscore['report']
+
+            if i == 0:
+                bench_conf['app'] = jscore['app']
+                bench_conf['run_info'] = jscore['run_info']
+
+            sub_results = []
+            for sub_bmk in bench_conf['ref_scores'].keys():
+                sub_score = float(jscore['report'][self.scorekey][sub_bmk])
+                sub_score = sub_score / \
+                    bench_conf['ref_scores'][sub_bmk]
+                sub_score = round(sub_score, 4)
+                sub_results.append(sub_score)
+                score = weighted_geometric_mean(sub_results)
 
             results[i] = round(score, 4)
 
@@ -233,13 +255,8 @@ class HEPscore(object):
             return(-1)
 
         if len(results) != runs:
-            fail = True
-            logging.error("missing json score file for one or more runs")
-
-        if fail:
-            if 'allow_fail' not in self.confobj['settings'].keys() or \
-                    self.confobj['settings']['allow_fail'] is False:
-                return(-1)
+            logging.error("%i scores not reported", runs)
+            return(-1)
 
         final_result, final_run = median_tuple(results)
 
@@ -272,8 +289,11 @@ class HEPscore(object):
 
         return(final_result)
 
-    def _docker_rm(self, image):
-        if self.clean and self.cec == 'docker':
+    def _container_rm(self, image):
+        if self.clean is False:
+            return False
+
+        if self.cec == 'docker':
             logging.info("Deleting Docker image %s", image)
             command = "docker rmi -f " + image
             logging.debug(command)
@@ -281,13 +301,12 @@ class HEPscore(object):
             ret = subprocess.Popen(command, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
             ret.wait()
-
-    def root_filter(self, f):
-        if re.match(r'.*\.root$', f.name):
-            logging.debug("Skipping " + f.name)
-            return None
-        else:
-            return f
+        if self.cec == 'singularity' and self.scache != "":
+            if os.path.abspath(self.scache) != '/' and \
+                    self.scache.find(self.resultsdir) == 0:
+                logging.info("Removing temporary singularity cache %s",
+                             self.scache)
+                shutil.rmtree(self.scache)
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
@@ -366,6 +385,13 @@ class HEPscore(object):
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
 
+        if 'retries' in self.confobj['settings']:
+            retries = int(self.confobj['settings']['retries'])
+        else:
+            retries = 0
+        retry_count = 0
+        successful_runs = 0
+
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
             tmp += 's'
@@ -408,7 +434,19 @@ class HEPscore(object):
         benchmark_complete = benchmark_name + options_string
         self.confobj['settings']['replay'] = mock
 
-        for i in range(runs):
+        if self.cec == 'singularity' and self.scache != "":
+            logging.info("Creating singularity cache %s", self.scache)
+            try:
+                os.makedirs(self.scache)
+            except:
+                logging.error("Failed to create Singularity cache dir " +
+                              self.scache)
+            os.environ['SINGULARITY_CACHEDIR'] = self.scache
+
+        for i in range(runs + retries):
+            if successful_runs == runs:
+                break
+
             runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
             logsFile = runDir + "/" + self.cec + "_logs"
 
@@ -436,21 +474,27 @@ class HEPscore(object):
             starttime = time.time()
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
             if not mock:
-                if self.cec == 'singularity':
-                    os.environ['SINGULARITYENV_PYTHONNOUSERSITE'] = "1"
                 try:
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except Exception:
+                    if self.cec == 'docker':
+                        os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
+                                 stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+
                     logging.error("failure to execute: " + command_string)
                     lfile.close()
                     bench_conf['run' + str(i)]['end_at'] = \
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
                     self._proc_results(benchmark, mock)
-                    if i == (runs - 1):
-                        self._docker_rm(benchmark_name)
+                    if i == (runs + retries - 1):
+                        self._container_rm(benchmark_name)
                     return(-1)
+
+                if self.cec == 'docker':
+                    os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
+                             stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
                 line = cmdf.stdout.readline()
                 while line:
@@ -468,6 +512,9 @@ class HEPscore(object):
                     logging.error(self.cec + " output logs:")
                     for line in list(reversed(output_logs))[-10:]:
                         print(line)
+                else:
+                    successful_runs += 1
+
                 try:
                     with open(logsFile, 'w') as f:
                         for line in reversed(output_logs):
@@ -475,8 +522,8 @@ class HEPscore(object):
                 except Exception:
                     logging.warning("Failed to write logs to file. ")
 
-                if i == (runs - 1):
-                    self._docker_rm(benchmark_name)
+                if i == (runs + retries - 1) or successful_runs == runs:
+                    self._container_rm(benchmark_name)
             else:
                 time.sleep(1)
 
@@ -489,8 +536,8 @@ class HEPscore(object):
                 logging.error("running " + benchmark + " failed.  Exit "
                               "status " + str(cmdf.returncode) + "\n")
 
-                if 'allow_fail' not in self.confobj['settings'].keys() or \
-                        self.confobj['settings']['allow_fail'] is False:
+                if 'retries' not in self.confobj['settings'].keys() or \
+                        self.confobj['settings']['retries'] <= 0:
                     lfile.close()
                     self._proc_results(benchmark, mock)
                     return(-1)
@@ -603,12 +650,12 @@ class HEPscore(object):
                                           "'geometric_mean' method is"
                                           " currently supported")
                             sys.exit(1)
-                    if j == 'repetitions':
+                    if j == 'repetitions' or j == 'retries':
                         val = self.confobj[k][j]
-                        if not type(val) is int:
-                            logging.error("Configuration: 'repititions' "
+                        if not type(val) is int or val < 0:
+                            logging.error("Configuration: '%s' "
                                           "configuration parameter must "
-                                          "be an integer")
+                                          "be a positive integer", j)
                             sys.exit(1)
                     if j == 'scaling':
                         try:
