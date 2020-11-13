@@ -251,7 +251,8 @@ class HEPscore(object):
             return(-1)
 
         if len(results) != runs:
-            logging.error("%i scores not reported", runs)
+            logging.error("%Expected %d scores, got %d!", runs,
+                          len(results))
             return(-1)
 
         final_result, final_run = median_tuple(results)
