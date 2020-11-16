@@ -41,10 +41,9 @@ executing ```hep-score -p```.
 The benchmark will take 5+ hours to execute on modern hardware.
 
 **NOTE**: ~20 GB of free disk space in your Singularity or Docker
-cache area, and ~40 GB of free space in the specified
-OUTDIR output directory (unless the ```-C``` clean option is 
-passed, which reduces utilized space by 50%) is necessary to run 
-the HEPscore20 benchmark.  
+cache area, and 320 MB/core of free space (e.g. 20 GB on 64 core host)
+in the specified OUTDIR output directory is necessary to run the 
+HEPscore20 benchmark.  
 
 If you are running low on space in your Singularity cache area (typically 
 located in ~/.singularity/cache), you can specify an alternate cache 

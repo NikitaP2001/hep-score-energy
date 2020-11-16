@@ -66,5 +66,6 @@ hepscore_benchmark:
     registry: dir:///cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     method: geometric_mean
     repetitions: 3
+    retries: 1
     scaling: 355
     container_exec: singularity

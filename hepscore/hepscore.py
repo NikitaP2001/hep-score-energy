@@ -232,12 +232,20 @@ class HEPscore(object):
 
             sub_results = []
             for sub_bmk in bench_conf['ref_scores'].keys():
+                if sub_bmk not in jscore['report'][self.scorekey]:
+                    logging.error("Sub-score not reported for %s!", sub_bmk)
+                    key_issue = True
+                    continue
                 sub_score = float(jscore['report'][self.scorekey][sub_bmk])
                 sub_score = sub_score / \
                     bench_conf['ref_scores'][sub_bmk]
                 sub_score = round(sub_score, 4)
                 sub_results.append(sub_score)
-                score = weighted_geometric_mean(sub_results)
+
+            if key_issue:
+                continue
+
+            score = weighted_geometric_mean(sub_results)
 
             results[i] = round(score, 4)
 
@@ -251,7 +259,7 @@ class HEPscore(object):
             return(-1)
 
         if len(results) != runs:
-            logging.error("%Expected %d scores, got %d!", runs,
+            logging.error("Expected %d scores, got %d!", runs,
                           len(results))
             return(-1)
 
@@ -288,22 +296,30 @@ class HEPscore(object):
 
     def _container_rm(self, image):
         if self.clean is False:
-            return False
+            return(False)
 
-        if self.cec == 'docker':
-            logging.info("Deleting Docker image %s", image)
-            command = "docker rmi -f " + image
-            logging.debug(command)
-            command = command.split(' ')
-            ret = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-            ret.wait()
-        if self.cec == 'singularity' and self.scache != "":
-            if os.path.abspath(self.scache) != '/' and \
-                    self.scache.find(self.resultsdir) == 0:
-                logging.info("Removing temporary singularity cache %s",
-                             self.scache)
-                shutil.rmtree(self.scache)
+        try:
+            if self.cec == 'docker':
+                logging.info("Deleting Docker image %s", image)
+                command = "docker rmi -f " + image
+                logging.debug(command)
+                command = command.split(' ')
+                ret = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+                ret.wait()
+            elif self.cec == 'singularity' and self.scache != "":
+                if os.path.abspath(self.scache) != '/' and \
+                        self.scache.find(self.resultsdir) == 0:
+                    logging.info("Removing temporary singularity cache %s",
+                                 self.scache)
+                    shutil.rmtree(self.scache)
+                else:
+                    return(False)
+        except Exception:
+            logging.error("Failed to cleanup image!")
+            return(False)
+
+        return(True)
 
     def check_userns(self):
         proc_muns = "/proc/sys/user/max_user_namespaces"
@@ -378,6 +394,7 @@ class HEPscore(object):
         bmark_keys = ''
         bmark_registry = self.registry
         bmark_reg_url = self.confobj['settings']['registry']
+        result = 0
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
@@ -387,6 +404,7 @@ class HEPscore(object):
         else:
             retries = 0
         successful_runs = 0
+        retry_count = 0
 
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
@@ -455,7 +473,7 @@ class HEPscore(object):
             commands = {'docker': "docker run --rm --network=host -v "
                         + runDir + ":/results ",
                         'singularity': "singularity run -C -B " + runDir
-                        + ":/results -B " + "/tmp:/tmp "
+                        + ":/results -B " + "/tmp "
                         + self._get_usernamespace_flag()}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -479,14 +497,15 @@ class HEPscore(object):
                                  stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
                     logging.error("failure to execute: " + command_string)
-                    lfile.close()
                     bench_conf['run' + str(i)]['end_at'] = \
                         bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
-                    self._proc_results(benchmark, mock)
-                    if i == (runs + retries - 1):
-                        self._container_rm(benchmark_name)
-                    return(-1)
+                    retry_count += 1
+                    if retries <= 0 or retry_count > retries:
+                        result = -1
+                        break
+                    else:
+                        continue
 
                 line = cmdf.stdout.readline()
                 while line:
@@ -518,8 +537,6 @@ class HEPscore(object):
                 except Exception:
                     logging.warning("Failed to write logs to file. ")
 
-                if i == (runs + retries - 1) or successful_runs == runs:
-                    self._container_rm(benchmark_name)
             else:
                 time.sleep(1)
 
@@ -532,18 +549,20 @@ class HEPscore(object):
                 logging.error("running " + benchmark + " failed.  Exit "
                               "status " + str(cmdf.returncode) + "\n")
 
-                if 'retries' not in self.confobj['settings'].keys() or \
-                        self.confobj['settings']['retries'] <= 0:
-                    lfile.close()
-                    self._proc_results(benchmark, mock)
-                    return(-1)
+                retry_count += 1
+                if retries <= 0 or retry_count > retries:
+                    result = -1
+                    break
 
         lfile.close()
-
+        self._container_rm(benchmark_name)
         print("")
 
-        result = self._proc_results(benchmark, mock)
-        return(result)
+        proc_result = self._proc_results(benchmark, mock)
+        if result != -1:
+            return(proc_result)
+        else:
+            return(result)
 
     def _check_rc(self, rc):
         if rc == 137 and self.cec == 'docker':
