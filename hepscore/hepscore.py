@@ -186,8 +186,9 @@ class HEPscore(object):
                                   + "/run*/" + benchmark_glob + "*/"
                                   + benchmark_glob + "_summary.json"))
         logging.debug("Looking for results in " + str(gpaths))
-        i = 0
+        i = -1
         for gpath in gpaths:
+            i += 1
             logging.debug("Opening file " + gpath)
 
             try:
@@ -233,7 +234,8 @@ class HEPscore(object):
             sub_results = []
             for sub_bmk in bench_conf['ref_scores'].keys():
                 if sub_bmk not in jscore['report'][self.scorekey]:
-                    logging.error("Sub-score not reported for %s!", sub_bmk)
+                    logging.error("Sub-score not reported for %s in %s!",
+                                  sub_bmk, runstr)
                     key_issue = True
                     continue
                 sub_score = float(jscore['report'][self.scorekey][sub_bmk])
@@ -251,8 +253,6 @@ class HEPscore(object):
 
             if self.level != "INFO":
                 logging.info(" " + str(results[i]))
-
-            i = i + 1
 
         if len(results) == 0:
             logging.warning("No results: fail")
@@ -505,6 +505,7 @@ class HEPscore(object):
                         result = -1
                         break
                     else:
+                        logging.error("Retrying...")
                         continue
 
                 line = cmdf.stdout.readline()
@@ -553,6 +554,8 @@ class HEPscore(object):
                 if retries <= 0 or retry_count > retries:
                     result = -1
                     break
+                else:
+                    logging.error("Retrying...")
 
         lfile.close()
         self._container_rm(benchmark_name)
