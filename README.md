@@ -102,8 +102,8 @@ Option overview:
 -y           Specify output file should be YAML instead of JSON
 -p           Print configuration and exit
 -V           Enable debugging output: implies -v
--c           Remove the docker image after completion
--C           Tar up results and remove results directories
+-c           Remove images after completion
+-C           Clean the workload scratch directories after execution
 Examples:
 Run the benchmark using Docker, displaying all component scores:
 hep-score -dv /tmp/hs19
@@ -236,13 +236,9 @@ STRING; defaullt = "singularity"
 Allows one to specify the default container execution platform:
 "singularity" and "docker" are supported.  This can be overridden on the
 commandline
-##### allow_fail
-BOOL; default = false  
-If multiple runs of a benchmark are requested via the "repetitions" 
-parameter, when true, allow failures as long as one run completes.  
-Normally, a single run failure will fail the entire benchmark, and no 
-score will be reported.  This parameter is primarily useful for testing 
-and debugging purposes
+##### retries
+INTEGER; default = 0
+Specifies how many times to retry a given workload if it fails.
 ##### continue_fail
 BOOL; default = false  
 Defines whether hep-score should continue attempting to run other
