@@ -6,64 +6,52 @@ hepscore_benchmark:
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 1
-        # events
-        -e: 200
+        threads: 1
+        events: 200
     .atlas-sim-bmk:
       ref_scores:
         sim: 0.0641
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 4
-        # events
-        -e: 10
+        threads: 4
+        events: 10
     cms-gen-sim-bmk:
       ref_scores:
         gen-sim: 0.726
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 4
-        # events
-        -e: 20
+        threads: 4
+        events: 20
     cms-digi-bmk:
       ref_scores:
         digi: 3.58
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 4
-        # events
-        -e: 50
+        threads: 4
+        events: 50
     cms-reco-bmk:
       ref_scores:
         reco: 2.196
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 4
-        # events
-        -e: 50
+        threads: 4
+        events: 50
     lhcb-gen-sim-bmk:
       ref_scores:
         gen-sim: 90.29
       weight: 1.0
       version: v2.1
       args:
-        # threads
-        -t: 1
-        # events
-        -e: 5
+        threads: 1
+        events: 5
   settings:
     name: HEPscore20
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
-    registry: dir:///cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     method: geometric_mean
     repetitions: 3
     retries: 1

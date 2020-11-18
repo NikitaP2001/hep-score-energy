@@ -422,17 +422,18 @@ class HEPscore(object):
                          + bmark_reg_url)
 
         if self.clean_files is True:
-            options_string = " -m all"
+            options_string = " --mop all"
 
         for option in bmark_keys:
-            if len(option) != 2 or option[0] != '-' or \
-                    option[1].isalnum() is False or \
-                    str(bench_conf['args'][option]).isalnum() is False:
+            if option.isalnum() is False or  \
+                    option == "mop" or \
+                    option == "resultsdir" or \
+                    str(bench_conf['args'][option]).isalnum() or \ is False:
                 logging.error("Ignoring invalid option in YAML configuration '"
                               + option + " " + bench_conf['args'][option])
                 continue
             if str(bench_conf['args'][option]) not in ['None', 'False']:
-                options_string = options_string + ' ' + option
+                options_string = options_string + ' ' + '--' + option
                 if str(bench_conf['args'][option]) != 'True':
                     options_string = options_string + ' ' + \
                         str(bench_conf['args'][option])
