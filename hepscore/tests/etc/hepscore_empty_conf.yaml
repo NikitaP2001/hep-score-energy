@@ -49,7 +49,7 @@ hepscore_benchmark:
         threads: 1
         events: 5
   settings:
-    name: HEPscore20
+    name: HEPscore20EMPTY
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     method: geometric_mean
