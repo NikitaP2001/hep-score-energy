@@ -1,8 +1,0 @@
-{
-  "containment": "singularity",
-  "bmk_checksum": "647556dcd0898e0b3279e08b3bdbf735",
-  "bmkdata_checksum": "09e9283642fecd717def8b483d30a27e",
-  "cvmfs_checksum": "d82abe792b3ff3870a941a87299dab6d",
-  "description": "CMS GEN-SIM of ttbar events, based on CMSSW_10_2_9",
-  "version": "v2.0"
-}

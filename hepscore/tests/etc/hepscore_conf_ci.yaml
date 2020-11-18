@@ -12,12 +12,8 @@ hepscore_benchmark:
       ref_scores:
         sim: 1
       args:
-        # events
-        -e: 3
-        # threads
-        -t: 1
-        # copies
-        -c: 2
-        # debug
-        -d: true
+        events: 3
+        threads: 1
+        copies: 2
+        debug: true
     

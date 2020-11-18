@@ -428,7 +428,7 @@ class HEPscore(object):
             if option.isalnum() is False or  \
                     option == "mop" or \
                     option == "resultsdir" or \
-                    str(bench_conf['args'][option]).isalnum() or \ is False:
+                    str(bench_conf['args'][option]).isalnum() is False:
                 logging.error("Ignoring invalid option in YAML configuration '"
                               + option + " " + bench_conf['args'][option])
                 continue

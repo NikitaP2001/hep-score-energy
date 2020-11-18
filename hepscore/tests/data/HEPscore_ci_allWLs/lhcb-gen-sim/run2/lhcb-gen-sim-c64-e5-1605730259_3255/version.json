@@ -1,0 +1,8 @@
+{
+  "containment": "singularity",
+  "bmk_checksum": "dc5ad0c309bcf5af0e38f600f1bdeee8",
+  "bmkdata_checksum": "707baabbf015e2f5021a4cda34badc95",
+  "cvmfs_checksum": "75684fff3da8b8c3a9bb91a2c4f0fda7",
+  "description": "LHCb GEN-SIM benchmark",
+  "version": "v2.1"
+}

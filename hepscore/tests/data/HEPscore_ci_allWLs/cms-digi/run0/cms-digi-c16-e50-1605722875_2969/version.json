@@ -1,0 +1,8 @@
+{
+  "containment": "singularity",
+  "bmk_checksum": "07b21173e4cd72d04b1b4b00da4e6061",
+  "bmkdata_checksum": "b1aee3951cff029f030dd5233167a51c",
+  "cvmfs_checksum": "77aad4087cafb0ace8260d1de257031e",
+  "description": "CMS DIGI of ttbar events based on CMSSW_10_2_9",
+  "version": "v2.1"
+}
