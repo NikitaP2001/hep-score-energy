@@ -425,18 +425,25 @@ class HEPscore(object):
             options_string = " --mop all"
 
         for option in bmark_keys:
-            if option.isalnum() is False or  \
-                    option == "mop" or \
-                    option == "resultsdir" or \
-                    str(bench_conf['args'][option]).isalnum() is False:
+            bad_args = ["mop", "resultsdir", "--mop", "--resultsdir",
+                        "-m", "-w", "-W"]
+            option_arg = str(bench_conf['args'][option])
+
+            if re.match(r'^[a-zA-Z0-9\-_]*$', option) is None or \
+                    option in bad_args or \
+                    re.match(r'^[a-zA-Z0-9\-_]*$', option_arg) \
+                    is None:
                 logging.error("Ignoring invalid option in YAML configuration '"
-                              + option + " " + bench_conf['args'][option])
+                              + option + " " + option_arg)
                 continue
-            if str(bench_conf['args'][option]) not in ['None', 'False']:
-                options_string = options_string + ' ' + '--' + option
-                if str(bench_conf['args'][option]) != 'True':
+            if option_arg not in ['None', 'False']:
+                if option[0] != '-':
+                    options_string = options_string + ' ' + '--' + option
+                else:
+                    options_string = options_string + ' ' + option
+                if option_arg != 'True':
                     options_string = options_string + ' ' + \
-                        str(bench_conf['args'][option])
+                        option_arg
 
         try:
             lfile = open(log, mode='a')
