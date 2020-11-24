@@ -1,0 +1,8 @@
+{
+  "containment": "singularity",
+  "bmk_checksum": "0852715cbc1ddeea2e76301b69d1524e",
+  "bmkdata_checksum": "cdf19b5f42900eb2cfea1dc1a10cae0c",
+  "cvmfs_checksum": "3e51249ddbb4144b8a969a6977643995",
+  "description": "CMS RECO of ttbar events, based on CMSSW_10_2_9",
+  "version": "v2.1"
+}

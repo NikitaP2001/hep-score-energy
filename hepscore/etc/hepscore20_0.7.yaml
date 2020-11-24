@@ -54,5 +54,6 @@ hepscore_benchmark:
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     method: geometric_mean
     repetitions: 3
+    retries: 1
     scaling: 355
     container_exec: singularity
