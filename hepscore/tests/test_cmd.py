@@ -104,6 +104,7 @@ class TestRun(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             hs.write_output("json", "")
             self.assertEqual(cm.exception.code, 2)
+        os.remove("/tmp/test_run_empty_cfg/HEPscore20EMPTY.json")
 
 
 class testOutput(unittest.TestCase):
@@ -159,6 +160,7 @@ class testOutput(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         os.remove(resDir + "/HEPscore20.json")
+        os.remove(resDir + "/HEPscore20.log")
 
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
@@ -192,6 +194,7 @@ class testOutput(unittest.TestCase):
         self.assertEqual(actual_res['status'], "failed")
 
         os.remove(resDir + "/HEPscore20.json")
+        os.remove(resDir + "/HEPscore20.log")
 
 
 if __name__ == '__main__':

@@ -30,11 +30,26 @@ job_build_image_tox:
 pep8:
   stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
+  dependencies: []
   except:
     - tags
   script:
-    # run python2 tox
-    - tox -epep8
+    - mkdir -p public/badges public/lint
+    - echo undefined > public/badges/$CI_JOB_NAME.score
+    - tox -e pep8 | tee pylint.txt
+    - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt > public/badges/$CI_JOB_NAME.score
+    - tox -e pep8 -- -f pylint_gitlab.GitlabCodeClimateReporter > codeclimate.json
+  after_script:
+    - tox -e badge -- $(cat public/badges/$CI_JOB_NAME.score)
+    - |
+      echo "Your score is $(cat public/badges/$CI_JOB_NAME.score)"
+  artifacts:
+    paths:
+      - public
+    reports:
+      codequality: codeclimate.json
+    when: always
+
 
 python27:
   stage: unit-test
@@ -43,7 +58,7 @@ python27:
     - tags
   script:
     # python2 
-    - tox -epy27
+    - tox -e py27
 
 python36:
   stage: unit-test
@@ -51,18 +66,20 @@ python36:
   except:
     - tags
   script:
-    - tox -epy36
+    - tox
+  artifacts:
+    reports:
+      junit: report.xml
+    expire_in: 1 week
+    when: always
 
-coverage:
+security:
   stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
   except:
     - tags
   script:
-    - tox -ecover
-  artifacts:
-    paths:
-      - cover
+    - tox -e bandit    
 
 test_python_support:
   # determine minimum supported python version
@@ -73,7 +90,7 @@ test_python_support:
     - vermin -vv .
   only:
     changes:
-      - "*.py"
+      - "**/*.py"
 
 job_test_kv_run_cc7:
     image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest

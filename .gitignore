@@ -13,13 +13,12 @@ develop-eggs
 .installed.cfg
 
 # Unit test / coverage reports
-.coverage
-.coverage.*
-cover/
+.coverage*
+coverage.xml
 .tox
-.stestr/
 .venv
 .python-version
+report.xml
 
 # Editors
 *~
