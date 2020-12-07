@@ -8,19 +8,18 @@
 #
 
 import getopt
-import hepscore
-from hepscore import HEPscore
 import os
-import oyaml as yaml
 import sys
 import time
+import oyaml as yaml
+import hepscore
 
 
 def help(progname):
 
     namel = progname
 
-    print(HEPscore.NAME + " Benchmark Execution - Version " + HEPscore.VER)
+    print(hepscore.HEPscore.NAME + " Benchmark Execution - Version " + hepscore.HEPscore.VER)
     print(namel + " [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
     print(namel + " -h")
     print(namel + " -p [-f CONF]")
@@ -153,7 +152,7 @@ def main():
         if v != "":
             active_config['hepscore_benchmark']['options'][k] = v
 
-    hs = HEPscore(active_config, resultsdir)
+    hs = hepscore.HEPscore(active_config, resultsdir)
 
     if hs.run(replay) >= 0:
         hs.gen_score()
