@@ -5,31 +5,17 @@ ignore-patterns=test_*
 jobs=0
 # Using default set, with new tests disabled to match previous rules from flake8
         # Warnings skipped
-disable=unused-argument,
-        logging-not-lazy,
-        logging-format-interpolation,
-        unused-import,
-        redefined-builtin,
+disable=redefined-builtin, # fixed via argparse
         broad-except,
-        try-except-raise,
         # Conventions skipped
-        superfluous-parens,
-        wrong-import-order,
-        bad-continuation,
         invalid-name,
-        unidiomatic-typecheck,
         missing-module-docstring,
         missing-function-docstring,
         missing-class-docstring,
         # Refactor skips
+        useless-object-inheritance, # drop python2 first
         no-else-return,
-        useless-object-inheritance,
-        simplifiable-if-statement,
         too-many-branches,
         too-many-statements,
         too-many-locals,
-        comparison-with-itself,
-        no-self-use,
-        too-many-instance-attributes,
-        consider-using-in,
-        no-else-break
+        too-many-instance-attributes
