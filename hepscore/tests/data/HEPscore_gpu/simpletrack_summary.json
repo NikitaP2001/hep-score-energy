@@ -1,0 +1,25 @@
+{
+  "run_info": {
+    "copies": 1,
+    "threads_per_copy": 15,
+    "events_per_thread": 20000
+  },
+  "report": {
+    "wl-scores": {
+      "simpletrack": 127346
+    },
+    "log": "ok"
+  },
+  "app": {
+    "devices": {
+      "device_id": "0.0",
+      "name": "Tesla T4",
+      "platform": "NVIDIA CUDA"
+    },
+    "containment": "singularity",
+    "version": "qa-simpletrack",
+    "description": "Simpletrack OpenCL WIP of SixTrack",
+    "bmk_checksum": "c607c89b2fa7e2a26bafaa7f2df8e5a339f92c0a",
+    "upstream_hash": "5d040ba6b3f82e97f855c4b49407189bac0c3b49"
+  }
+}

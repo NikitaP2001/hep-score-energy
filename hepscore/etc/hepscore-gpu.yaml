@@ -1,0 +1,20 @@
+hepscore_benchmark:
+  benchmarks:
+    lhc-simpletrack-bmk:
+      ref_scores:
+        simpletrack: 1
+      version: qa-simpletrack
+      registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-gpu/simpletrack
+      gpu: true
+      args:
+        particles: 30000
+        turns: 200
+        benchmark: all
+  settings:
+    name: HEPscore20
+    reference_machine: "NVIDIA Tesla T4 OpenCL 1.2 CUDA 11.1.102"
+    registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
+    method: geometric_mean
+    repetitions: 3
+    scaling: 1
+    container_exec: singularity

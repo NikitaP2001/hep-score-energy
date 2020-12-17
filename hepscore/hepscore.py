@@ -382,6 +382,7 @@ class HEPscore(object):
         bmark_registry = self.registry
         bmark_reg_url = self.confobj['settings']['registry']
         result = 0
+        gpu_flag = ""
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
@@ -410,6 +411,12 @@ class HEPscore(object):
 
         if self.clean_files is True:
             options_string = " --mop all"
+
+        if 'gpu' in bench_conf and bench_conf['gpu'] is True:
+            if self.cec == 'singularity':
+                gpu_flag = "--nv "
+            else:
+                gpu_flag = "--gpus all "
 
         for option in bmark_keys:
             bad_args = ["mop", "resultsdir", "--mop", "--resultsdir",
@@ -465,9 +472,10 @@ class HEPscore(object):
                     os.chmod(runDir, stat.S_ISVTX | stat.S_IRWXU |
                              stat.S_IRWXG | stat.S_IRWXO)
 
-            commands = {'docker': "docker run --rm --network=host -v " + runDir + ":/results ",
-                        'singularity': "singularity run -C -B " + runDir + ":/results -B /tmp "
-                                       + self._get_usernamespace_flag()}
+            commands = {'docker': "docker run --rm --network=host -v " + runDir
+                            + ":/results " + gpu_flag,
+                        'singularity': "singularity run -C -B " + runDir
+                            + ":/results -B /tmp " + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')

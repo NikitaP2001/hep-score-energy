@@ -9,7 +9,7 @@ stages:
 # Adapted from https://gitlab.cern.ch/gitlabci-examples/build_docker_image/blob/master/.gitlab-ci.yml
 # Kaniko is the recommended method for running Docker-builds as of May 2019. 
 # See https://docs.gitlab.com/ee/ci/docker/using_kaniko.html for GitLab's documentation.
-job_build_image_tox:
+build_image_tox:
   stage: build-testing-image
   image: # NB enable shared runners and do not specify a CI tag
     name: gitlab-registry.cern.ch/ci-tools/docker-image-builder # CERN version of the Kaniko image
@@ -93,20 +93,39 @@ test_python_support:
     changes:
       - "**/*.py"
 
-job_test_kv_run_cc7:
-    image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
-    tags:
-        -  hep-score-docker-runner 
-    stage: test
-    script: 
-        - $CI_PROJECT_DIR/hepscore/tests/run_bat_tests.sh
-    after_script:
-        - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
-    only:
-      variables:
-        - $CI_COMMIT_BRANCH =~ /^qa-.*$/
-    artifacts:
-        paths:
-           - hep-score-test.tgz
-        expire_in: 1 week
-        when: always
+kv_run_cc7:
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
+  tags:
+    -  hep-score-docker-runner 
+  stage: test
+  script: 
+    - $CI_PROJECT_DIR/hepscore/tests/run_bat_tests.sh
+  after_script:
+    - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
+  only:
+    variables:
+      - $CI_COMMIT_BRANCH =~ /^qa-.*$/
+  artifacts:
+      paths:
+        - hep-score-test.tgz
+      expire_in: 1 week
+      when: always
+
+simpletrack_gpu:
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
+  tags:
+    -  hep-workload-gpu-docker-builder
+  stage: test
+  script: 
+    - pip install .
+    - hep-score -v -V -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
+  after_script:
+    - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
+  only:
+    variables:
+      - $CI_COMMIT_BRANCH =~ /^qa-.*$/
+  artifacts:
+      paths:
+        - hep-score-test.tgz
+      expire_in: 1 week
+      when: always
