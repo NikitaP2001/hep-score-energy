@@ -9,7 +9,6 @@ hepscore_benchmark:
       args:
         particles: 30000
         turns: 200
-        benchmark: all
   settings:
     name: HEPscore20
     reference_machine: "NVIDIA Tesla T4 OpenCL 1.2 CUDA 11.1.102"
