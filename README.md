@@ -94,12 +94,13 @@ known issues when using HEPscore with earlier Singularity and Docker releases.
 
 ```sh
 HEPscore Benchmark Execution - Version 1.0.0
-hep-score [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR
+hep-score [-s|-d] [-v] [-y] [-o OUTFILE] [-f CONF] OUTDIR
 hep-score -h
+hep-score -V
 hep-score -p [-f CONF]
 Option overview:
 -h           Print help information and exit
--v           Display verbose output, including all component benchmark scores
+-V           Print version and exit
 -d           Run benchmark containers in Docker
 -s           Run benchmark containers in Singularity
 -S           Run benchmark containers in Singularity, forcing userns if supported
@@ -108,9 +109,9 @@ Option overview:
 -o           Specify an alternate summary output file location
 -y           Specify output file should be YAML instead of JSON
 -p           Print configuration and exit
--V           Enable debugging output: implies -v
+-v           Enable verbose/debugging output
 -c           Remove images after completion
--C           Clean the workload scratch directories after execution
+-C           Clean workload scratch directories after execution
 Examples:
 Run the benchmark using Docker, displaying all component scores:
 hep-score -dv /tmp/hs19

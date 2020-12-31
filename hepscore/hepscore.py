@@ -25,6 +25,8 @@ import time
 import pbr.version
 import oyaml as yaml
 
+logger = logging.getLogger(__name__)
+
 
 def median_tuple(vals):
 
@@ -36,8 +38,7 @@ def median_tuple(vals):
     else:
         val1 = sorted_vals[med_ind - 1][1]
         val2 = sorted_vals[med_ind][1]
-        return ((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0],
-                                       sorted_vals[med_ind][0])
+        return ((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0], sorted_vals[med_ind][0])
 
 
 def weighted_geometric_mean(vals, weights=None):
@@ -75,7 +76,6 @@ class HEPscore(object):
     VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
-    level = "INFO"
     scorekey = 'wl-scores'
     cec = "singularity"
     clean = False
@@ -94,32 +94,16 @@ class HEPscore(object):
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
 
-        if self.confobj.get('options', {}).get('level') in \
-                ("VERBOSE", "DEBUG"):
-            self.level = self.confobj['options']['level']
-
-        if self.level == "DEBUG":
-            logging.basicConfig(level=logging.DEBUG,
-                                format='%(asctime)s - %(levelname)s - '
-                                '%(funcName)s() - %(message)s ',
-                                stream=sys.stdout)
-        else:
-            logging.basicConfig(level=logging.INFO,
-                                format='%(asctime)s - %(levelname)s - '
-                                '%(message)s',
-                                stream=sys.stdout)
-
         if 'container_exec' in self.settings:
             if self.settings['container_exec'] in (
                     "singularity", "docker"):
                 self.cec = self.settings['container_exec']
             else:
-                logging.error("%s not understood. Stopping",
-                    self.settings['container_exec'])
+                logger.error("%s not understood. Stopping", self.settings['container_exec'])
                 sys.exit(1)
         else:
-            logging.warning("Run type not specified on commandline or"
-                            " in config - assuming %s ", self.cec)
+            logger.warning("Container not specified on commandline or in config - assuming %s",
+                           self.cec)
 
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
@@ -142,7 +126,7 @@ class HEPscore(object):
             try:
                 reg_url = self.confobj['settings']['registry']
             except KeyError:
-                logging.error("Registry undefined")
+                logger.error("Registry undefined")
                 sys.exit(1)
 
         found_valid = False
@@ -153,13 +137,11 @@ class HEPscore(object):
                 break
 
         if not found_valid:
-            logging.error("Invalid URI specification in registry path: %s",
-                          reg_url)
+            logger.error("Invalid URI specification in registry path: %s", reg_url)
             sys.exit(1)
 
         if self.cec == 'docker' and uri != 'docker':
-            logging.error("Only docker registry URI (docker://) supported for"
-                          " Docker runs.")
+            logger.error("Only docker registry URI (docker://) supported for Docker runs.")
             sys.exit(1)
         return reg_path if (self.cec == 'docker' or uri == 'dir') else reg_url
 
@@ -175,24 +157,24 @@ class HEPscore(object):
         gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob
                                   + "/run*/" + benchmark_glob + "*/"
                                   + benchmark_glob + "_summary.json"))
-        logging.debug("Looking for results in %s", gpaths)
+        logger.debug("Looking for results in %s", gpaths)
         i = -1
         for gpath in gpaths:
             i += 1
-            logging.debug("Opening file %s", gpath)
+            logger.debug("Opening file %s", gpath)
 
             try:
                 with open(gpath, mode='r') as jfile:
                     lines = jfile.read()
             except Exception:
-                logging.error("Failure reading from %s", gpath)
+                logger.error("Failure reading from %s", gpath)
                 continue
 
             try:
                 jscore = ""
                 jscore = json.loads(lines)
             except Exception:
-                logging.error("Malformed JSON in %s", gpath)
+                logger.error("Malformed JSON in %s", gpath)
                 continue
 
             json_required_keys = ['app', 'run_info', 'report']
@@ -202,12 +184,11 @@ class HEPscore(object):
                 if k not in jscore.keys():
                     key_issue = True
                 elif k == 'report':
-                    if (not isinstance(jscore[k], dict)) or self.scorekey not in \
-                            jscore[k].keys():
+                    if (not isinstance(jscore[k], dict)) or self.scorekey not in jscore[k].keys():
                         key_issue = True
                         kstr = k + '[' + self.scorekey + ']'
                 if key_issue:
-                    logging.error("Required key %s not in JSON!", kstr)
+                    logger.error("Required key '%s' not in JSON!", kstr)
 
             if key_issue:
                 continue
@@ -224,13 +205,12 @@ class HEPscore(object):
             sub_results = []
             for sub_bmk in bench_conf['ref_scores'].keys():
                 if sub_bmk not in jscore['report'][self.scorekey]:
-                    logging.error("Sub-score not reported for %s in %s!",
-                                  sub_bmk, runstr)
+                    logger.error("Sub-score not reported for %s in %s!",
+                                 sub_bmk, runstr)
                     key_issue = True
                     continue
                 sub_score = float(jscore['report'][self.scorekey][sub_bmk])
-                sub_score = sub_score / \
-                    bench_conf['ref_scores'][sub_bmk]
+                sub_score = sub_score / bench_conf['ref_scores'][sub_bmk]
                 sub_score = round(sub_score, 4)
                 sub_results.append(sub_score)
 
@@ -240,17 +220,14 @@ class HEPscore(object):
             score = weighted_geometric_mean(sub_results)
 
             results[i] = round(score, 4)
-
-            if self.level != "INFO":
-                logging.info(" %s", str(results[i]))
+            logger.debug(results[i])
 
         if len(results) == 0:
-            logging.warning("No results: fail")
+            logger.warning("No results: fail")
             return -1
 
         if len(results) != runs:
-            logging.error("Expected %d scores, got %d!", runs,
-                          len(results))
+            logger.error("Expected %d scores, got %d!", runs, len(results))
             return -1
 
         final_result, final_run = median_tuple(results)
@@ -263,7 +240,7 @@ class HEPscore(object):
         for sub_bmk in bench_conf['ref_scores'].keys():
             if len(results) % 2 != 0:
                 runstr = 'run' + str(final_run)
-                logging.debug("Median selected run %s", runstr)
+                logger.debug("Median selected run %s", runstr)
                 self.confobj['wl-scores'][benchmark][sub_bmk] = \
                     bench_conf[runstr]['report']['wl-scores'][sub_bmk]
             else:
@@ -278,8 +255,8 @@ class HEPscore(object):
 
         bench_conf.pop('ref_scores', None)
 
-        if len(results) > 1 and self.level != "INFO":
-            logging.info("Median: %s", str(final_result))
+        if len(results) > 1:
+            logger.debug(" Median: %s", final_result)
 
         return final_result
 
@@ -289,23 +266,20 @@ class HEPscore(object):
 
         try:
             if self.cec == 'docker':
-                logging.info("Deleting Docker image %s", image)
+                logger.info("Deleting Docker image %s", image)
                 command = "docker rmi -f " + image
-                logging.debug(command)
+                logger.debug(command)
                 command = command.split(' ')
-                ret = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       stderr=subprocess.STDOUT)
+                ret = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 ret.wait()
             elif self.cec == 'singularity' and self.scache != "":
-                if os.path.abspath(self.scache) != '/' and \
-                        self.scache.find(self.resultsdir) == 0:
-                    logging.info("Removing temporary singularity cache %s",
-                                 self.scache)
+                if os.path.abspath(self.scache) != '/' and self.scache.find(self.resultsdir) == 0:
+                    logger.info("Removing temporary singularity cache %s", self.scache)
                     shutil.rmtree(self.scache)
                 else:
                     return False
         except Exception:
-            logging.error("Failed to cleanup image!")
+            logger.error("Failed to cleanup image!")
             return False
 
         return True
@@ -317,19 +291,17 @@ class HEPscore(object):
         try:
             cg = open(dockerenv, mode='r')
             cg.close()
-            logging.debug("%s running inside of Docker.  "
-                          "Not enabling user namespaces.", self.NAME)
+            logger.debug("%s running inside of Docker. Not enabling user namespaces.", self.NAME)
             return False
         except Exception:
-            logging.debug("%s not running inside Docker.", self.NAME)
+            logger.debug("%s not running inside Docker.", self.NAME)
 
         try:
             mf = open(proc_muns, mode='r')
             max_usrns = int(mf.read())
         except Exception:
-            if self.level != 'INFO':
-                logging.info("Cannot open/read from %s, assuming user "
-                             "namespace support disabled", proc_muns)
+            logger.debug("Cannot open/read from %s, assuming user namespace support disabled",
+                         proc_muns)
             return False
 
         mf.close()
@@ -339,11 +311,8 @@ class HEPscore(object):
     def _get_usernamespace_flag(self):
         if self.cec == "singularity" and self.userns is True:
             if self.check_userns():
-                if self.level != 'INFO':
-                    logging.info("System supports user namespaces, enabling in"
-                                 " singularity call")
+                logger.debug("System supports user namespaces, enabling in singularity call")
                 return "-u "
-
         return ""
 
     def get_version(self):
@@ -356,7 +325,7 @@ class HEPscore(object):
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
         except Exception:
-            logging.error("Error fetching %s version", self.cec)
+            logger.error("Error fetching %s version", self.cec)
 
         try:
             # cmdf unbound
@@ -397,7 +366,7 @@ class HEPscore(object):
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
             tmp += 's'
-        logging.info("%s of %s", tmp, benchmark)
+        logger.info("%s of %s", tmp, benchmark)
 
         if 'args' in bench_conf.keys():
             bmark_keys = bench_conf['args'].keys()
@@ -406,8 +375,7 @@ class HEPscore(object):
         if 'registry' in bench_conf.keys():
             bmark_reg_url = bench_conf['registry']
             bmark_registry = self._gen_reg_path(bench_conf['registry'])
-            logging.info("Overriding registry for this container: %s",
-                         bmark_reg_url)
+            logger.info("Overriding registry for this container: %s", bmark_reg_url)
 
         if self.clean_files is True:
             options_string = " --mop all"
@@ -427,8 +395,8 @@ class HEPscore(object):
                     option in bad_args or \
                     re.match(r'^[a-zA-Z0-9\-_]*$', option_arg) \
                     is None:
-                logging.error("Ignoring invalid option in YAML configuration %s %s",
-                              option, option_arg)
+                logger.error("Ignoring invalid option in YAML configuration %s %s",
+                             option, option_arg)
                 continue
             if option_arg not in ['None', 'False']:
                 if option[0] != '-':
@@ -436,28 +404,25 @@ class HEPscore(object):
                 else:
                     options_string = options_string + ' ' + option
                 if option_arg != 'True':
-                    options_string = options_string + ' ' + \
-                        option_arg
+                    options_string = options_string + ' ' + option_arg
 
         try:
             lfile = open(log, mode='a')
         except Exception:
-            logging.error("failure to open %s", log)
+            logger.error("failure to open %s", log)
             return -1
 
-        benchmark_name = bmark_registry + '/' + benchmark + ':' + \
-            bench_conf['version']
+        benchmark_name = bmark_registry + '/' + benchmark + ':' + bench_conf['version']
         benchmark_complete = benchmark_name + options_string
         self.confobj['settings']['replay'] = mock
 
         if self.cec == 'singularity' and self.scache != "":
-            logging.info("Creating singularity cache %s", self.scache)
+            logger.info("Creating singularity cache %s", self.scache)
             try:
                 os.makedirs(self.scache)
+                os.environ['SINGULARITY_CACHEDIR'] = self.scache
             except Exception:
-                logging.error("Failed to create Singularity cache dir %s",
-                              self.scache)
-            os.environ['SINGULARITY_CACHEDIR'] = self.scache
+                logger.error("Failed to create Singularity cache dir %s", self.scache)
 
         for i in range(runs + retries):
             if successful_runs == runs:
@@ -482,8 +447,8 @@ class HEPscore(object):
 
             runstr = 'run' + str(i)
 
-            logging.info("Starting %s", runstr)
-            logging.debug("Running  %s", command)
+            logger.info("Starting %s", runstr)
+            logger.debug("Running  %s", command)
 
             bench_conf[runstr] = {}
             starttime = time.time()
@@ -497,15 +462,14 @@ class HEPscore(object):
                         os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
                                  stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-                    logging.error("failure to execute: %s", command_string)
-                    bench_conf['run' + str(i)]['end_at'] = \
-                        bench_conf['run' + str(i)]['start_at']
+                    logger.error("failure to execute: %s", command_string)
+                    bench_conf['run' + str(i)]['end_at'] = bench_conf['run' + str(i)]['start_at']
                     bench_conf['run' + str(i)]['duration'] = 0
                     retry_count += 1
                     if retries <= 0 or retry_count > retries:
                         result = -1
                         break
-                    logging.error("Retrying...")
+                    logger.error("Retrying...")
                     continue
 
                 line = cmdf.stdout.readline()
@@ -515,7 +479,7 @@ class HEPscore(object):
                     lfile.flush()
                     line = cmdf.stdout.readline()
                     if line[-25:] == "no space left on device.\n":
-                        logging.error("Docker: No space left on device.")
+                        logger.error("Docker: No space left on device.")
 
                 cmdf.wait()
 
@@ -525,9 +489,9 @@ class HEPscore(object):
 
                 self._check_rc(cmdf.returncode)
                 if cmdf.returncode > 0:
-                    logging.error("%s output logs:", self.cec)
+                    logger.error("%s output logs:", self.cec)
                     for line in list(reversed(output_logs))[-10:]:
-                        print(line)
+                        logger.error(line)
                 else:
                     successful_runs += 1
 
@@ -536,42 +500,39 @@ class HEPscore(object):
                         for line in reversed(output_logs):
                             f.write('%s' % line)
                 except Exception:
-                    logging.warning("Failed to write logs to file. ")
+                    logger.warning("Failed to write logs to file!")
 
             else:
                 time.sleep(1)
 
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
-            bench_conf[runstr]['duration'] = math.floor(endtime) - \
-                math.floor(starttime)
+            bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
 
-            #cmdf unbound
+            # cmdf unbound
             if not mock and cmdf.returncode != 0:
-                logging.error("running %s failed.  Exit status %s",
-                              benchmark, str(cmdf.returncode))
+                logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
 
                 retry_count += 1
                 if retries <= 0 or retry_count > retries:
                     result = -1
                     break
-                logging.error("Retrying...")
+                logger.warning("Retrying...")
 
         lfile.close()
         self._container_rm(benchmark_name)
-        print("")
+        logger.info("")
 
         proc_result = self._proc_results(benchmark)
         return proc_result if result != -1 else result
 
     def _check_rc(self, rc):
         if rc == 137 and self.cec == 'docker':
-            logging.error("%s returned code 137: OOM-kill or intervention",
-                          self.cec)
+            logger.error("%s returned code 137: OOM-kill or intervention", self.cec)
         elif rc != 0:
-            logging.error("%s returned code %s", self.cec, str(rc))
+            logger.error("%s returned code %s", self.cec, rc)
         else:
-            logging.debug("%s terminated without errors", self.cec)
+            logger.debug("%s terminated without errors", self.cec)
 
     def gen_score(self):
 
@@ -582,10 +543,10 @@ class HEPscore(object):
 
         fres = round(fres, 4)
 
-        logging.info("Final result: %s", str(fres))
+        logger.info("Final result: %s", fres)
 
         if math.isnan(fres):
-            logging.debug("Final result is not valid")
+            logger.debug("Final result is not valid")
             self.confobj['score_per_core'] = -1
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
@@ -597,13 +558,12 @@ class HEPscore(object):
                 self.confobj['score_per_core'] = round(spc, 3)
             except Exception:
                 self.confobj['score_per_core'] = -1
-                logging.warning('Could not determine core count')
+                logger.warning('Could not determine core count')
 
     def write_output(self, outtype, outfile):
 
         if not outfile:
-            outfile = self.resultsdir + '/' + \
-                self.confobj['settings']['name'] + '.' + outtype
+            outfile = self.resultsdir + '/' + self.confobj['settings']['name'] + '.' + outtype
 
         outobj = {}
         if outtype == 'yaml':
@@ -617,32 +577,32 @@ class HEPscore(object):
             jfile = open(outfile, mode='w')
             if outtype == 'yaml':
                 jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                            allow_unicode=True).decode('utf-8'))
+                                           allow_unicode=True).decode('utf-8'))
             else:
                 jfile.write(json.dumps(outobj))
             jfile.close()
         except Exception:
-            logging.error("Failed to create summary output %s", outfile)
+            logger.exception("Failed to create summary output %s", outfile)
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
+            logger.error("Results = %s.", self.results)
             sys.exit(2)
 
     def validate_conf(self):
 
         hep_settings = ['settings', 'benchmarks']
-        rsf = {'settings': ['method', 'repetitions', 'name', 'registry',
-                            'reference_machine'],
+        rsf = {'settings': ['method', 'repetitions', 'name', 'registry', 'reference_machine'],
                'benchmarks': []}
 
         for k in hep_settings:
             if k not in self.confobj:
-                logging.error("Configuration: %s section must be defined", k)
+                logger.error("Configuration: %s section must be defined", k)
                 sys.exit(1)
 
             for f in rsf[k]:
                 if f not in self.confobj[k]:
-                    logging.error("Configuration: %s must be specified in %s", f, k)
+                    logger.error("Configuration: %s must be specified in %s", f, k)
                     sys.exit(1)
 
             if k == 'settings':
@@ -651,32 +611,27 @@ class HEPscore(object):
                         reg_string = \
                             self.confobj[k][j]
                         if not reg_string[0].isalpha() or \
-                                re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
-                                         reg_string) is None:
-                            logging.error("Configuration: illegal "
-                                          "character in registry")
+                                re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
+                            logger.error("Configuration: illegal character in registry")
                             sys.exit(1)
                     if j == 'method':
                         val = self.confobj[k][j]
                         if val != 'geometric_mean':
-                            logging.error("Configuration: only "
-                                          "'geometric_mean' method is"
-                                          " currently supported")
+                            logger.error("Configuration: only 'geometric_mean' method is "
+                                         "currently supported")
                             sys.exit(1)
                     if j in ('repetitions', 'retries'):
                         val = self.confobj[k][j]
                         if (not isinstance(val, int)) or val < 0:
-                            logging.error("Configuration: '%s' "
-                                          "configuration parameter must "
-                                          "be a positive integer", j)
+                            logger.error("Configuration: '%s' configuration parameter must "
+                                         "be a positive integer", j)
                             sys.exit(1)
                     if j == 'scaling':
                         try:
                             float(self.confobj[k][j])
                         except ValueError:
-                            logging.error("Configuration: 'scaling' "
-                                          "configuration parameter must be a "
-                                          "float")
+                            logger.error("Configuration: 'scaling' configuration parameter "
+                                         "must be a float")
                             sys.exit(1)
 
         bcount = 0
@@ -685,60 +640,57 @@ class HEPscore(object):
             bcount = bcount + 1
 
             if benchmark[0] == ".":
-                logging.info("the config has a commented entry %s:"
-                             "Skipping this benchmark!", benchmark)
+                logger.info("%s is commented out: Skipping this benchmark!", benchmark)
                 self.confobj['benchmarks'].pop(benchmark, None)
                 continue
 
             if re.match(r'^[a-zA-Z0-9\-_]*$', benchmark) is None:
-                logging.error("Configuration: illegal character in benchmark name %s", benchmark)
+                logger.error("Configuration: illegal character in benchmark name %s", benchmark)
                 sys.exit(1)
 
             if benchmark.find('-') == -1:
-                logging.error("Configuration: expect at least 1 '-' character in benchmark name %s",
-                              benchmark)
+                logger.error("Configuration: expect at least 1 '-' character in benchmark name %s",
+                             benchmark)
                 sys.exit(1)
 
             bmk_req_options = ['version']
 
             for k in bmk_req_options:
                 if k not in bmark_conf.keys():
-                    logging.error("Configuration: missing required benchmark option for %s - %s",
-                                  benchmark, k)
+                    logger.error("Configuration: missing required benchmark option for %s - %s",
+                                 benchmark, k)
                     sys.exit(1)
 
             if 'weight' in bmark_conf.keys():
                 try:
                     float(bmark_conf['weight'])
                 except ValueError:
-                    logging.error("Configuration: invalid 'weight' specified: %s Must be a float",
-                                  bmark_conf['weight'])
+                    logger.error("Configuration: invalid 'weight' specified: %s Must be a float",
+                                 bmark_conf['weight'])
 
             if 'ref_scores' in bmark_conf.keys():
                 for score in bmark_conf['ref_scores']:
                     try:
                         float(bmark_conf['ref_scores'][score])
                     except ValueError:
-                        logging.error("Configuration: ref_score " + score
-                                      + " is not a float for " + benchmark)
+                        logger.error("Configuration: ref_score %s is not a float for %s",
+                                     score, benchmark)
                         sys.exit(1)
             else:
-                logging.error("Configuration: ref_scores missing for %s", benchmark)
+                logger.error("Configuration: ref_scores missing for %s", benchmark)
                 sys.exit(1)
 
             if 'registry' in bmark_conf.keys():
                 if not reg_string[0].isalpha() or \
-                        re.match(r'^[a-zA-Z0-9:/\-_\.~]*$',
-                                 reg_string) is None:
-                    logging.error("Configuration: illegal "
-                                  "character in registry")
+                        re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
+                    logger.error("Configuration: illegal character in registry")
                     sys.exit(1)
 
         if bcount == 0:
-            logging.error("Configuration: no benchmarks specified")
+            logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logging.debug("The parsed config is: %s", yaml.safe_dump(self.confobj))
+        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj))
 
         return self.confobj
 
@@ -746,14 +698,13 @@ class HEPscore(object):
 
         # check rundir is empty
         if os.listdir(self.resultsdir) and not mock:
-            logging.error("Results directory is not empty!")
+            logger.error("Results directory is not empty!")
             sys.exit(2)
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
         m = hashlib.sha256()
-        hashable_conf = {k: v for k, v in self.confobj.items() if
-                         k not in 'options'}
+        hashable_conf = {k: v for k, v in self.confobj.items() if k not in 'options'}
         m.update(json.dumps(hashable_conf, sort_keys=True).encode('utf-8'))
         self.confobj['app_info'] = {}
         self.confobj['app_info']['config_hash'] = m.hexdigest()
@@ -764,23 +715,21 @@ class HEPscore(object):
         ver = self.get_version()
         exec_ver = self.cec + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'date': curtime,
-                                       exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'date': curtime, exec_ver: ver}
 
-        print(self.confobj['settings']['name'] + " Benchmark")
-        print("Config Hash:          " +
-              self.confobj['app_info']['config_hash'])
-        print("System:               " + sysname)
-        print("Container Execution:  " + self.cec)
-        print("Registry:             " + self.confobj['settings']['registry'])
-        print("Output:               " + self.resultsdir)
-        print("Date:                 " + curtime + "\n")
+        logger.info("%s Benchmark", self.confobj['settings']['name'])
+        logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
+        logger.info("System:              %s", sysname)
+        logger.info("Container Execution: %s", self.cec)
+        logger.info("Registry:            %s", self.confobj['settings']['registry'])
+        logger.info("Output:              %s", self.resultsdir)
+        logger.info("Date:                %s\n", curtime)
 
         self.confobj['wl-scores'] = {}
         self.confobj['app_info']['hepscore_ver'] = self.VER
 
         if mock is True:
-            logging.info("NOTE: Replaying prior results")
+            logger.info("Replaying prior results")
 
         res = 0
         have_failure = False
@@ -791,9 +740,8 @@ class HEPscore(object):
                 # set error to first benchmark encountered
                 if 'error' not in self.confobj.keys():
                     self.confobj['error'] = benchmark
-                if 'continue_fail' not in \
-                        self.confobj['settings'].keys() \
-                        or self.confobj['settings']['continue_fail'] is False:
+                if 'continue_fail' not in self.confobj['settings'].keys() or \
+                        self.confobj['settings']['continue_fail'] is False:
                     break
             self.results.append(res)
             bench_conf = self.confobj['benchmarks'][benchmark]
@@ -804,7 +752,7 @@ class HEPscore(object):
                 bench_conf['weight'] = 1.0
 
         if have_failure:
-            logging.error("BENCHMARK FAILURE")
+            logger.error("BENCHMARK FAILURE")
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
             return -1

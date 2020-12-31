@@ -39,7 +39,7 @@ pep8:
     - tox -e pep8 | tee pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt > public/badges/$CI_JOB_NAME.score
     - tox -q -e pep8 -- -f pylint_gitlab.GitlabCodeClimateReporter > codeclimate.json
-    - sed -i "/]/q" codeclimate.json 
+    - sed -i "/]/q" codeclimate.json
   after_script:
     - tox -e badge -- $(cat public/badges/$CI_JOB_NAME.score)
     - |
