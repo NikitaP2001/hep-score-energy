@@ -118,7 +118,7 @@ simpletrack_gpu:
   stage: test
   script: 
     - pip install .
-    - hep-score -v -V -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
+    - hep-score -v -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
   only:
