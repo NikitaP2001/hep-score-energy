@@ -8,11 +8,16 @@
 #
 
 import getopt
+import logging
 import os
 import sys
 import time
 import oyaml as yaml
 import hepscore
+
+logger = logging.getLogger()
+logging.basicConfig(format='%(asctime)s, hepscore:%(funcName)s [%(levelname)s] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.WARNING)
 
 
 def help(progname):
@@ -20,13 +25,13 @@ def help(progname):
     namel = progname
 
     print(hepscore.HEPscore.NAME + " Benchmark Execution - Version " + hepscore.HEPscore.VER)
-    print(namel + " [-s|-d] [-v] [-V] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
+    print(namel + " [-s|-d] [-v] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
     print(namel + " -h")
+    print(namel + " -V")
     print(namel + " -p [-f CONF]")
     print("Option overview:")
     print("-h           Print help information and exit")
-    print("-v           Display verbose output, including all component "
-          "benchmark scores")
+    print("-V           Print version and exit")
     print("-d           Run benchmark containers in Docker")
     print("-s           Run benchmark containers in Singularity")
     print("-S           Run benchmark containers in Singularity, forcing"
@@ -37,11 +42,11 @@ def help(progname):
     print("-o           Specify an alternate summary output file location")
     print("-y           Specify output file should be YAML instead of JSON")
     print("-p           Print configuration and exit")
-    print("-V           Enable debugging output: implies -v")
+    print("-v           Enable verbose/debugging output")
     print("-c           Remove images after completion")
     print("-C           Clean workload scratch directories after execution")
     print("Examples:")
-    print("Run the benchmark using Docker, dispaying all component scores:")
+    print("Run the benchmark using Docker, displaying all component scores:")
     print(namel + " -dv /tmp/hs19")
     print("Run with Singularity, using a non-standard benchmark "
           "configuration:")
@@ -53,6 +58,8 @@ def help(progname):
 
 def main():
 
+    logger.setLevel(logging.INFO)
+
     hsargs = {}
     replay = False
     printconf_and_exit = False
@@ -60,11 +67,10 @@ def main():
     conffile = '/'.join(os.path.split(hepscore.__file__)[:-1]) + \
         "/etc/hepscore-default.yaml"
     outfile = ""
-
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsSyrf:o:')
     except getopt.GetoptError as err:
-        print("\nError: " + str(err) + "\n")
+        logger.error(err)
         help(sys.argv[0])
         sys.exit(1)
 
@@ -74,10 +80,15 @@ def main():
             sys.exit(0)
         if opt == '-p':
             printconf_and_exit = True
+        if opt == '-V':
+            if len(opts)==1:
+                print(str(hepscore.HEPscore.VER))
+                sys.exit(0)
+            else:
+                help(sys.argv[0])
+                sys.exit(1)
         elif opt == '-v':
-            hsargs['level'] = 'VERBOSE'
-        elif opt == '-V':
-            hsargs['level'] = 'DEBUG'
+            logger.setLevel(logging.DEBUG)
         elif opt == '-f':
             conffile = arg
         elif opt == '-y':
@@ -92,7 +103,7 @@ def main():
             hsargs['clean_files'] = True
         elif opt in ['-s', '-S', '-d']:
             if 'container_exec' in hsargs:
-                print("\nError: -s, -d and -S are exclusive\n")
+                logger.error("-s, -d and -S are exclusive")
                 sys.exit(1)
             if opt == '-d':
                 hsargs['container_exec'] = "docker"
@@ -106,7 +117,7 @@ def main():
         goodlen = 0
     if len(args) != goodlen:
         if not printconf_and_exit:
-            print("Must specify OUTDIR.\n")
+            logger.error("Must specify OUTDIR.\n")
         help(sys.argv[0])
         sys.exit(1)
 
@@ -115,7 +126,7 @@ def main():
         with open(conffile, 'r') as yam:
             active_config = yaml.safe_load(yam)
     except Exception:
-        print("Error reading/parsing YAML configuration file " + conffile)
+        logger.error("Cannot read/parse YAML configuration file %s", conffile)
         sys.exit(1)
 
     if printconf_and_exit:
@@ -125,7 +136,7 @@ def main():
     # check passed dir
     if replay:
         if not os.path.isdir(args[0]):
-            print("Replay mode requires valid directory!")
+            logger.error("Replay mode requires valid directory!")
             sys.exit(1)
         else:
             resultsdir = args[0]
@@ -136,7 +147,8 @@ def main():
         try:
             os.makedirs(resultsdir)
         except Exception:
-            print("Error creating output directory " + resultsdir)
+            logger.exception("Failed to create output directory %s. Do you have permissions?",
+                             resultsdir)
             sys.exit(1)
 
     if 'container_exec' in hsargs:
