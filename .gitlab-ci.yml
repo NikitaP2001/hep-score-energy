@@ -107,7 +107,8 @@ simpletrack_gpu:
   tags:
     -  hep-workload-gpu-docker-builder
   stage: test
-  script: 
+  script:
+    - yum -y install python3 python3-pip
     - pip3 install .
     - hep-score -v -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
   after_script:
