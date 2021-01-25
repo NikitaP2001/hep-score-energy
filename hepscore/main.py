@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ###############################################################################
 # Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
 # of this distribution. For licensing information, see the COPYING file at
@@ -7,168 +8,149 @@
 # main.py - HEPscore benchmark execution CLI tool
 #
 
-import getopt
+import argparse
 import logging
 import os
 import sys
+import textwrap
 import time
 import oyaml as yaml
-import hepscore
+from hepscore.hepscore import HEPscore, __version__
 
 logger = logging.getLogger()
-logging.basicConfig(format='%(asctime)s, hepscore:%(funcName)s [%(levelname)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.WARNING)
 
 
-def help(progname):
+def parse_args(args):
+    """Parse passed argv list."""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent('''
+        -----------------------------------------------
+        HEPscore Benchmark Execution
+        -----------------------------------------------
+        This utility orchestrates several benchmarks
 
-    namel = progname
+        Additional Information:
+           https://gitlab.cern.ch/hep-benchmarks/hep-score
+        Contact: benchmark-suite-wg-devel@cern.ch
+        '''), epilog=textwrap.dedent('''
+        -----------------------------------------------
+        Examples:
 
-    print(hepscore.HEPscore.NAME + " Benchmark Execution - Version " + hepscore.HEPscore.VER)
-    print(namel + " [-s|-d] [-v] [-y] [-o OUTFILE] [-f CONF] OUTDIR")
-    print(namel + " -h")
-    print(namel + " -V")
-    print(namel + " -p [-f CONF]")
-    print("Option overview:")
-    print("-h           Print help information and exit")
-    print("-V           Print version and exit")
-    print("-d           Run benchmark containers in Docker")
-    print("-s           Run benchmark containers in Singularity")
-    print("-S           Run benchmark containers in Singularity, forcing"
-          " userns if supported")
-    print("-r           Replay output using existing results directory")
-    print("-f           Use specified YAML configuration file (instead of "
-          "built-in)")
-    print("-o           Specify an alternate summary output file location")
-    print("-y           Specify output file should be YAML instead of JSON")
-    print("-p           Print configuration and exit")
-    print("-v           Enable verbose/debugging output")
-    print("-c           Remove images after completion")
-    print("-C           Clean workload scratch directories after execution")
-    print("Examples:")
-    print("Run the benchmark using Docker, displaying all component scores:")
-    print(namel + " -dv /tmp/hs19")
-    print("Run with Singularity, using a non-standard benchmark "
-          "configuration:")
-    print(namel + " -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore\n")
-    print("Additional information: https://gitlab.cern.ch/hep-benchmarks/hep-"
-          "score")
-    print("Questions/comments: benchmark-suite-wg-devel@cern.ch")
+        Run benchmarks via Docker, and display verbose information:
+        $ hep-score -v -m docker /tmp/rundir
+
+        Run using Singularity (default) with a custom benchmark configuration:
+        $ hep-score -f /tmp/my-custom-bmk.yml /tmp/hsresults
+        ''')
+    )
+
+    default_config = '/'.join(os.path.split(__file__)[:-1]) + \
+        "/etc/hepscore-default.yaml"
+    # required argument
+    parser.add_argument("OUTDIR", type=str, help="Base output directory.")
+    # optionals
+    parser.add_argument("-m", "--container_exec", choices=['singularity', 'docker'],
+                        nargs='?', default=False,
+                        help="specify container platform for benchmark execution "
+                             "(singularity [default], or docker).")
+    parser.add_argument("-S", "--userns", action='store_true',
+                        help="enable user namespace for Singularity, if supported.")
+    parser.add_argument("-c", "--clean", action='store_true',
+                        help="clean residual container images from system after run.")
+    parser.add_argument("-C", "--cleanall", action='store_true',
+                        help="clean residual files & directories after execution. Tar results.")
+    parser.add_argument("-f", "--conffile", nargs='?', default=default_config,
+                        help="custom config yaml to use instead of default.")
+    parser.add_argument("-r", "--replay", action='store_true',
+                        help="replay output using existing results directory OUTDIR.")
+    parser.add_argument("-o", "--outfile", nargs='?', default=False,
+                        help="specify custom output filename. Default: HEPscore20.json.")
+    parser.add_argument("-y", "--yaml", action='store_true',
+                        help="YAML output instead of JSON.")
+    parser.add_argument("-p", "--print", action='store_true',
+                        help="print configuration and exit.")
+    parser.add_argument("-V", "--version", action='version',
+                        version="%(prog)s " + __version__)
+    parser.add_argument("-v", "--verbose", action='store_true',
+                        help="enables verbose mode. Display debug messages.")
+
+    ns = parser.parse_args(args)
+    return vars(ns)
 
 
 def main():
+    """Command-line entry point."""
+    args = parse_args(sys.argv[1:])
 
-    logger.setLevel(logging.INFO)
-
-    hsargs = {}
-    replay = False
-    printconf_and_exit = False
-    outtype = "json"
-    conffile = '/'.join(os.path.split(hepscore.__file__)[:-1]) + \
-        "/etc/hepscore-default.yaml"
-    outfile = ""
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hpvVcCdsSyrf:o:')
-    except getopt.GetoptError as err:
-        logger.error(err)
-        help(sys.argv[0])
-        sys.exit(1)
-
-    for opt, arg in opts:
-        if opt == '-h':
-            help(sys.argv[0])
-            sys.exit(0)
-        if opt == '-p':
-            printconf_and_exit = True
-        if opt == '-V':
-            if len(opts)==1:
-                print(str(hepscore.HEPscore.VER))
-                sys.exit(0)
-            else:
-                help(sys.argv[0])
-                sys.exit(1)
-        elif opt == '-v':
-            logger.setLevel(logging.DEBUG)
-        elif opt == '-f':
-            conffile = arg
-        elif opt == '-y':
-            outtype = 'yaml'
-        elif opt == '-o':
-            outfile = arg
-        elif opt == '-r':
-            replay = True
-        elif opt == '-c':
-            hsargs['clean'] = True
-        elif opt == '-C':
-            hsargs['clean_files'] = True
-        elif opt in ['-s', '-S', '-d']:
-            if 'container_exec' in hsargs:
-                logger.error("-s, -d and -S are exclusive")
-                sys.exit(1)
-            if opt == '-d':
-                hsargs['container_exec'] = "docker"
-            else:
-                hsargs['container_exec'] = "singularity"
-                if opt == '-S':
-                    hsargs['userns'] = True
-
-    goodlen = 1
-    if printconf_and_exit:
-        goodlen = 0
-    if len(args) != goodlen:
-        if not printconf_and_exit:
-            logger.error("Must specify OUTDIR.\n")
-        help(sys.argv[0])
-        sys.exit(1)
+    user_args = {k: v for k, v in args.items() if v is not False}
+    vstring = ' '
+    vlevel = logging.INFO
+    if 'verbose' in user_args:
+        vstring = '.%(funcName)s() '
+        vlevel = logging.DEBUG
+    logging.basicConfig(format='%(asctime)s hepscore' + vstring + '[%(levelname)s] %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S', level=vlevel)
 
     # Read config yaml
     try:
-        with open(conffile, 'r') as yam:
+        with open(args['conffile'], 'r') as yam:
             active_config = yaml.safe_load(yam)
-    except Exception:
-        logger.error("Cannot read/parse YAML configuration file %s", conffile)
+            args.pop('conffile', None)
+    except Exception as e:
+        print(e)
+        logger.error("Cannot read/parse YAML configuration file %s", args['conffile'])
         sys.exit(1)
 
-    if printconf_and_exit:
-        print(str(yaml.safe_dump(active_config)))
-        sys.exit(0)
+    # Don't let users pass their dirs in conf object
+    outdir = args.pop('OUTDIR', None)
 
-    # check passed dir
-    if replay:
-        if not os.path.isdir(args[0]):
-            logger.error("Replay mode requires valid directory!")
-            sys.exit(1)
-        else:
-            resultsdir = args[0]
-    else:
-        resultsdir = os.path.join(
-            args[0],
-            hepscore.HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
-        try:
-            os.makedirs(resultsdir)
-        except Exception:
-            logger.exception("Failed to create output directory %s. Do you have permissions?",
-                             resultsdir)
-            sys.exit(1)
-
-    if 'container_exec' in hsargs:
+    # separate conainment overide from options
+    if args['container_exec']:
         active_config['hepscore_benchmark']['settings']['container_exec'] \
-            = hsargs['container_exec']
-        hsargs.pop('container_exec', None)
+            = args.pop('container_exec')
 
-    if 'options' not in active_config['hepscore_benchmark']:
-        active_config['hepscore_benchmark']['options'] = {}
+    outtype = 'yaml' if 'yaml' in user_args else 'json'
+    user_args.pop('yaml', None)
 
     # Populate active config with cli override
-    for k, v in hsargs.items():
-        if v != "":
-            active_config['hepscore_benchmark']['options'][k] = v
+    if 'options' not in active_config['hepscore_benchmark']:
+        active_config['hepscore_benchmark']['options'] = {}
+    for arg in user_args:
+        active_config['hepscore_benchmark']['options'][arg] = user_args[arg]
 
-    hs = hepscore.HEPscore(active_config, resultsdir)
+    if args['print']:
+        print(yaml.safe_dump(active_config))
+        sys.exit(0)
 
-    if hs.run(replay) >= 0:
+    # check replay outdir actually contains a run...
+    if args['replay']:
+        if not os.path.isdir(outdir):
+            print("Replay did not find a valid directory at " + outdir)
+            sys.exit(1)
+        else:
+            resultsdir = outdir
+    else:
+        try:
+            resultsdir = os.path.join(outdir, HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+            os.makedirs(resultsdir)
+        except (TypeError, AttributeError):
+            logger.error("Output directory required. 'hep-score <args> [OUTDIR]'\n"
+                         "See usage: 'hep-score --help'")
+            sys.exit(1)
+        except NotADirectoryError:
+            logger.error("%s not valid directory", resultsdir)
+            sys.exit(1)
+        except PermissionError:
+            logger.error("Failed creating output directory %s. Do you have write permission?",
+                         resultsdir)
+            sys.exit(1)
+
+    hs = HEPscore(active_config, resultsdir)
+
+    if hs.run(args['replay']) >= 0:
         hs.gen_score()
-    hs.write_output(outtype, outfile)
+    hs.write_output(outtype, args['outfile'])
 
 
 if __name__ == '__main__':

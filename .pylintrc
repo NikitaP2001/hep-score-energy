@@ -5,8 +5,7 @@ ignore-patterns=test_*
 jobs=0
 # Using default set, with new tests disabled to match previous rules from flake8
         # Warnings skipped
-disable=redefined-builtin, # fixed via argparse
-        broad-except,
+disable=broad-except,
         # Conventions skipped
         invalid-name,
         missing-module-docstring,

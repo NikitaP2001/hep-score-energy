@@ -1,3 +1,3 @@
 setuptools<45
-pbr!=2.1.0,>=2.0.0
+pbr>=5.0.0
 oyaml

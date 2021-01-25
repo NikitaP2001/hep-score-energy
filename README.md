@@ -83,40 +83,54 @@ cd hep-score
 pip install --user .
 ```
 
+Note, that on  RHEL/CentOS/Scientific Linux 7 hosts, where python 3 is not
+the default python installation, it may be necessary to use ```pip3``` to
+install instead of ```pip```.
+
 ## Dependencies
 
-HEPscore currently functions with both Python 2 (2.7) and Python 3.  The pip
-installation will pull in all dependencies.  HEPscore should be used with
-**Singularity 3.5.3 and newer**, or **Docker 1.13 and newer**.  There are some
-known issues when using HEPscore with earlier Singularity and Docker releases.
+HEPscore requires a  Python 3 installation.  The pip installation will pull
+in all dependencies.  HEPscore should be used with **Singularity 3.5.3 and newer**, or
+**Docker 1.13 and newer**.  There are some known issues when using HEPscore
+with earlier Singularity and Docker releases.
 
 ## Running HEPscore
 
 ```sh
-HEPscore Benchmark Execution - Version 1.0.0
-hep-score [-s|-d] [-v] [-y] [-o OUTFILE] [-f CONF] OUTDIR
-hep-score -h
-hep-score -V
-hep-score -p [-f CONF]
-Option overview:
--h           Print help information and exit
--V           Print version and exit
--d           Run benchmark containers in Docker
--s           Run benchmark containers in Singularity
--S           Run benchmark containers in Singularity, forcing userns if supported
--r           Replay output using existing results directory
--f           Use specified YAML configuration file (instead of built-in)
--o           Specify an alternate summary output file location
--y           Specify output file should be YAML instead of JSON
--p           Print configuration and exit
--v           Enable verbose/debugging output
--c           Remove images after completion
--C           Clean workload scratch directories after execution
+usage: hep-score [-h] [-m [{singularity,docker}]] [-S] [-c] [-C]
+                 [-f [CONFFILE]] [-r] [-o [OUTFILE]] [-y] [-p] [-V] [-v]
+                 OUTDIR
+
+positional arguments:
+  OUTDIR                Base output directory.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m [{singularity,docker}], --container_exec [{singularity,docker}]
+                        specify container platform for benchmark execution
+                        (singularity [default], or docker).
+  -S, --userns          enable user namespace for Singularity, if supported.
+  -c, --clean           clean residual container images from system after run.
+  -C, --cleanall        clean residual files & directories after execution.
+                        Tar results.
+  -f [CONFFILE], --conffile [CONFFILE]
+                        custom config yaml to use instead of default.
+  -r, --replay          replay output using existing results directory OUTDIR.
+  -o [OUTFILE], --outfile [OUTFILE]
+                        specify custom output filename. Default:
+                        HEPscore20.json.
+  -y, --yaml            YAML output instead of JSON.
+  -p, --print           print configuration and exit.
+  -V, --version         show program's version number and exit
+  -v, --verbose         enables verbose mode. Display debug messages.
+
+
 Examples:
-Run the benchmark using Docker, displaying all component scores:
-hep-score -dv /tmp/hs19
-Run with Singularity, using a non-standard benchmark configuration:
-hep-score -sf /tmp/hscore/hscore_custom.yaml /tmp/hscore
+Run benchmarks via Docker, and display verbose information:
+$ hep-score -v -m docker /tmp/rundir
+
+Run using Singularity (default) with a custom benchmark configuration:
+$ hep-score -f /tmp/my-custom-bmk.yml /tmp/hsresults
 ```
 
 Singularity will be used as the container engine for the run, unless Docker

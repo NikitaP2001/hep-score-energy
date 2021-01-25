@@ -22,8 +22,8 @@ import stat
 import subprocess
 import sys
 import time
-import pbr.version
 import oyaml as yaml
+from hepscore import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,6 @@ def weighted_geometric_mean(vals, weights=None):
 class HEPscore(object):
 
     NAME = "HEPscore"
-    VER = pbr.version.VersionInfo("hep-score").release_string()
 
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
     scorekey = 'wl-scores'
@@ -140,6 +139,7 @@ class HEPscore(object):
             logger.error("Invalid URI specification in registry path: %s", reg_url)
             sys.exit(1)
 
+        # uri, reg_path possibly unbound
         if self.cec == 'docker' and uri != 'docker':
             logger.error("Only docker registry URI (docker://) supported for Docker runs.")
             sys.exit(1)
@@ -328,7 +328,7 @@ class HEPscore(object):
             logger.error("Error fetching %s version", self.cec)
 
         try:
-            # cmdf unbound
+            # cmdf possibly unbound
             line = cmdf.stdout.readline()
             line = line.decode('utf-8')
 
@@ -337,7 +337,7 @@ class HEPscore(object):
                 if version[-1] == "\n":
                     version = version[:-1]
                 line = cmdf.stdout.readline()
-
+            # version possibly unbound
             return version
         except Exception:
             return "error"
@@ -438,9 +438,9 @@ class HEPscore(object):
                              stat.S_IRWXG | stat.S_IRWXO)
 
             commands = {'docker': "docker run --rm --network=host -v " + runDir
-                            + ":/results " + gpu_flag,
-                        'singularity': "singularity run -C -B " + runDir
-                            + ":/results -B /tmp " + self._get_usernamespace_flag() + gpu_flag}
+                                  + ":/results " + gpu_flag,
+                        'singularity': "singularity run -C -B " + runDir + ":/results -B /tmp "
+                                       + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
             command = command_string.split(' ')
@@ -509,7 +509,7 @@ class HEPscore(object):
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
 
-            # cmdf unbound
+            # cmdf possibly unbound
             if not mock and cmdf.returncode != 0:
                 logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
 
@@ -565,6 +565,10 @@ class HEPscore(object):
         if not outfile:
             outfile = self.resultsdir + '/' + self.confobj['settings']['name'] + '.' + outtype
 
+        # check outfile is same type as outtype
+        if outtype != outfile[-4:]:
+            logging.error("%s output requested, but %s does not match!", outtype, outfile)
+
         outobj = {}
         if outtype == 'yaml':
             outobj['hepscore_benchmark'] = self.confobj
@@ -582,7 +586,7 @@ class HEPscore(object):
                 jfile.write(json.dumps(outobj))
             jfile.close()
         except Exception:
-            logger.exception("Failed to create summary output %s", outfile)
+            logging.error("Failed to create summary output %s", outfile)
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
@@ -681,6 +685,7 @@ class HEPscore(object):
                 sys.exit(1)
 
             if 'registry' in bmark_conf.keys():
+                # reg_string possibly unbound
                 if not reg_string[0].isalpha() or \
                         re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
                     logger.error("Configuration: illegal character in registry")
@@ -726,10 +731,10 @@ class HEPscore(object):
         logger.info("Date:                %s\n", curtime)
 
         self.confobj['wl-scores'] = {}
-        self.confobj['app_info']['hepscore_ver'] = self.VER
+        self.confobj['app_info']['hepscore_ver'] = __version__
 
         if mock is True:
-            logger.info("Replaying prior results")
+            logging.info("NOTE: Replaying prior results")
 
         res = 0
         have_failure = False
