@@ -3,52 +3,92 @@
 # the top-level directory of this distribution.
 
 from dictdiffer import diff
-import hepscore
-import hepscore.main
+from hepscore import main
+from hepscore.hepscore import HEPscore
+import io
 import json
 import logging
 import os
 import oyaml as yaml
 # from parameterized import parameterized
+import shutil
 import sys
 import unittest
+from unittest.mock import patch, mock_open
 
 
-# Import mock compatible with Python2 and Python3
-try:
-    from mock import mock
-    from mock import patch
-except ImportError:
-    from unittest.mock import mock
-    from unittest.mock import patch
-
-
-class TestArguments(unittest.TestCase):
-
+class Test_parse_args(unittest.TestCase):
+    """Test arg_parse() in main()."""
     def test_c_option_fails(self):
-        with mock.patch.object(sys, 'argv', ["-v", "-c"]):
-            with self.assertRaises(SystemExit) as cm:
-                hepscore.main.main()
-                self.assertEqual(cm.exception.code, 1)
+        with self.assertRaises(SystemExit) as cm:
+            main.parse_args(["-v", "-c"])
+        self.assertEqual(cm.exception.code, 2)
 
     def test_h_option(self):
-        with mock.patch.object(sys, 'argv', ["hepscore", "-h"]):
-            with self.assertRaises(SystemExit) as cm:
-                hepscore.main.main()
+        with self.assertRaises(SystemExit) as cm:
+            main.parse_args(['-h'])
         self.assertEqual(cm.exception.code, 0)
+
+    def test_version(self):
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            with self.assertRaises(SystemExit) as cm:
+                main.parse_args(['-V'])
+        self.assertEqual(cm.exception.code, 0)
+        self.assertRegex(fake_out.getvalue(), r'\w+\s(\d+\.)+.*')
+
+    def test_require_outdir(self):
+        with self.assertRaises(SystemExit) as cm:
+            main.main()
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_return_type(self):
+        res = main.parse_args(["/tmp"])
+        self.assertIsInstance(res, dict)
+
+class Test_main(unittest.TestCase):
+    """Test main() function."""
+    def setUp(self):
+         #self.mock_hepscore = patch('HEPscore', autospec=True)
+        self.mock_parse = patch.object(main, 'parse_args')
+        self.mock_conf_path = "etc/hepscore_empty_conf.yaml"
+        self.mock_bad_path = "/tmp/notafile.txt"
+        self.mock_args = {'OUTDIR': '/tmp',
+                         'container_exec': False,
+                         'userns': False,
+                         'clean': False,
+                         'cleanall': False,
+                         'conffile': self.mock_bad_path,
+                         'replay': False,
+                         'resultsdir': False,
+                         'outfile': False,
+                         'yaml': False,
+                         'print': False,
+                         'verbose': False}
+        self.mock_parse.return_value = self.mock_args
+
+    @patch.object(main, 'parse_args')
+    def test_read_config(self, mock_parse):
+        mock_parse.return_value=self.mock_args
+        # with patch('builtins.open', mock_open(read_data="2")) as mock_file
+        with self.assertRaises(SystemExit) as exit_code:
+            main.main()
+        mock_parse.assert_called_once()
+        self.assertEqual(exit_code.exception.code, 1)
+
+
 
 
 class Test_Constructor(unittest.TestCase):
 
     def test_fail_no_conf(self):
         with self.assertRaises(TypeError):
-            hepscore.HEPscore(resultsdir="/tmp")
+            HEPscore(resultsdir="/tmp")
 
     def test_fail_read_conf(self):
         with self.assertRaises(KeyError):
-            hepscore.HEPscore(dict(), "/tmp")
+            HEPscore(dict(), "/tmp")
 
-    @patch.object(hepscore.HEPscore, 'validate_conf')
+    @patch.object(HEPscore, 'validate_conf')
     def test_succeed_read_set_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
                     {'settings': {'name': 'test', 'registry': 'docker://',
@@ -57,13 +97,13 @@ class Test_Constructor(unittest.TestCase):
                                   'repetitions': 1}}}
         test_config = standard.copy()
 
-        hs = hepscore.HEPscore(test_config, "/tmp")
+        hs = HEPscore(test_config, "/tmp")
 
         self.assertEqual(hs.cec, "singularity")
         self.assertEqual(hs.resultsdir, "/tmp")
         self.assertEqual(hs.confobj, standard['hepscore_benchmark'])
 
-    @patch.object(hepscore.HEPscore, 'validate_conf')
+    @patch.object(HEPscore, 'validate_conf')
     def test_succeed_override_defaults(self, mock_validate):
         standard = {'hepscore_benchmark':
                     {'settings': {'name': 'test', 'registry': 'docker://',
@@ -73,7 +113,7 @@ class Test_Constructor(unittest.TestCase):
                                   'container_exec': 'singularity'}}}
         test_config = standard.copy()
 
-        hs = hepscore.HEPscore(test_config, "/tmp1")
+        hs = HEPscore(test_config, "/tmp1")
 
         self.assertEqual(hs.cec, "singularity")
         self.assertEqual(hs.resultsdir, "/tmp1")
@@ -98,13 +138,14 @@ class TestRun(unittest.TestCase):
         with open(self.emptyPath, 'r') as yam:
             test_config = yaml.full_load(yam)
 
-        hs = hepscore.HEPscore(test_config, "/tmp/test_run_empty_cfg")
+        # what is this testing?
+        hs = HEPscore(test_config, "/tmp/test_run_empty_cfg")
         if hs.run(False) >= 0:
             hs.gen_score()
         with self.assertRaises(SystemExit) as cm:
             hs.write_output("json", "")
             self.assertEqual(cm.exception.code, 2)
-        os.remove("/tmp/test_run_empty_cfg/HEPscore20EMPTY.json")
+        shutil.rmtree("/tmp/test_run_empty_cfg")
 
 
 class testOutput(unittest.TestCase):
@@ -130,7 +171,7 @@ class testOutput(unittest.TestCase):
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(test_config, resDir)
+        hs = HEPscore(test_config, resDir)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
                         'app_info.hepscore_ver', 'score_per_core', 'score']
@@ -180,7 +221,7 @@ class testOutput(unittest.TestCase):
         outtype = "json"
         outfile = ""
 
-        hs = hepscore.HEPscore(test_config, resDir)
+        hs = HEPscore(test_config, resDir)
 
         if hs.run(True) >= 0:
             hs.gen_score()

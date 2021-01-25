@@ -51,16 +51,6 @@ pep8:
       codequality: codeclimate.json
     when: always
 
-
-python27:
-  stage: unit-test
-  image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
-  except:
-    - tags
-  script:
-    # python2 
-    - tox -e py27
-
 python36:
   stage: unit-test
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-score/tox
@@ -71,6 +61,7 @@ python36:
   artifacts:
     reports:
       junit: report.xml
+      cobertura: coverage.xml
     expire_in: 1 week
     when: always
 

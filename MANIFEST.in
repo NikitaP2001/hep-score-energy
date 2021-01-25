@@ -1,1 +1,1 @@
-include hepscore/etc/
+prune hepscore/tests

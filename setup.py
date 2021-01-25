@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import setuptools
 setuptools.setup(
     setup_requires=['pbr'],
-    pbr=True,
-    include_package_data=True)
+    pbr=True
+    )
