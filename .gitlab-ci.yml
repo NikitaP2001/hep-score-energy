@@ -110,7 +110,7 @@ simpletrack_gpu:
   script:
     - yum -y install python3 python3-pip
     - pip3 install .
-    - hep-score -v -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
+    - hep-score -v -m docker -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
   only:

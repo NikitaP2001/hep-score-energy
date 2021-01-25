@@ -48,7 +48,7 @@ def parse_args(args):
     default_config = '/'.join(os.path.split(__file__)[:-1]) + \
         "/etc/hepscore-default.yaml"
     # required argument
-    parser.add_argument("OUTDIR", type=str, help="Base output directory.")
+    parser.add_argument("OUTDIR", type=str, nargs='?', help="Base output directory.")
     # optionals
     parser.add_argument("-m", "--container_exec", choices=['singularity', 'docker'],
                         nargs='?', default=False,
@@ -76,7 +76,14 @@ def parse_args(args):
                         help="enables verbose mode. Display debug messages.")
 
     ns = parser.parse_args(args)
-    return vars(ns)
+    nsd = vars(ns)
+
+    if nsd['OUTDIR'] is None and nsd['print']==False:
+        print("Output directory required. 'hep-score <args> OUTDIR\n"
+              "See usage: 'hep-score --help'")
+        sys.exit(2)
+
+    return nsd
 
 
 def main():
@@ -102,6 +109,10 @@ def main():
         logger.error("Cannot read/parse YAML configuration file %s", args['conffile'])
         sys.exit(1)
 
+    if args['print']:
+        print(yaml.safe_dump(active_config))
+        sys.exit(0)
+
     # Don't let users pass their dirs in conf object
     outdir = args.pop('OUTDIR', None)
 
@@ -119,9 +130,6 @@ def main():
     for arg in user_args:
         active_config['hepscore_benchmark']['options'][arg] = user_args[arg]
 
-    if args['print']:
-        print(yaml.safe_dump(active_config))
-        sys.exit(0)
 
     # check replay outdir actually contains a run...
     if args['replay']:
@@ -134,10 +142,6 @@ def main():
         try:
             resultsdir = os.path.join(outdir, HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
             os.makedirs(resultsdir)
-        except (TypeError, AttributeError):
-            logger.error("Output directory required. 'hep-score <args> [OUTDIR]'\n"
-                         "See usage: 'hep-score --help'")
-            sys.exit(1)
         except NotADirectoryError:
             logger.error("%s not valid directory", resultsdir)
             sys.exit(1)
