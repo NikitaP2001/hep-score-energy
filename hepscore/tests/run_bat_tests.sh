@@ -8,7 +8,7 @@ BASEDIR=$(readlink -f $(dirname $0))
 
 cd $BASEDIR/../..
 echo "[run_bat_tests] Install hepscore"
-pip install .
+pip3 install .
 
 
 for afile in `ls $BASEDIR/*bat`;

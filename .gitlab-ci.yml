@@ -108,7 +108,7 @@ simpletrack_gpu:
     -  hep-workload-gpu-docker-builder
   stage: test
   script: 
-    - pip install .
+    - pip3 install .
     - hep-score -v -d -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
