@@ -22,7 +22,7 @@ import stat
 import subprocess
 import sys
 import time
-import oyaml as yaml
+import yaml
 from hepscore import __version__
 
 logger = logging.getLogger(__name__)
@@ -83,6 +83,7 @@ class HEPscore(object):
 
     scache = ""
     registry = ""
+    confobj = {}
     results = []
     weights = []
     score = -1
@@ -560,7 +561,7 @@ class HEPscore(object):
                 self.confobj['score_per_core'] = -1
                 logger.warning('Could not determine core count')
 
-    def write_output(self, outtype, outfile):
+    def write_output(self, outtype, outfile=None):
 
         if not outfile:
             outfile = self.resultsdir + '/' + self.confobj['settings']['name'] + '.' + outtype
@@ -580,8 +581,7 @@ class HEPscore(object):
         try:
             jfile = open(outfile, mode='w')
             if outtype == 'yaml':
-                jfile.write(yaml.safe_dump(outobj, encoding='utf-8',
-                                           allow_unicode=True).decode('utf-8'))
+                jfile.write(yaml.safe_dump(outobj, sort_keys=False))
             else:
                 jfile.write(json.dumps(outobj))
             jfile.close()
@@ -695,7 +695,7 @@ class HEPscore(object):
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj))
+        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
         return self.confobj
 
