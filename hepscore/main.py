@@ -14,7 +14,7 @@ import os
 import sys
 import textwrap
 import time
-import oyaml as yaml
+import yaml
 from hepscore.hepscore import HEPscore, __version__
 
 logger = logging.getLogger()
@@ -110,7 +110,7 @@ def main():
         sys.exit(1)
 
     if args['print']:
-        print(yaml.safe_dump(active_config))
+        print(yaml.safe_dump(active_config, sort_keys=False))
         sys.exit(0)
 
     # Don't let users pass their dirs in conf object
