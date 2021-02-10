@@ -5,15 +5,7 @@ ignore-patterns=test_*
 jobs=0
 # Using default set, with new tests disabled to match previous rules from flake8
         # Warnings skipped
-disable=broad-except,
-        # Conventions skipped
-        invalid-name,
-        missing-module-docstring,
-        missing-function-docstring,
-        missing-class-docstring,
-        # Refactor skips
-        useless-object-inheritance, # drop python2 first
-        no-else-return,
+disable=no-member,
         too-many-branches,
         too-many-statements,
         too-many-locals,
