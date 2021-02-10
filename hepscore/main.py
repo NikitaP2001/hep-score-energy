@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-###############################################################################
-# Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
-# of this distribution. For licensing information, see the COPYING file at
-# the top-level directory of this distribution.
-###############################################################################
-#
-# main.py - HEPscore benchmark execution CLI tool
-#
+"""HEPscore benchmark execution CLI tool
+
+Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
+of this distribution. For licensing information, see the COPYING file at
+the top-level directory of this distribution.
+"""
+
 
 import argparse
 import logging
@@ -58,7 +57,7 @@ def parse_args(args):
                         help="enable user namespace for Singularity, if supported.")
     parser.add_argument("-c", "--clean", action='store_true',
                         help="clean residual container images from system after run.")
-    parser.add_argument("-C", "--cleanall", action='store_true',
+    parser.add_argument("-C", "--clean_files", action='store_true',
                         help="clean residual files & directories after execution. Tar results.")
     parser.add_argument("-f", "--conffile", nargs='?', default=default_config,
                         help="custom config yaml to use instead of default.")
@@ -75,19 +74,18 @@ def parse_args(args):
     parser.add_argument("-v", "--verbose", action='store_true',
                         help="enables verbose mode. Display debug messages.")
 
-    ns = parser.parse_args(args)
-    nsd = vars(ns)
+    arg_dict = vars(parser.parse_args(args))
 
-    if nsd['OUTDIR'] is None and nsd['print']==False:
+    if arg_dict['OUTDIR'] is None and not arg_dict['print']:
         print("Output directory required. 'hep-score <args> OUTDIR\n"
               "See usage: 'hep-score --help'")
         sys.exit(2)
 
-    return nsd
+    return arg_dict
 
 
 def main():
-    """Command-line entry point."""
+    """Command-line entry point. Parses arguments to construct configuration dict."""
     args = parse_args(sys.argv[1:])
 
     user_args = {k: v for k, v in args.items() if v is not False}
@@ -104,9 +102,16 @@ def main():
         with open(args['conffile'], 'r') as yam:
             active_config = yaml.safe_load(yam)
             args.pop('conffile', None)
-    except Exception as e:
-        print(e)
-        logger.error("Cannot read/parse YAML configuration file %s", args['conffile'])
+    except OSError as err:
+        logger.error("Cannot read YAML configuration file %s", args['conffile'])
+        logger.error(err)
+        sys.exit(1)
+    except yaml.YAMLError as exc:
+        logger.error("Failed to parse config YAML.")
+        if hasattr(exc, 'problem_mark'):
+            logger.error("Error at line: %s column: %s",
+                         exc.problem_mark.line+1,
+                         exc.problem_mark.column+1)
         sys.exit(1)
 
     if args['print']:
@@ -140,7 +145,8 @@ def main():
             resultsdir = outdir
     else:
         try:
-            resultsdir = os.path.join(outdir, HEPscore.NAME + '_' + time.strftime("%d%b%Y_%H%M%S"))
+            resultsdir = os.path.join(outdir, HEPscore.__name__ + '_' + \
+                time.strftime("%d%b%Y_%H%M%S"))
             os.makedirs(resultsdir)
         except NotADirectoryError:
             logger.error("%s not valid directory", resultsdir)
@@ -150,11 +156,11 @@ def main():
                          resultsdir)
             sys.exit(1)
 
-    hs = HEPscore(active_config, resultsdir)
+    hep_score = HEPscore(active_config, resultsdir)
 
-    if hs.run(args['replay']) >= 0:
-        hs.gen_score()
-    hs.write_output(outtype, args['outfile'])
+    if hep_score.run(args['replay']) >= 0:
+        hep_score.gen_score()
+    hep_score.write_output(outtype, args['outfile'])
 
 
 if __name__ == '__main__':

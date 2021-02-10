@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-###############################################################################
-# Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
-# of this distribution. For licensing information, see the COPYING file at
-# the top-level directory of this distribution.
-###############################################################################
-#
-# hepscore.py - HEPscore benchmark execution
-#
+"""
+hepscore.py - HEPscore benchmark execution
+
+Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
+of this distribution. For licensing information, see the COPYING file at
+the top-level directory of this distribution.
+"""
+
 
 import glob
 import hashlib
@@ -29,19 +29,34 @@ logger = logging.getLogger(__name__)
 
 
 def median_tuple(vals):
+    """Return median of vals
 
+    Args:
+        vals (dict): A dict of benchmark scores
+
+    Returns:
+        2-tuple (result final, result run): [description]
+    """
     sorted_vals = sorted(vals.items(), key=operator.itemgetter(1))
 
     med_ind = int(len(sorted_vals) / 2)
     if len(sorted_vals) % 2 == 1:
         return sorted_vals[med_ind][::-1]
-    else:
-        val1 = sorted_vals[med_ind - 1][1]
-        val2 = sorted_vals[med_ind][1]
-        return ((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0], sorted_vals[med_ind][0])
+    val1 = sorted_vals[med_ind - 1][1]
+    val2 = sorted_vals[med_ind][1]
+    return ((val1 + val2) / 2.0), (sorted_vals[med_ind - 1][0], sorted_vals[med_ind][0])
 
 
 def weighted_geometric_mean(vals, weights=None):
+    """Return geometric mean of floats, with optional weighting
+
+    Args:
+        vals (list[float]): List of float(scores)
+        weights (list[float], optional): [description]. Defaults to None.
+
+    Returns:
+        float: the weighted geometric mean
+    """
 
     if weights is None:
         weights = []
@@ -70,10 +85,8 @@ def weighted_geometric_mean(vals, weights=None):
     return weighted_gmean
 
 
-class HEPscore(object):
-
-    NAME = "HEPscore"
-
+class HEPscore():
+    """HEPscore class."""
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
     scorekey = 'wl-scores'
     cec = "singularity"
@@ -89,7 +102,20 @@ class HEPscore(object):
     score = -1
 
     def __init__(self, config, resultsdir):
-        """Set & validate config, enable logging."""
+        """HEPSCORE: a HEP benchmark SCORE generator.
+
+        This class orchestrates HEP benchmarks (as docker or singularity images).
+        The results are collected, calculated, and parsed into JSON or YAML reports.
+        See [the documentation on GitLab](https://gitlab.cern.ch/hep-benchmarks/hep-score)
+        for more information.
+
+        Contact:
+            benchmark-suite-wg-devel@cern.ch
+
+        Args:
+            config (dict): Nested dict object with benchmark and parsing configurations
+            resultsdir (str): Path to output results
+        """
         self.resultsdir = resultsdir
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
@@ -120,7 +146,8 @@ class HEPscore(object):
         self.registry = self._gen_reg_path()
 
     def _gen_reg_path(self, reg_url=None):
-
+        uri = None
+        reg_path = None
         valid_uris = ['docker', 'shub', 'dir']
         if reg_url is None:
             try:
@@ -140,7 +167,6 @@ class HEPscore(object):
             logger.error("Invalid URI specification in registry path: %s", reg_url)
             sys.exit(1)
 
-        # uri, reg_path possibly unbound
         if self.cec == 'docker' and uri != 'docker':
             logger.error("Only docker registry URI (docker://) supported for Docker runs.")
             sys.exit(1)
@@ -167,15 +193,12 @@ class HEPscore(object):
             try:
                 with open(gpath, mode='r') as jfile:
                     lines = jfile.read()
-            except Exception:
+                    jscore = json.loads(lines)
+            except OSError:
                 logger.error("Failure reading from %s", gpath)
                 continue
-
-            try:
-                jscore = ""
-                jscore = json.loads(lines)
-            except Exception:
-                logger.error("Malformed JSON in %s", gpath)
+            except json.JSONDecodeError as loc:
+                logger.error("Malformed JSON: %s", loc.msg)
                 continue
 
             json_required_keys = ['app', 'run_info', 'report']
@@ -233,7 +256,7 @@ class HEPscore(object):
 
         final_result, final_run = median_tuple(results)
 
-    #   Insert wl-score from chosen run
+        # Insert wl-score from chosen run
         if 'wl-scores' not in self.confobj:
             self.confobj['wl-scores'] = {}
         self.confobj['wl-scores'][benchmark] = {}
@@ -278,38 +301,43 @@ class HEPscore(object):
                     logger.info("Removing temporary singularity cache %s", self.scache)
                     shutil.rmtree(self.scache)
                 else:
+                    logger.error("Invalid cache path specified - skipping cleanup")
                     return False
-        except Exception:
-            logger.error("Failed to cleanup image!")
+        except subprocess.SubprocessError:
+            logger.error("Failed to clean docker images!")
+            return False
+        except shutil.Error:
+            logger.error("Failed to cleanup singularity cache at %s", self.scache)
             return False
 
         return True
 
     def check_userns(self):
+        """Checks for user namespace support for Singularity.
+
+        Returns:
+            bool: singularity namespace support
+        """
         proc_muns = "/proc/sys/user/max_user_namespaces"
         dockerenv = "/.dockerenv"
+        podmanenv = "/run/.containerenv"
 
-        try:
-            cg = open(dockerenv, mode='r')
-            cg.close()
-            logger.debug("%s running inside of Docker. Not enabling user namespaces.", self.NAME)
+        if os.path.isfile(dockerenv) or os.path.isfile(podmanenv):
+            logger.debug("%s running inside of Docker. Not enabling user namespaces.",
+                         self.__class__)
             return False
-        except Exception:
-            logger.debug("%s not running inside Docker.", self.NAME)
 
         try:
-            mf = open(proc_muns, mode='r')
-            max_usrns = int(mf.read())
-        except Exception:
+            with open(proc_muns, mode='r') as userns_file:
+                max_usrns = int(userns_file.read())
+            return bool(max_usrns)
+        except OSError:
             logger.debug("Cannot open/read from %s, assuming user namespace support disabled",
                          proc_muns)
             return False
 
-        mf.close()
-        return bool(max_usrns)
-
-    # User namespace flag needed to support nested singularity
     def _get_usernamespace_flag(self):
+        """User namespace flag needed to support nested singularity."""
         if self.cec == "singularity" and self.userns is True:
             if self.check_userns():
                 logger.debug("System supports user namespaces, enabling in singularity call")
@@ -317,31 +345,26 @@ class HEPscore(object):
         return ""
 
     def get_version(self):
+        """Report version of containment choice.
 
-        commands = {'docker': "docker --version",
-                    'singularity': "singularity --version"}
+        Returns:
+            str: Version as reported by containment (eg `singularity version`)
+        """
+        commands = {'docker': "docker version -f {{.Server.Version}}",
+                    'singularity': "singularity version",
+                    'podman': "podman version --format {{.Server.Version}}"}
+        command = commands[self.cec].split(' ')
 
         try:
-            command = commands[self.cec].split(' ')
-            cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-        except Exception:
+            cmdf = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in cmdf.stdout.readlines():
+                if re.sub(r'[^0-9\.]', '', line.decode('utf-8'))[0].isdigit():
+                    return str(line.decode('utf-8').strip('\n'))
+        except subprocess.SubprocessError:
             logger.error("Error fetching %s version", self.cec)
-
-        try:
-            # cmdf possibly unbound
-            line = cmdf.stdout.readline()
-            line = line.decode('utf-8')
-
-            while line:
-                version = line
-                if version[-1] == "\n":
-                    version = version[:-1]
-                line = cmdf.stdout.readline()
-            # version possibly unbound
-            return version
-        except Exception:
-            return "error"
+        except OSError:
+            logger.error("Could not locate %s on the system. Please check your path!", self.cec)
+        return "None"
 
     def _run_benchmark(self, benchmark, mock):
 
@@ -353,6 +376,7 @@ class HEPscore(object):
         bmark_reg_url = self.confobj['settings']['registry']
         result = 0
         gpu_flag = ""
+        cmdf = None
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
@@ -388,14 +412,12 @@ class HEPscore(object):
                 gpu_flag = "--gpus all "
 
         for option in bmark_keys:
-            bad_args = ["mop", "resultsdir", "--mop", "--resultsdir",
-                        "-m", "-w", "-W"]
+            bad_args = ["mop", "resultsdir", "--mop", "--resultsdir", "-m", "-w", "-W"]
             option_arg = str(bench_conf['args'][option])
 
             if re.match(r'^[a-zA-Z0-9\-_]*$', option) is None or \
                     option in bad_args or \
-                    re.match(r'^[a-zA-Z0-9\-_]*$', option_arg) \
-                    is None:
+                    re.match(r'^[a-zA-Z0-9\-_]*$', option_arg) is None:
                 logger.error("Ignoring invalid option in YAML configuration %s %s",
                              option, option_arg)
                 continue
@@ -409,7 +431,7 @@ class HEPscore(object):
 
         try:
             lfile = open(log, mode='a')
-        except Exception:
+        except OSError:
             logger.error("failure to open %s", log)
             return -1
 
@@ -422,25 +444,25 @@ class HEPscore(object):
             try:
                 os.makedirs(self.scache)
                 os.environ['SINGULARITY_CACHEDIR'] = self.scache
-            except Exception:
+            except OSError:
                 logger.error("Failed to create Singularity cache dir %s", self.scache)
 
         for i in range(runs + retries):
             if successful_runs == runs:
                 break
 
-            runDir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
-            logsFile = runDir + "/" + self.cec + "_logs"
+            run_dir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
+            log_filepath = run_dir + "/" + self.cec + "_logs"
 
             if self.confobj['settings']['replay'] is False:
-                os.makedirs(runDir)
+                os.makedirs(run_dir)
                 if self.cec == 'docker':
-                    os.chmod(runDir, stat.S_ISVTX | stat.S_IRWXU |
+                    os.chmod(run_dir, stat.S_ISVTX | stat.S_IRWXU |
                              stat.S_IRWXG | stat.S_IRWXO)
 
-            commands = {'docker': "docker run --rm --network=host -v " + runDir
+            commands = {'docker': "docker run --rm --network=host -v " + run_dir
                                   + ":/results " + gpu_flag,
-                        'singularity': "singularity run -C -B " + runDir + ":/results -B /tmp "
+                        'singularity': "singularity run -C -B " + run_dir + ":/results -B /tmp "
                                        + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -454,13 +476,14 @@ class HEPscore(object):
             bench_conf[runstr] = {}
             starttime = time.time()
             bench_conf[runstr]['start_at'] = time.ctime(starttime)
+
             if not mock:
                 try:
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
-                except Exception:
+                except (subprocess.SubprocessError, OSError):
                     if self.cec == 'docker':
-                        os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
+                        os.chmod(run_dir, stat.S_IRWXU | stat.S_IRGRP |
                                  stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
                     logger.error("failure to execute: %s", command_string)
@@ -485,10 +508,10 @@ class HEPscore(object):
                 cmdf.wait()
 
                 if self.cec == 'docker':
-                    os.chmod(runDir, stat.S_IRWXU | stat.S_IRGRP |
+                    os.chmod(run_dir, stat.S_IRWXU | stat.S_IRGRP |
                              stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-                self._check_rc(cmdf.returncode)
+                self._check_return_code(cmdf.returncode)
                 if cmdf.returncode > 0:
                     logger.error("%s output logs:", self.cec)
                     for line in list(reversed(output_logs))[-10:]:
@@ -497,10 +520,10 @@ class HEPscore(object):
                     successful_runs += 1
 
                 try:
-                    with open(logsFile, 'w') as f:
+                    with open(log_filepath, 'w') as log_file:
                         for line in reversed(output_logs):
-                            f.write('%s' % line)
-                except Exception:
+                            log_file.write('%s' % line)
+                except OSError:
                     logger.warning("Failed to write logs to file!")
 
             else:
@@ -510,7 +533,6 @@ class HEPscore(object):
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
 
-            # cmdf possibly unbound
             if not mock and cmdf.returncode != 0:
                 logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
 
@@ -527,16 +549,16 @@ class HEPscore(object):
         proc_result = self._proc_results(benchmark)
         return proc_result if result != -1 else result
 
-    def _check_rc(self, rc):
-        if rc == 137 and self.cec == 'docker':
+    def _check_return_code(self, return_code):
+        if return_code == 137 and self.cec == 'docker':
             logger.error("%s returned code 137: OOM-kill or intervention", self.cec)
-        elif rc != 0:
-            logger.error("%s returned code %s", self.cec, rc)
+        elif return_code != 0:
+            logger.error("%s returned code %s", self.cec, return_code)
         else:
             logger.debug("%s terminated without errors", self.cec)
 
     def gen_score(self):
-
+        """Generates output score into HEPscore.confobj based on method defined in config."""
         method = self.allowed_methods[self.confobj['settings']['method']]
         fres = method(self.results, self.weights)
         if 'scaling' in self.confobj['settings'].keys():
@@ -557,11 +579,21 @@ class HEPscore(object):
             try:
                 spc = float(fres) / float(multiprocessing.cpu_count())
                 self.confobj['score_per_core'] = round(spc, 3)
-            except Exception:
+            except ArithmeticError:
                 self.confobj['score_per_core'] = -1
                 logger.warning('Could not determine core count')
 
     def write_output(self, outtype, outfile=None):
+        """Writes summary results in selected `outtype` to `outfile`.
+
+        Args:
+            outtype (str): Output format. Either JSON(default) or YAML. Can be defined in
+            constructor dict.
+            outfile (str): Filename with extension to write to.
+
+        Raises:
+            ValueError: If `outtype` does not match filename supplied by `outfile`
+        """
 
         if not outfile:
             outfile = self.resultsdir + '/' + self.confobj['settings']['name'] + '.' + outtype
@@ -585,8 +617,11 @@ class HEPscore(object):
             else:
                 jfile.write(json.dumps(outobj))
             jfile.close()
-        except Exception:
+        except OSError:
             logging.error("Failed to create summary output %s", outfile)
+            sys.exit(2)
+        except (TypeError, yaml.representer.RepresenterError):
+            logging.error("Invalid output object")
             sys.exit(2)
 
         if len(self.results) == 0 or self.results[-1] < 0:
@@ -594,45 +629,54 @@ class HEPscore(object):
             sys.exit(2)
 
     def validate_conf(self):
+        """Parses constructor configuration dict for valid values.
 
+        Returns:
+            dict: a valid dict (constructor dict if valid)
+        """
         hep_settings = ['settings', 'benchmarks']
-        rsf = {'settings': ['method', 'repetitions', 'name', 'registry', 'reference_machine'],
-               'benchmarks': []}
+        required_keys = {'settings': ['method',
+                                      'repetitions',
+                                      'name',
+                                      'registry',
+                                      'reference_machine'],
+                         'benchmarks': []}
+        reg_string = None
 
-        for k in hep_settings:
-            if k not in self.confobj:
-                logger.error("Configuration: %s section must be defined", k)
+        for key in hep_settings:
+            if key not in self.confobj:
+                logger.error("Configuration: %s section must be defined", key)
                 sys.exit(1)
 
-            for f in rsf[k]:
-                if f not in self.confobj[k]:
-                    logger.error("Configuration: %s must be specified in %s", f, k)
+            for value in required_keys[key]:
+                if value not in self.confobj[key]:
+                    logger.error("Configuration: %s must be specified in %s", value, key)
                     sys.exit(1)
 
-            if k == 'settings':
-                for j in self.confobj[k]:
-                    if j == 'registry':
+            if key == 'settings':
+                for subkey in self.confobj[key]:
+                    if subkey == 'registry':
                         reg_string = \
-                            self.confobj[k][j]
+                            self.confobj[key][subkey]
                         if not reg_string[0].isalpha() or \
                                 re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
                             logger.error("Configuration: illegal character in registry")
                             sys.exit(1)
-                    if j == 'method':
-                        val = self.confobj[k][j]
+                    if subkey == 'method':
+                        val = self.confobj[key][subkey]
                         if val != 'geometric_mean':
                             logger.error("Configuration: only 'geometric_mean' method is "
                                          "currently supported")
                             sys.exit(1)
-                    if j in ('repetitions', 'retries'):
-                        val = self.confobj[k][j]
+                    if subkey in ('repetitions', 'retries'):
+                        val = self.confobj[key][subkey]
                         if (not isinstance(val, int)) or val < 0:
                             logger.error("Configuration: '%s' configuration parameter must "
-                                         "be a positive integer", j)
+                                         "be a positive integer", subkey)
                             sys.exit(1)
-                    if j == 'scaling':
+                    if subkey == 'scaling':
                         try:
-                            float(self.confobj[k][j])
+                            float(self.confobj[key][subkey])
                         except ValueError:
                             logger.error("Configuration: 'scaling' configuration parameter "
                                          "must be a float")
@@ -659,10 +703,10 @@ class HEPscore(object):
 
             bmk_req_options = ['version']
 
-            for k in bmk_req_options:
-                if k not in bmark_conf.keys():
+            for key in bmk_req_options:
+                if key not in bmark_conf.keys():
                     logger.error("Configuration: missing required benchmark option for %s - %s",
-                                 benchmark, k)
+                                 benchmark, key)
                     sys.exit(1)
 
             if 'weight' in bmark_conf.keys():
@@ -685,7 +729,6 @@ class HEPscore(object):
                 sys.exit(1)
 
             if 'registry' in bmark_conf.keys():
-                # reg_string possibly unbound
                 if not reg_string[0].isalpha() or \
                         re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
                     logger.error("Configuration: illegal character in registry")
@@ -700,6 +743,15 @@ class HEPscore(object):
         return self.confobj
 
     def run(self, mock=False):
+        """Run the benchmarks defined in the constructor config dict.
+
+        Args:
+            mock (bool, optional): Skips the run call to the benchmarks, used for testing.
+                                   Default: False.
+
+        Returns:
+            float: value as reported from the most recent run benchmark
+        """
 
         # check rundir is empty
         if os.listdir(self.resultsdir) and not mock:
@@ -708,11 +760,11 @@ class HEPscore(object):
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
-        m = hashlib.sha256()
+        conf_hash = hashlib.sha256()
         hashable_conf = {k: v for k, v in self.confobj.items() if k not in 'options'}
-        m.update(json.dumps(hashable_conf, sort_keys=True).encode('utf-8'))
+        conf_hash.update(json.dumps(hashable_conf, sort_keys=True).encode('utf-8'))
         self.confobj['app_info'] = {}
-        self.confobj['app_info']['config_hash'] = m.hexdigest()
+        self.confobj['app_info']['config_hash'] = conf_hash.hexdigest()
 
         sysname = ' '.join(os.uname())
         curtime = time.asctime()
