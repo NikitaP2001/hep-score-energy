@@ -83,13 +83,13 @@ cd hep-score
 pip install --user .
 ```
 
-Note, that on  RHEL/CentOS/Scientific Linux 7 hosts, where python 3 is not
+**NOTE**: on RHEL/CentOS/Scientific Linux 7 hosts, where python 3 is not
 the default python installation, it may be necessary to use ```pip3``` to
 install instead of ```pip```.
 
 ## Dependencies
 
-HEPscore requires a  Python 3 installation.  The pip installation will pull
+HEPscore requires a **Python 3.6+** installation.  The pip installation will pull
 in all dependencies.  HEPscore should be used with **Singularity 3.5.3 and newer**, or
 **Docker 1.13 and newer**.  There are some known issues when using HEPscore
 with earlier Singularity and Docker releases.
@@ -99,7 +99,7 @@ with earlier Singularity and Docker releases.
 ```sh
 usage: hep-score [-h] [-m [{singularity,docker}]] [-S] [-c] [-C]
                  [-f [CONFFILE]] [-r] [-o [OUTFILE]] [-y] [-p] [-V] [-v]
-                 OUTDIR
+                 [OUTDIR]
 
 positional arguments:
   OUTDIR                Base output directory.
@@ -111,7 +111,7 @@ optional arguments:
                         (singularity [default], or docker).
   -S, --userns          enable user namespace for Singularity, if supported.
   -c, --clean           clean residual container images from system after run.
-  -C, --cleanall        clean residual files & directories after execution.
+  -C, --clean_files     clean residual files & directories after execution.
                         Tar results.
   -f [CONFFILE], --conffile [CONFFILE]
                         custom config yaml to use instead of default.
@@ -134,8 +134,8 @@ $ hep-score -f /tmp/my-custom-bmk.yml /tmp/hsresults
 ```
 
 Singularity will be used as the container engine for the run, unless Docker
-is specified on the hep-score commmandline (```-d```), or in the benchmark
-configuration.
+is specified on the hep-score commmandline (```-m docker```), or in the
+benchmark configuration.
 
 hep-score creates a HEPscore_DATE_TIME named directory under OUTDIR which
 is used as the working directory for the sub-benchmark containers.  A detailed
@@ -311,5 +311,4 @@ testing and debugging purposes
 
 |     |     |     |
 | --- | --- | --- |
-| **master**     |   [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-score/commits/master)     | ![coverage](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/master/coverage.svg?job=coverage) |
-| **qa**     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/qa/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-score/commits/qa)     |  ![coverage](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/qa/coverage.svg?job=coverage) |
+| **qa-v1.0**     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/qa-v1.0/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-score/commits/qa-v1.0)     | ![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/jobs/artifacts/qa-v1.0/raw/public/badges/pep8.svg?job=pep8) |
