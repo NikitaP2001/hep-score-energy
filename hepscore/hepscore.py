@@ -600,7 +600,7 @@ class HEPscore():
 
         # check outfile is same type as outtype
         if outtype != outfile[-4:]:
-            logging.error("%s output requested, but %s does not match!", outtype, outfile)
+            logging.warning("%s output requested, but %s does not match!", outtype, outfile)
 
         outobj = {}
         if outtype == 'yaml':
