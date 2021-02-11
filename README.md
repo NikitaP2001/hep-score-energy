@@ -78,9 +78,9 @@ Alternatively, you can clone the hep-score git repository, and run the pip
 installation out of the root directory of the repo:
 
 ```sh
-git clone https://gitlab.cern.ch/hep-benchmarks/hep-score.git
-cd hep-score
-pip install --user .
+$ git clone https://gitlab.cern.ch/hep-benchmarks/hep-score.git
+$ cd hep-score
+$ pip install --user .
 ```
 
 **NOTE**: on RHEL/CentOS/Scientific Linux 7 hosts, where python 3 is not
@@ -121,7 +121,7 @@ optional arguments:
                         HEPscore20.json.
   -y, --yaml            YAML output instead of JSON.
   -p, --print           print configuration and exit.
-  -V, --version         show program's version number and exit
+  -V, --version         show program version number and exit
   -v, --verbose         enables verbose mode. Display debug messages.
 
 
