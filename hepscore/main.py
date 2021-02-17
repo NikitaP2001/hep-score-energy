@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """HEPscore benchmark execution CLI tool
 
-Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
+Copyright 2019-2021 CERN. See the COPYRIGHT file at the top-level directory
 of this distribution. For licensing information, see the COPYING file at
 the top-level directory of this distribution.
 """
@@ -64,9 +64,9 @@ def parse_args(args):
     parser.add_argument("-r", "--replay", action='store_true',
                         help="replay output using existing results directory OUTDIR.")
     parser.add_argument("-o", "--outfile", nargs='?', default=False,
-                        help="specify custom output filename. Default: HEPscore20.json.")
+                        help="specify summary output file path/name.")
     parser.add_argument("-y", "--yaml", action='store_true',
-                        help="YAML output instead of JSON.")
+                        help="create YAML summary output instead of JSON.")
     parser.add_argument("-p", "--print", action='store_true',
                         help="print configuration and exit.")
     parser.add_argument("-V", "--version", action='version',

@@ -32,8 +32,7 @@ HEPSPEC06 as the standard HEPiX/WLCG benchmark.  It is currently in a beta
 development state, and consists of the following workloads from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
-atlas-gen-bmk
-atlas-sim-bmk
+atlas-gen-bmk  
 cms-gen-sim-bmk  
 cms-digi-bmk  
 cms-reco-bmk  
@@ -46,13 +45,10 @@ The benchmark will take 5+ hours to execute on modern hardware.
 **NOTE**: ~20 GB of free disk space in your Singularity or Docker
 cache area, and 320 MB/core of free space (e.g. 20 GB on 64 core host)
 in the specified OUTDIR output directory is necessary to run the
-HEPscore20 benchmark.  
-
-If you are running low on space in your Singularity cache area (typically
-located in ~/.singularity/cache), you can specify an alternate cache
-location by setting the Singularity SINGULARITY_CACHEDIR environment
-variable appropriately (see the Singularity documentation for
-further information).
+HEPscore20 benchmark.  If passed the ```-c``` (clean images) and 
+```-C``` (clean files) command line options, hep-score will clean
+the benchmark container images and output after execution, which will 
+greatly reduce the amount of space needed to run.
 
 It is also possible to run the benchmark containers out of the
 "unpacked.cern.ch" CVMFS repo instead of the CERN gitlab Docker registry,
@@ -117,9 +113,8 @@ optional arguments:
                         custom config yaml to use instead of default.
   -r, --replay          replay output using existing results directory OUTDIR.
   -o [OUTFILE], --outfile [OUTFILE]
-                        specify custom output filename. Default:
-                        HEPscore20.json.
-  -y, --yaml            YAML output instead of JSON.
+                        specify summary output file path/name.
+  -y, --yaml            create YAML summary output instead of JSON.
   -p, --print           print configuration and exit.
   -V, --version         show program version number and exit
   -v, --verbose         enables verbose mode. Display debug messages.
@@ -160,26 +155,21 @@ hepscore_benchmark:
         reco: 2.196
       version: v1.2
       args:
-        # threads
-        -t: 4
-        # events
-        -e: 50
+        threads: 4
+        events: 50
       weight: 3.0
     lhcb-gen-sim-bmk:
       ref_scores:
         gen-sim: 90.29
       version: v0.15
       args:
-        # threads
-        -t: 1
-        # events
-        -e: 5
+        threads: 1
+        events: 5
       weight: 1.0
-  app_info:
+  settings:
     name: TestBenchmark
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
-  settings:
     method: geometric_mean
     repetitions: 3
     scaling: 355
@@ -219,9 +209,14 @@ The version of the benchmark container to execute
 ###### args
 
 DICTIONARY; default set by container  
-Set options to pass to the benchmark container.  Typically, ```-e``` to
-set events, ```-t``` for threads, ```-c``` for copies, and ```-d``` for
-debug
+Set options to pass to the benchmark container.  Typically, ```events``` to
+set the number of events, ```threads``` for the number threads, ```copies``` 
+for the number of copies, and ```debug```to enable debugging output
+
+###### gpu
+
+BOOL; default = false  
+Enable GPU support in Singularity/Docker call.
 
 ###### weight
 
@@ -231,14 +226,14 @@ score
 
 ###### registry
 
-STRING; defaults to the primary registry specified in "app_info"  
+STRING; defaults to the primary registry specified in "settings"  
 Allows for overriding the registry to use for this container.  See
-"registry", under "app_info" below, for more information
+"registry", under "settings" below, for more information
 
-#### app_info (required)
+#### settings (required)
 
 DICTIONARY  
-Defines overall benchmark application information below  
+Defines overall benchmark application settings/information below  
 
 ##### name (required)
 
@@ -260,11 +255,6 @@ The registry to run containers from.  Multiple URIs are permitted:
 only) to specify a local directory containing unpacked images or image
 files, or ```shub://``` (Singularity only) to specify a Singularity
 registry
-
-#### settings (required)
-
-DICTIONARY  
-Defines various settings for the overall benchmark application  
 
 ##### method (required)
 
@@ -296,8 +286,8 @@ commandline
 
 ##### retries
 
-INTEGER; default = 0
-Specifies how many times to retry a given workload if it fails.
+INTEGER; default = 0  
+Specifies how many times to retry running a container if it fails.
 
 ##### continue_fail
 
