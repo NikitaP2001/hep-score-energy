@@ -22,7 +22,7 @@ You can also seek support by contacting benchmark-suite-wg-devel@cern.ch
 
 Copyright
 ------------
-Copyright 2019-2020 CERN. See the COPYRIGHT file at the top-level directory
+Copyright 2019-2021 CERN. See the COPYRIGHT file at the top-level directory
 of this distribution. For licensing information, see the COPYING file at
 the top-level directory of this distribution.
 
