@@ -2,6 +2,7 @@ stages:
   - build-testing-image
   - unit-test
   - test
+  - deploy
 
     
 # Build the tox image (which is used to test the hep-score package)
@@ -121,3 +122,27 @@ simpletrack_gpu:
         - hep-score-test.tgz
       expire_in: 1 week
       when: always
+
+build_wheels:
+  stage: deploy
+  only:
+    - tags
+  script:
+    - yum install -y python3-pip
+    - python3 -m pip install --upgrade pip wheel
+    # build all wheels incl. hepscore, release will put into archive
+    - pip3 wheel -r requirements.txt --wheel-dir=hepscore_wheels .
+    - tar -czvf hepscore_wheels.tar.gz hepscore_wheels/*.whl
+    # create release w/ package dl
+    # YAML eating special characters :
+    - |
+      curl -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
+      --header "PRIVATE-TOKEN: ${CI_API_TOKEN}" \
+      --header "Content-Type: application/json" \
+      --data "{\"tag_name\": \"${CI_COMMIT_TAG}\", \"name\": \"${CI_COMMIT_TAG}\", \"description\": \"${CI_COMMIT_TAG_MESSAGE:-No release notes.}\", \"assets\": { \"links\": [{ \"name\": \"HEPscore wheels\", \"url\": \"$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build_wheels\", \"link_type\":\"package\" }] }}" \
+      --fail --output "/dev/null" --silent --show-error --write-out "HTTP response: ${http_code:-OK}\n\n"
+  artifacts:
+    paths:
+      - hepscore_wheels
+      - hepscore_wheels.tar.gz
+    when: always
