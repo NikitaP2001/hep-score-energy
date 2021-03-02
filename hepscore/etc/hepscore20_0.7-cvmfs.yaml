@@ -8,6 +8,14 @@ hepscore_benchmark:
       args:
         threads: 1
         events: 200
+    belle2-gen-sim-reco-bmk:
+      ref_scores:
+        gen-sim-reco: 5.44
+      weight: 1.0
+      version: v2.1
+      args:
+        threads: 1
+        events: 50
     .atlas-sim-bmk:
       ref_scores:
         sim: 0.0641
