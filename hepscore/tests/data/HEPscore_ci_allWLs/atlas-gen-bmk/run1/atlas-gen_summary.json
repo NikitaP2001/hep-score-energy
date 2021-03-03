@@ -1,0 +1,11 @@
+{
+    "run_info": {"copies":64 , "threads_per_copy": 1 , "events_per_thread" : 200 }, 
+    "report": {"wl-scores": {"gen": 1043.8430} ,"wl-stats": {"avg": 16.3100, "median": 17.2861, "min": 11.1111, "max": 19.6850, "count": 64} , "log": "ok"}, 
+    "app":{
+  "containment": "singularity",
+  "bmk_checksum": "48598ad84ee79d858700ecc86b4e7c9a",
+  "bmkdata_checksum": "809f5a89604aab45e53d3f1f69d6c6f9",
+  "cvmfs_checksum": "1940e3491d437c6325aff2a2d5ab8fdd",
+  "description": "ATLAS Event Generation based on athena version 19.2.5.5",
+  "version": "v2.1"
+} }

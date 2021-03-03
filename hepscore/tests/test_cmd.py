@@ -88,7 +88,7 @@ class TestRun(unittest.TestCase):
 class testOutput(unittest.TestCase):
 
     def test_parse_results(self):
-        benchmarks = ["atlas-gen-bmk", "cms-digi-bmk", "cms-gen-sim-bmk",
+        benchmarks = ["atlas-gen-bmk", "belle2-gen-sim-reco-bmk", "cms-digi-bmk", "cms-gen-sim-bmk",
                       "cms-reco-bmk", "lhcb-gen-sim-bmk"]
 
         head, _ = os.path.split(__file__)
@@ -107,7 +107,7 @@ class testOutput(unittest.TestCase):
 
         outtype = "json"
         outfile = ""
-
+        
         hs = HEPscore(test_config, resDir)
 
         ignored_keys = ['app_info.hash', 'environment', 'settings.replay',
@@ -124,7 +124,7 @@ class testOutput(unittest.TestCase):
 
         expected_res = json.load(
             open(resDir + "/hepscore_result_expected_output.json"))
-        actual_res = json.load(open(resDir + "/HEPscore20.json"))
+        actual_res = json.load(open(resDir + "/HEPscore2X.json"))
 
         result = list(diff(expected_res, actual_res, ignore=set(ignored_keys)))
 
@@ -137,8 +137,8 @@ class testOutput(unittest.TestCase):
 
         self.assertEqual(len(result), 0)
 
-        os.remove(resDir + "/HEPscore20.json")
-        os.remove(resDir + "/HEPscore20.log")
+        os.remove(resDir + "/HEPscore2X.json")
+        os.remove(resDir + "/HEPscore2X.log")
 
     def test_parse_corrupt_results(self):
         head, _ = os.path.split(__file__)
@@ -166,13 +166,13 @@ class testOutput(unittest.TestCase):
             hs.write_output(outtype, outfile)
         self.assertEqual(ec.exception.code, 2)
 
-        actual_res = json.load(open(resDir + "/HEPscore20.json"))
+        actual_res = json.load(open(resDir + "/HEPscore2X.json"))
 
         self.assertEqual(actual_res['score'], -1)
         self.assertEqual(actual_res['status'], "failed")
 
-        os.remove(resDir + "/HEPscore20.json")
-        os.remove(resDir + "/HEPscore20.log")
+        os.remove(resDir + "/HEPscore2X.json")
+        os.remove(resDir + "/HEPscore2X.log")
 
 
 if __name__ == '__main__':

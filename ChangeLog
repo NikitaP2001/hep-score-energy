@@ -1,0 +1,30 @@
+v1.0
+----
+-Modularized the overall design of the software
+-HEPscore2X new default benchmark
+-Added Belle2 gen-sim-reco benchmark to HEPscore2X
+-Support for custom container arguments in the YAML config
+-Implements support for weighted geometric mean (BMK-427) via per-benchmark
+'weight' field (defaults to 1.0)
+-Support for forced user namespace Singularity execution with '-S' -
+useful in nested Singularity environments
+-Singularity now the default container execution platform
+-Added 'continue_fail' parameter to the configuration (BMK-442)
+-Implements multiple URIs for the registry setting in the YAML config
+(docker://, dir://, shub://).
+-Update configuration and support latest available versions of benchmark
+containers which set the execution USER for Docker
+-Enable multiline json output handling to support new containers
+-Add support for new workload cleanup functionality (BMK-566)
+-Move app_info configuration to settings in the YAML config (BMK-559)
+-Support new workload JSON structure (BMK-558)
+-Implement Singularity image cleaning (BMK-561)
+-Add "retries" parameter - set to 1 in default configuration (BMK-533)
+-Moved to argparse for argument parsing
+-Dropped Python2 support and need for oyaml module
+-PEP8 code quality improvements
+-Support for benchmarks which use GPUs ('gpu' config option)
+-Improvements to module logging configurability
+-Added per-benchmark 'results_file' config option (BMK-284)
+-Automatically build/publish wheels for tags
+

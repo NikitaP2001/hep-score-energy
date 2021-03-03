@@ -1,0 +1,8 @@
+{
+  "containment": "docker",
+  "bmk_checksum": "c22b5186d0c62a1ea1b06e304f3865b2",
+  "bmkdata_checksum": "1d546a4c60149a9fd62ae71ebc40e3c2",
+  "cvmfs_checksum": "d365dbf4f4b60c6c8ea4eb53d49da4b1",
+  "description": "belle2-gen-sim-reco-bmk",
+  "version": "v2.1"
+}
