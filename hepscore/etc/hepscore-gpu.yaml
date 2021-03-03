@@ -1,7 +1,7 @@
 hepscore_benchmark:
   benchmarks:
     lhc-simpletrack-bmk:
-      results_file: lhc-simptrack_summary.json
+      results_file: lhc-simpletrack_summary.json
       ref_scores:
         simpletrack: 1
       version: qa-simpletrack
