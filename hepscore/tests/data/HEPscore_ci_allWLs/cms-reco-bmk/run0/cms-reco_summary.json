@@ -1,0 +1,11 @@
+{
+    "run_info": {"copies":16 , "threads_per_copy":4 , "events_per_thread" : 50 }, 
+    "report": {"wl-scores": {"reco": 5.3813}, "wl-stats": {"throughput_score": {"avg": 0.3363, "median": 0.3373, "min": 0.3255, "max": 0.3424, "count": 16} , "CPU_score": {"avg": 0.0883, "median": 0.0886, "min": 0.0853, "max": 0.0897, "count": 16} }, "log": "ok"}, 
+    "app": {
+  "containment": "singularity",
+  "bmk_checksum": "0852715cbc1ddeea2e76301b69d1524e",
+  "bmkdata_checksum": "cdf19b5f42900eb2cfea1dc1a10cae0c",
+  "cvmfs_checksum": "3e51249ddbb4144b8a969a6977643995",
+  "description": "CMS RECO of ttbar events, based on CMSSW_10_2_9",
+  "version": "v2.1"
+} }

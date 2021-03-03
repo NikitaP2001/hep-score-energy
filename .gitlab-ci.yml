@@ -4,7 +4,6 @@ stages:
   - test
   - deploy
 
-    
 # Build the tox image (which is used to test the hep-score package)
 # Use new CERN ci-tools (July 2019, BMK-113): see https://cern.service-now.com/service-portal/article.do?n=KB0005851
 # Adapted from https://gitlab.cern.ch/gitlabci-examples/build_docker_image/blob/master/.gitlab-ci.yml
@@ -132,7 +131,6 @@ build_wheels:
     - python3 -m pip install --upgrade pip wheel
     # build all wheels incl. hepscore, release will put into archive
     - pip3 wheel -r requirements.txt --wheel-dir=hepscore_wheels .
-    - tar -czvf hepscore_wheels.tar.gz hepscore_wheels/*.whl
     # create release w/ package dl
     # YAML eating special characters :
     - |
@@ -144,5 +142,4 @@ build_wheels:
   artifacts:
     paths:
       - hepscore_wheels
-      - hepscore_wheels.tar.gz
     when: always

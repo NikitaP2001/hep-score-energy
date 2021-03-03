@@ -178,12 +178,12 @@ class HEPscore():
         bench_conf = self.confobj['benchmarks'][benchmark]
         runs = int(self.confobj['settings']['repetitions'])
 
-        benchmark_glob = benchmark.split('-')[:-1]
-        benchmark_glob = '-'.join(benchmark_glob)
+        if 'results_file' in bench_conf:
+            benchmark_summary = bench_conf['results_file']
+        else:
+            benchmark_summary = benchmark + '_summary.json'
 
-        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark_glob
-                                  + "/run*/" + benchmark_glob + "*/"
-                                  + benchmark_glob + "_summary.json"))
+        gpaths = sorted(glob.glob(self.resultsdir + "/" + benchmark + "/run*/" + benchmark_summary))
         logger.debug("Looking for results in %s", gpaths)
         i = -1
         for gpath in gpaths:
@@ -297,7 +297,9 @@ class HEPscore():
                 ret = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 ret.wait()
             elif self.cec == 'singularity' and self.scache != "":
-                if os.path.abspath(self.scache) != '/' and self.scache.find(self.resultsdir) == 0:
+                if os.path.abspath(self.scache) != '/' and \
+                        self.scache.endswith("/scache") and \
+                        self.scache.find(self.resultsdir) == 0:
                     logger.info("Removing temporary singularity cache %s", self.scache)
                     shutil.rmtree(self.scache)
                 else:
@@ -369,7 +371,7 @@ class HEPscore():
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
-        options_string = ""
+        options_string = " -W"
         output_logs = ['']
         bmark_keys = ''
         bmark_registry = self.registry
@@ -403,7 +405,7 @@ class HEPscore():
             logger.info("Overriding registry for this container: %s", bmark_reg_url)
 
         if self.clean_files is True:
-            options_string = " --mop all"
+            options_string += " --mop all"
 
         if 'gpu' in bench_conf and bench_conf['gpu'] is True:
             if self.cec == 'singularity':
@@ -418,7 +420,7 @@ class HEPscore():
             if re.match(r'^[a-zA-Z0-9\-_]*$', option) is None or \
                     option in bad_args or \
                     re.match(r'^[a-zA-Z0-9\-_]*$', option_arg) is None:
-                logger.error("Ignoring invalid option in YAML configuration %s %s",
+                logger.error("Ignoring invalid option in YAML configuration: %s %s",
                              option, option_arg)
                 continue
             if option_arg not in ['None', 'False']:
@@ -451,7 +453,7 @@ class HEPscore():
             if successful_runs == runs:
                 break
 
-            run_dir = self.resultsdir + "/" + benchmark[:-4] + "/run" + str(i)
+            run_dir = self.resultsdir + "/" + benchmark + "/run" + str(i)
             log_filepath = run_dir + "/" + self.cec + "_logs"
 
             if self.confobj['settings']['replay'] is False:
@@ -528,6 +530,7 @@ class HEPscore():
 
             else:
                 time.sleep(1)
+                successful_runs += 1
 
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
@@ -696,11 +699,6 @@ class HEPscore():
                 logger.error("Configuration: illegal character in benchmark name %s", benchmark)
                 sys.exit(1)
 
-            if benchmark.find('-') == -1:
-                logger.error("Configuration: expect at least 1 '-' character in benchmark name %s",
-                             benchmark)
-                sys.exit(1)
-
             bmk_req_options = ['version']
 
             for key in bmk_req_options:
@@ -728,11 +726,13 @@ class HEPscore():
                 logger.error("Configuration: ref_scores missing for %s", benchmark)
                 sys.exit(1)
 
-            if 'registry' in bmark_conf.keys():
-                if not reg_string[0].isalpha() or \
-                        re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', reg_string) is None:
-                    logger.error("Configuration: illegal character in registry")
-                    sys.exit(1)
+            for pbkey in ['registry', 'results_file']:
+                if pbkey in bmark_conf.keys():
+                    if not bmark_conf[pbkey][0].isalpha() or \
+                            re.match(r'^[a-zA-Z0-9:/\-_\.~]*$', bmark_conf[pbkey]) is None:
+                        logger.error("Configuration: illegal character in %s - %s", pbkey,
+                                     bmark_conf[pbkey])
+                        sys.exit(1)
 
         if bcount == 0:
             logger.error("Configuration: no benchmarks specified")

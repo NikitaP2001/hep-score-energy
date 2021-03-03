@@ -13,7 +13,6 @@ develop-eggs
 .installed.cfg
 
 # PBR auto-generated files
-ChangeLog*
 RELEASENOTES*
 
 # Unit test / coverage reports

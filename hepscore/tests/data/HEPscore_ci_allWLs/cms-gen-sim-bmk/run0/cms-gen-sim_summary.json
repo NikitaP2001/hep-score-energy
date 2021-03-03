@@ -1,0 +1,11 @@
+{
+    "run_info": {"copies":16 , "threads_per_copy":4 , "events_per_thread" : 20 },
+    "report": {"wl-scores": {"gen-sim": 1.7114}, "wl-stats": {"throughput_score": {"avg": 0.1070, "median": 0.1072, "min": 0.1045, "max": 0.1088, "count": 16} , "CPU_score": {"avg": 0.0281, "median": 0.0281, "min": 0.0274, "max": 0.0286, "count": 16} }, "log": "ok"}, 
+    "app": {
+  "containment": "singularity",
+  "bmk_checksum": "482d8efd1449002264bebd177cce44a0",
+  "bmkdata_checksum": "09e9283642fecd717def8b483d30a27e",
+  "cvmfs_checksum": "025f555ccd5ea8b1aef680434c8b8dea",
+  "description": "CMS GEN-SIM of ttbar events, based on CMSSW_10_2_9",
+  "version": "v2.1"
+} }

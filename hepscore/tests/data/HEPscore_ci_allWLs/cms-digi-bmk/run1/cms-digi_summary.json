@@ -1,0 +1,11 @@
+{
+    "run_info": {"copies":16 , "threads_per_copy":4 , "events_per_thread" : 50 },
+    "report": {"wl-scores": {"digi": 8.2820}, "wl-stats": {"throughput_score": {"avg": 0.5176, "median": 0.5219, "min": 0.4966, "max": 0.5271, "count": 16} , "CPU_score": {"avg": 0.1395, "median": 0.1409, "min": 0.1325, "max": 0.1429, "count": 16} }, "log": "ok"}, 
+    "app": {
+  "containment": "singularity",
+  "bmk_checksum": "07b21173e4cd72d04b1b4b00da4e6061",
+  "bmkdata_checksum": "b1aee3951cff029f030dd5233167a51c",
+  "cvmfs_checksum": "77aad4087cafb0ace8260d1de257031e",
+  "description": "CMS DIGI of ttbar events based on CMSSW_10_2_9",
+  "version": "v2.1"
+} }

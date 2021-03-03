@@ -1,6 +1,7 @@
 hepscore_benchmark:
   benchmarks:
     lhc-simpletrack-bmk:
+      results_file: lhc-simptrack_summary.json
       ref_scores:
         simpletrack: 1
       version: qa-simpletrack
@@ -10,7 +11,7 @@ hepscore_benchmark:
         particles: 30000
         turns: 200
   settings:
-    name: HEPscore20
+    name: HEPscoreGPU
     reference_machine: "NVIDIA Tesla T4 OpenCL 1.2 CUDA 11.1.102"
     registry: docker://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     method: geometric_mean
