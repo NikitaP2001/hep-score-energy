@@ -143,7 +143,7 @@ hep-score creates a HEPscore_DATE_TIME named directory under OUTDIR which
 is used as the working directory for the sub-benchmark containers.  A detailed
 log of the run of the application is also written to this directory:
 BENCHMARK_NAME.log, where BENCHMARK_NAME is taken from the "name" parameter in
-the YAML configuration ("HEPscore20.log" by default).
+the YAML configuration ("HEPscore2X.log" by default).
 
 The final computed score will be printed to stdout ("Final score: XYZ"), and
 also stored in a summary output JSON (or YAML, if ```-y``` is specified) file

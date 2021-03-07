@@ -455,6 +455,8 @@ class HEPscore():
 
             run_dir = self.resultsdir + "/" + benchmark + "/run" + str(i)
             log_filepath = run_dir + "/" + self.cec + "_logs"
+            if self.cec == 'docker':
+                run_dir = os.path.abspath(run_dir)
 
             if self.confobj['settings']['replay'] is False:
                 os.makedirs(run_dir)
