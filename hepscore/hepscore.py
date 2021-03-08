@@ -752,7 +752,7 @@ class HEPscore():
                                    Default: False.
 
         Returns:
-            float: value as reported from the most recent run benchmark
+            int: 0 on success, -1 on error
         """
 
         # check rundir is empty
@@ -816,5 +816,5 @@ class HEPscore():
             self.confobj['status'] = 'failed'
             return -1
 
-        return res
+        return 0
 # End of HEPscore class
