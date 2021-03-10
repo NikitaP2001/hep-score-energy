@@ -8,6 +8,7 @@
 4. [Dependencies](#dependencies)  
 5. [Configuring HEPscore](#configuring-hepscore)  
     1. [Parameters](#parameters)  
+6. [Feedback and Support](#feedback-and-support)
 
 ## About
 
@@ -313,6 +314,12 @@ score will *not* be reported by the application, but runs of other
 sub-benchmarks will continue.  This parameter is primarily useful for
 testing and debugging purposes
 
+## Feedback and Support
+Feedback, and support questions are welcome in the HEP Benchmarks Project
+[Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks/13).
+You can also contact the developers via e-mail: <benchmark-suite-wg-devel@cern.ch>.
+
 |     |     |     |
 | --- | --- | --- |
 | **qa-v1.0**     |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/qa-v1.0/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-score/commits/qa-v1.0)     | ![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/jobs/artifacts/qa-v1.0/raw/public/badges/pep8.svg?job=pep8) |
+| **master**      |  [![pipeline status](https://gitlab.cern.ch/hep-benchmarks/hep-score/badges/master/pipeline.svg)](https://gitlab.cern.ch/hep-benchmarks/hep-score/commits/master)       | ![code quality](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/jobs/artifacts/master/raw/public/badges/pep8.svg?job=pep8) |
