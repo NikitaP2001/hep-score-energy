@@ -29,7 +29,7 @@ function run_atlas-kv-bmk {
 	 if [ ! -e $WDIR ]; then	
    	    mkdir -p $WDIR
 	 fi
-	 hep-score -v -m docker -f $TESTDIR/etc/hepscore_conf_ci.yaml $WDIR
+	 hep-score -v -f $TESTDIR/etc/hepscore_conf_ci.yaml $WDIR
 }
 
 @test "Test run of hep-score with configuration for atlas-kv-bmk" {
