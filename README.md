@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [About](#about)  
-2. [HEPscore2X Benchmark](#hepscore2X-benchmark)  
+2. [HEPscore2X Benchmark](#hepscore2x-benchmark)
 3. [Downloading and Installing HEPscore](#downloading-and-installing-hepscore)  
 4. [Dependencies](#dependencies)  
 5. [Configuring HEPscore](#configuring-hepscore)  
@@ -20,10 +20,9 @@ use with containers from the [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
-naming conventions and output JSON schema, are potentially usable.
-Both Singularity and Docker are supported for container execution.  By
-default, if no configuration is passed to HEPscore, the "HEPscore2X"
-benchmark is run.
+output JSON schema, are potentially usable.  Both Singularity and Docker 
+are supported for container execution.  By default, if no configuration 
+is passed to HEPscore, the "HEPscore2X" benchmark is run.
 
 ## HEPscore2X Benchmark
 
@@ -34,6 +33,7 @@ development state, and consists of the following workloads from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
 atlas-gen-bmk  
+belle2-gen-sim-reco-bmk  
 cms-gen-sim-bmk  
 cms-digi-bmk  
 cms-reco-bmk  
@@ -54,7 +54,7 @@ greatly reduce the amount of space needed to run.
 It is also possible to run the benchmark containers out of the
 "unpacked.cern.ch" CVMFS repo instead of the CERN gitlab Docker registry,
 by passing ```hep-score``` the
-[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore-cvmfs.yaml)
+[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore2X_0.8-cvmfs.yaml)
 file shipped in the application's etc/ directory.  When running the
 benchmark using the unpacked images in CVMFS, the Singularity cache area
 is not utilized.
@@ -84,19 +84,22 @@ $ pip install --user .
 the default python installation, it may be necessary to use ```pip3``` to
 install instead of ```pip```.
 
-An archive file containing the Python wheel for the hepscore package, as 
-well as all dependency wheels, is available/published in the
+Release tarfiles containing the Python wheel for the hepscore package, as
+well as all dependency wheels, are available/published in the
 [HEPscore release documentation](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/releases).
+An archive of all released wheel tarfiles is also available here: 
+<https://hep-benchmarks.web.cern.ch/hep-score/releases/>.
 These wheels can be used to install HEPscore via pip on hosts without
-network connectivity.
+network connectivity.  To install, after downloading and untarring a
+release tarfile, execute ```pip install --user hepscore_wheels/*.whl```.
 
 
 ## Dependencies
 
 HEPscore requires a **Python 3.6+** installation.  The pip installation will pull
-in all dependencies.  HEPscore should be used with **Singularity 3.5.3 and newer**, or
-**Docker 1.13 and newer**.  There are some known issues when using HEPscore
-with earlier Singularity and Docker releases.
+in all python module dependencies.  HEPscore should be used with **Singularity
+3.5.3 and newer**, or **Docker 1.13 and newer**.  There are some known issues
+when using HEPscore with earlier Singularity and Docker releases.
 
 ## Running HEPscore
 
@@ -159,21 +162,23 @@ An example hepscore YAML configuration is below:
 hepscore_benchmark:
   benchmarks:
     cms-reco-bmk:
+      results_file: cms-reco_summary.json
       ref_scores:
         reco: 2.196
-      version: v1.2
+      weight: 1.0
+      version: v2.1
       args:
         threads: 4
         events: 50
-      weight: 3.0
     lhcb-gen-sim-bmk:
+      results_file: lhcb-gen-sim_summary.json
       ref_scores:
         gen-sim: 90.29
-      version: v0.15
+      weight: 1.0
+      version: v2.1
       args:
         threads: 1
         events: 5
-      weight: 1.0
   settings:
     name: TestBenchmark
     reference_machine: "CPU Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz"
@@ -214,12 +219,11 @@ container
 STRING  
 The version of the benchmark container to execute
 
-###### results_file (optional)
+###### results_file
 
-STRING  
-The name of the benchmark container results JSON file.  If not
-specified, defaults to BENCHMARK_NAME.json, where BENCHMARK_NAME
-is the name of the benchmark container.
+STRING ; defaults to BENCHMARK_NAME.json, where BENCHMARK_NAME
+is the name of the benchmark container.  
+The name of the benchmark container results JSON file.
 
 ###### args
 
@@ -235,7 +239,7 @@ Enable GPU support in Singularity/Docker call.
 
 ###### weight
 
-FLOAT; default 1.0  
+FLOAT; default = 1.0  
 Sets the weight for the benchmark container when calculating the overall
 score
 
