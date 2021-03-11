@@ -103,7 +103,7 @@ kv_run_cc7:
       expire_in: 1 week
       when: always
 
-simpletrack_gpu:
+.simpletrack_gpu:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
   tags:
     -  hep-workload-gpu-docker-builder
@@ -111,7 +111,7 @@ simpletrack_gpu:
   script:
     - yum -y install python3 python3-pip
     - pip3 install .
-    - hep-score -v -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
+    - hep-score -v -m docker -f hepscore/etc/hepscore-gpu.yaml /tmp/HEPSCORE/$CI_JOB_ID
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID	
   only:
