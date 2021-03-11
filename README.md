@@ -20,10 +20,9 @@ use with containers from the [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
-naming conventions and output JSON schema, are potentially usable.
-Both Singularity and Docker are supported for container execution.  By
-default, if no configuration is passed to HEPscore, the "HEPscore2X"
-benchmark is run.
+output JSON schema, are potentially usable.  Both Singularity and Docker 
+are supported for container execution.  By default, if no configuration 
+is passed to HEPscore, the "HEPscore2X" benchmark is run.
 
 ## HEPscore2X Benchmark
 
@@ -34,7 +33,7 @@ development state, and consists of the following workloads from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
 atlas-gen-bmk  
-belle2-gen-sim-reco-bmk
+belle2-gen-sim-reco-bmk  
 cms-gen-sim-bmk  
 cms-digi-bmk  
 cms-reco-bmk  
