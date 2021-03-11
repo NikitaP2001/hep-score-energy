@@ -97,9 +97,9 @@ release tarfile, execute ```pip install --user hepscore_wheels/*.whl```.
 ## Dependencies
 
 HEPscore requires a **Python 3.6+** installation.  The pip installation will pull
-in all dependencies.  HEPscore should be used with **Singularity 3.5.3 and newer**, or
-**Docker 1.13 and newer**.  There are some known issues when using HEPscore
-with earlier Singularity and Docker releases.
+in all python module dependencies.  HEPscore should be used with **Singularity
+3.5.3 and newer**, or **Docker 1.13 and newer**.  There are some known issues
+when using HEPscore with earlier Singularity and Docker releases.
 
 ## Running HEPscore
 
@@ -221,10 +221,9 @@ The version of the benchmark container to execute
 
 ###### results_file
 
-STRING  
-The name of the benchmark container results JSON file.  If not
-specified, defaults to BENCHMARK_NAME.json, where BENCHMARK_NAME
-is the name of the benchmark container.
+STRING ; defaults to BENCHMARK_NAME.json, where BENCHMARK_NAME
+is the name of the benchmark container.  
+The name of the benchmark container results JSON file.
 
 ###### args
 
@@ -240,7 +239,7 @@ Enable GPU support in Singularity/Docker call.
 
 ###### weight
 
-FLOAT; default 1.0  
+FLOAT; default = 1.0  
 Sets the weight for the benchmark container when calculating the overall
 score
 
