@@ -136,6 +136,8 @@ build_wheels:
     - tar -czvf ${PKG_NAME} hepscore_wheels
     - export PKG_HASH=$(md5sum ${PKG_NAME} | cut -d ' ' -f 1)
     - SSHPASS=${CI_CPUBMK} sshpass -v -e scp -v -oStrictHostKeyChecking=no -r ${PKG_NAME} cpubmk@lxplus.cern.ch:${CI_EOS_RELEASES}
+    - curl -o retrieved_file ${CI_WEB_RELEASES}/${PKG_NAME}
+    - cmp retrieved_file ${PKG_NAME}
     # create release w/ package dl
     # YAML eating special characters :
     - |
@@ -144,9 +146,8 @@ build_wheels:
       --header "Content-Type: application/json" \
       --data "{\"tag_name\": \"${CI_COMMIT_TAG}\", \"name\": \"${CI_COMMIT_TAG}\", \"description\": \"${CI_COMMIT_TAG_MESSAGE:-No release notes.}\", \"assets\": { \"links\": [{ \"name\": \"HEPscore python wheels (md5sum: ${PKG_HASH})\", \"url\": \"${CI_WEB_RELEASES}/${PKG_NAME}\", \"link_type\":\"package\" }] }}" \
       --fail --output "/dev/null" --silent --show-error --write-out "HTTP response: ${http_code:-OK}\n\n"
-    - curl -o retrieved_file ${CI_WEB_RELEASES}/${PKG_NAME}
-    - cmp retrieved_file ${PKG_NAME}
   artifacts:
     paths:
       - hepscore_wheels
+      - hepscore-wheels-$CI_COMMIT_TAG.tar.gz
     when: always
