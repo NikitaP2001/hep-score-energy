@@ -110,13 +110,13 @@ class HEPscore():
         for more information.
 
         Contact:
-            benchmark-suite-wg-devel@cern.ch
+            https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
 
         Args:
             config (dict): Nested dict object with benchmark and parsing configurations
             resultsdir (str): Path to output results
         """
-        self.resultsdir = resultsdir
+        self.resultsdir = os.path.abspath(resultsdir)
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
 
@@ -455,8 +455,6 @@ class HEPscore():
 
             run_dir = self.resultsdir + "/" + benchmark + "/run" + str(i)
             log_filepath = run_dir + "/" + self.cec + "_logs"
-            if self.cec == 'docker':
-                run_dir = os.path.abspath(run_dir)
 
             if self.confobj['settings']['replay'] is False:
                 os.makedirs(run_dir)

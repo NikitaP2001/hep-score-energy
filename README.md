@@ -133,10 +133,10 @@ optional arguments:
 
 Examples:
 Run benchmarks via Docker, and display verbose information:
-$ hep-score -v -m docker /tmp/rundir
+$ hep-score -v -m docker ./testdir
 
 Run using Singularity (default) with a custom benchmark configuration:
-$ hep-score -f /tmp/my-custom-bmk.yml /tmp/hsresults
+$ hep-score -f /tmp/my-custom-bmk.yml /tmp
 ```
 
 Singularity will be used as the container engine for the run, unless Docker
@@ -320,8 +320,9 @@ testing and debugging purposes
 
 ## Feedback and Support
 Feedback, and support questions are welcome in the HEP Benchmarks Project
-[Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks/13).
-You can also contact the developers via e-mail: <benchmark-suite-wg-devel@cern.ch>.
+[Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
+You can also submit issues via 
+[Gitlab](https://gitlab.cern.ch/hep-benchmarks/user-support/-/issues).
 
 |     |     |     |
 | --- | --- | --- |

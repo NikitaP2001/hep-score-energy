@@ -31,16 +31,17 @@ def parse_args(args):
 
         Additional Information:
            https://gitlab.cern.ch/hep-benchmarks/hep-score
-        Contact: benchmark-suite-wg-devel@cern.ch
+        Contact: 
+           https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
         '''), epilog=textwrap.dedent('''
         -----------------------------------------------
         Examples:
 
         Run benchmarks via Docker, and display verbose information:
-        $ hep-score -v -m docker /tmp/rundir
+        $ hep-score -v -m docker ./testdir
 
         Run using Singularity (default) with a custom benchmark configuration:
-        $ hep-score -f /tmp/my-custom-bmk.yml /tmp/hsresults
+        $ hep-score -f /tmp/my-custom-bmk.yml /tmp
         ''')
     )
 
