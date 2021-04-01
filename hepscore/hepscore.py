@@ -776,6 +776,7 @@ class HEPscore():
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
+        logger.info("HEPscore version:    %s", __version__)
         logger.info("System:              %s", sysname)
         logger.info("Container Execution: %s", self.cec)
         logger.info("Registry:            %s", self.confobj['settings']['registry'])
