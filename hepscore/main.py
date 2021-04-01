@@ -31,7 +31,7 @@ def parse_args(args):
 
         Additional Information:
            https://gitlab.cern.ch/hep-benchmarks/hep-score
-        Contact: 
+        Contact:
            https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
         '''), epilog=textwrap.dedent('''
         -----------------------------------------------
