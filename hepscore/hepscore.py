@@ -466,7 +466,7 @@ class HEPscore():
 
             commands = {'docker': "docker run --rm --network=host -v " + run_dir
                                   + ":/results " + gpu_flag,
-                        'singularity': "singularity run -C -B " + run_dir + ":/results -B /tmp "
+                        'singularity': "singularity run -i -c -e -B " + run_dir + ":/results -B /tmp "
                                        + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
