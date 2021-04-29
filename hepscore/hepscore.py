@@ -772,7 +772,7 @@ class HEPscore():
         ver = self.get_version()
         exec_ver = self.cec + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'date': curtime, exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
@@ -808,6 +808,8 @@ class HEPscore():
             else:
                 self.weights.append(1.0)
                 bench_conf['weight'] = 1.0
+
+        self.confobj['environment']['end_at'] = time.asctime()
 
         if have_failure:
             logger.error("BENCHMARK FAILURE")
