@@ -1,3 +1,9 @@
+v1.1
+----
+-Update developer contact information to Discourse and Gitlab (BMK-722)
+-Use absolute path for OUTDIR for Singularity runs as well (BMK-725)
+-Include overall 'start_at' and 'end_at' fields in the output JSON/YAML
+
 v1.0
 ----
 -Modularized the overall design of the software
