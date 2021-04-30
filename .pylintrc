@@ -9,4 +9,5 @@ disable=no-member,
         too-many-branches,
         too-many-statements,
         too-many-locals,
-        too-many-instance-attributes
+        too-many-instance-attributes,
+        consider-using-with
