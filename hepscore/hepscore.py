@@ -110,13 +110,13 @@ class HEPscore():
         for more information.
 
         Contact:
-            benchmark-suite-wg-devel@cern.ch
+            https://wlcg-discourse.web.cern.ch/c/hep-benchmarks
 
         Args:
             config (dict): Nested dict object with benchmark and parsing configurations
             resultsdir (str): Path to output results
         """
-        self.resultsdir = resultsdir
+        self.resultsdir = os.path.abspath(resultsdir)
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
 
@@ -134,7 +134,7 @@ class HEPscore():
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
             if self.cec == 'singularity':
-                self.scache = resultsdir + '/scache'
+                self.scache = self.resultsdir + '/scache'
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
 
@@ -455,8 +455,6 @@ class HEPscore():
 
             run_dir = self.resultsdir + "/" + benchmark + "/run" + str(i)
             log_filepath = run_dir + "/" + self.cec + "_logs"
-            if self.cec == 'docker':
-                run_dir = os.path.abspath(run_dir)
 
             if self.confobj['settings']['replay'] is False:
                 os.makedirs(run_dir)
@@ -774,10 +772,11 @@ class HEPscore():
         ver = self.get_version()
         exec_ver = self.cec + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'date': curtime, exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
+        logger.info("HEPscore version:    %s", __version__)
         logger.info("System:              %s", sysname)
         logger.info("Container Execution: %s", self.cec)
         logger.info("Registry:            %s", self.confobj['settings']['registry'])
@@ -809,6 +808,8 @@ class HEPscore():
             else:
                 self.weights.append(1.0)
                 bench_conf['weight'] = 1.0
+
+        self.confobj['environment']['end_at'] = time.asctime()
 
         if have_failure:
             logger.error("BENCHMARK FAILURE")

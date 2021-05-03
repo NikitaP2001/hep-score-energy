@@ -85,7 +85,7 @@ test_python_support:
       - "**/*.py"
 
 kv_run_cc7:
-  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:latest
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:qa-v2.1
   tags:
     -  hep-score-docker-runner 
   stage: test
