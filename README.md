@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [About](#about)  
-2. [HEPscore20poc Benchmark](#hepscore20poc-benchmark)
+2. [HEPscore20POC Benchmark](#hepscore20poc-benchmark)
 3. [Downloading and Installing HEPscore](#downloading-and-installing-hepscore)  
 4. [Dependencies](#dependencies)  
 5. [Configuring HEPscore](#configuring-hepscore)  
@@ -22,11 +22,11 @@ However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
 output JSON schema, are potentially usable.  Both Singularity and Docker 
 are supported for container execution.  By default, if no configuration 
-is passed to HEPscore, the "HEPscore20poc" benchmark is run.
+is passed to HEPscore, the "HEPscore20POC" benchmark is run.
 
-## HEPscore20poc Benchmark
+## HEPscore20POC Benchmark
 
-HEPscore20poc is a benchmark based on containerized HEP workloads that
+HEPscore20POC is a benchmark based on containerized HEP workloads that
 the HEPiX Benchmarking Working Group is targeting to eventually replace
 HEPSPEC06 as the standard HEPiX/WLCG benchmark.  It is currently in a
 proof of concept development state, and consists of the following workloads 
@@ -39,7 +39,7 @@ cms-gen-sim-bmk
 cms-digi-bmk  
 cms-reco-bmk  
 lhcb-gen-sim-bmk  
-You can view the YAML HEPscore configuration for HEPscore20poc by
+You can view the YAML HEPscore configuration for HEPscore20POC by
 executing ```hep-score -p```.
 
 The benchmark will take 5+ hours to execute on modern hardware.
@@ -47,7 +47,7 @@ The benchmark will take 5+ hours to execute on modern hardware.
 **NOTE**: ~20 GB of free disk space in your Singularity or Docker
 cache area, and 320 MB/core of free space (e.g. 20 GB on 64 core host)
 in the specified OUTDIR output directory is necessary to run the
-HEPscore20poc benchmark.  If passed the ```-c``` (clean images) and 
+HEPscore20POC benchmark.  If passed the ```-c``` (clean images) and 
 ```-C``` (clean files) command line options, hep-score will clean
 the benchmark container images and output after execution, which will 
 greatly reduce the amount of space needed to run.
@@ -148,7 +148,7 @@ hep-score creates a HEPscore_DATE_TIME named directory under OUTDIR which
 is used as the working directory for the sub-benchmark containers.  A detailed
 log of the run of the application is also written to this directory:
 BENCHMARK_NAME.log, where BENCHMARK_NAME is taken from the "name" parameter in
-the YAML configuration ("HEPscore20poc.log" by default).
+the YAML configuration ("HEPscore20POC.log" by default).
 
 The final computed score will be printed to stdout ("Final score: XYZ"), and
 also stored in a summary output JSON (or YAML, if ```-y``` is specified) file
