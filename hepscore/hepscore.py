@@ -134,7 +134,8 @@ class HEPscore():
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
             if self.cec == 'singularity':
-                self.scache = self.resultsdir + '/scache'
+                # Set absolut path location for scache
+                self.scache = os.path.abspath(self.resultsdir + '/scache')
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
 
