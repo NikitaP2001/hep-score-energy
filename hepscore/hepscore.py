@@ -149,7 +149,7 @@ class HEPscore():
     def _gen_reg_path(self, reg_url=None):
         uri = None
         reg_path = None
-        valid_uris = ['docker', 'shub', 'dir']
+        valid_uris = ['docker', 'shub', 'dir', 'oras', 'https']
         if reg_url is None:
             try:
                 reg_url = self.confobj['settings']['registry']
