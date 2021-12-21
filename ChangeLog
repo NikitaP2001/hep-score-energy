@@ -1,3 +1,8 @@
+v1.3
+----
+-Add support for oras:// and https:// registry URIs.
+-Use absolute path for Singularity cache (MR140).
+
 v1.2
 ----
 -Rename default benchmark from HEPscore2X to HEPscore20POC (BMK-750)
