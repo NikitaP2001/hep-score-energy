@@ -273,8 +273,10 @@ STRING
 The registry to run containers from.  Multiple URIs are permitted:
 ```docker://``` to specify a Docker registry, ```dir://``` (Singularity
 only) to specify a local directory containing unpacked images or image
-files, or ```shub://``` (Singularity only) to specify a Singularity
-registry
+files, ```shub://``` (Singularity only) to specify a Singularity
+registry, ```oras://``` (Singularity only) to specify an OCI registry,
+or ```https://``` (Singularity only) to specify an HTTPS image 
+repository.
 
 ##### method (required)
 
