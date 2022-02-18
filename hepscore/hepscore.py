@@ -503,7 +503,10 @@ class HEPscore():
                 line = cmdf.stdout.readline()
                 while line:
                     output_logs.insert(0, line)
-                    lfile.write(line.decode('utf-8'))
+                    try:
+                        lfile.write(line.decode('utf-8'))
+                    except UnicodeEncodeError:
+                        pass
                     lfile.flush()
                     line = cmdf.stdout.readline()
                     if line[-25:] == "no space left on device.\n":
