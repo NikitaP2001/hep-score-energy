@@ -506,6 +506,7 @@ class HEPscore():
                     try:
                         lfile.write(line.decode('utf-8'))
                     except UnicodeEncodeError:
+                        # Ignore decode errors, for example from special characters
                         pass
                     lfile.flush()
                     line = cmdf.stdout.readline()
