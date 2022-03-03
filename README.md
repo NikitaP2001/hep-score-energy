@@ -21,8 +21,13 @@ https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
 output JSON schema, are potentially usable.  Both Singularity and Docker 
-are supported for container execution.  By default, if no configuration 
-is passed to HEPscore, the "HEPscore20POC" benchmark is run.
+are supported for container execution.  While Podman is not yet officially
+supported, tests have shown that it is functional with HEPscore and
+workloads from the HEP Workloads project as long as a "docker"
+symlink exists to the "podman" binary, and the open file descriptor
+ulimit can be set to 100k or higher (this may require administrator 
+privileges).  By default, if no configuration is passed to HEPscore, the 
+"HEPscore20POC" benchmark is run.
 
 ## HEPscore20POC Benchmark
 
