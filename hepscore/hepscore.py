@@ -579,18 +579,11 @@ class HEPscore():
 
         if math.isnan(fres):
             logger.debug("Final result is not valid")
-            self.confobj['score_per_core'] = -1
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
         else:
             self.confobj['score'] = float(fres)
             self.confobj['status'] = 'success'
-            try:
-                spc = float(fres) / float(multiprocessing.cpu_count())
-                self.confobj['score_per_core'] = round(spc, 3)
-            except ArithmeticError:
-                self.confobj['score_per_core'] = -1
-                logger.warning('Could not determine core count')
 
     def write_output(self, outtype, outfile=None):
         """Writes summary results in selected `outtype` to `outfile`.
