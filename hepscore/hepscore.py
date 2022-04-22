@@ -465,7 +465,8 @@ class HEPscore():
 
             commands = {'docker': "docker run --rm --network=host -v " + run_dir
                                   + ":/results " + gpu_flag,
-                        'singularity': "singularity run -C -B " + run_dir + ":/results -B /tmp "
+                        'singularity': "singularity run -i -c -e -B " + run_dir
+                                       + ":/results -B /tmp "
                                        + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -502,7 +503,11 @@ class HEPscore():
                 line = cmdf.stdout.readline()
                 while line:
                     output_logs.insert(0, line)
-                    lfile.write(line.decode('utf-8'))
+                    try:
+                        lfile.write(line.decode('utf-8'))
+                    except UnicodeEncodeError:
+                        # Ignore decode errors, for example from special characters
+                        pass
                     lfile.flush()
                     line = cmdf.stdout.readline()
                     if line[-25:] == "no space left on device.\n":
@@ -574,18 +579,11 @@ class HEPscore():
 
         if math.isnan(fres):
             logger.debug("Final result is not valid")
-            self.confobj['score_per_core'] = -1
             self.confobj['score'] = -1
             self.confobj['status'] = 'failed'
         else:
             self.confobj['score'] = float(fres)
             self.confobj['status'] = 'success'
-            try:
-                spc = float(fres) / float(multiprocessing.cpu_count())
-                self.confobj['score_per_core'] = round(spc, 3)
-            except ArithmeticError:
-                self.confobj['score_per_core'] = -1
-                logger.warning('Could not determine core count')
 
     def write_output(self, outtype, outfile=None):
         """Writes summary results in selected `outtype` to `outfile`.
