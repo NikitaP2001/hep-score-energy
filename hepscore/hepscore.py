@@ -802,7 +802,6 @@ class HEPscore():
 
         impl,ver = self.get_version()
         exec_ver = impl + "_version"
-        print(exec_ver)
 
         self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
 
