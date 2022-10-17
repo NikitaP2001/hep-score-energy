@@ -61,7 +61,6 @@ python36:
   artifacts:
     reports:
       junit: report.xml
-      cobertura: coverage.xml
     expire_in: 1 week
     when: always
 
