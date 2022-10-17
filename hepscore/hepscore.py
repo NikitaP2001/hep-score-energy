@@ -90,6 +90,7 @@ class HEPscore():
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
     scorekey = 'wl-scores'
     cec = "singularity"
+    engine = ""
     clean = False
     clean_files = False
     userns = False
@@ -347,27 +348,57 @@ class HEPscore():
                 return "-u "
         return ""
 
+    def check_unsquash(self):
+        """Check if --unsquash is supported"""
+        if self.cec != "docker" and 'apptainer_version' in self.confobj['environment']:
+            hcmd = "singularity run --help".split()
+            hout = subprocess.Popen(hcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in hout.stdout.readlines():
+                if '--unsquash' in line.decode('utf-8'):
+                    return True
+
+            return False
+
+    def _get_unsquash_flag(self):
+        """If we're running in apptainer that supports it, pass --unsquash"""
+        if self.check_userns() and self.check_unsquash():
+            logger.debug("Enabling --unsquash flag in singularity call")
+            return "--unsquash "
+        else:
+            return ""
+
     def get_version(self):
         """Report version of containment choice.
 
         Returns:
-            str: Version as reported by containment (eg `singularity version`)
+            str: Version as reported by containment (eg `singularity --version`)
         """
-        commands = {'docker': "docker version -f {{.Server.Version}}",
-                    'singularity': "singularity version",
-                    'podman': "podman version --format {{.Server.Version}}"}
+        commands = {'docker': "docker --version",
+                    'singularity': "singularity --version"}
         command = commands[self.cec].split(' ')
 
         try:
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            engimpl = self.cec
             for line in cmdf.stdout.readlines():
-                if re.sub(r'[^0-9\.]', '', line.decode('utf-8'))[0].isdigit():
-                    return str(line.decode('utf-8').strip('\n'))
+                dline = line.decode('utf-8')
+                dline_ver = re.sub(r'^[^0-9]*', '', dline)
+                if len(dline_ver)>0 and dline_ver[0].isdigit():
+                    if self.cec == 'singularity':
+                            if 'apptainer' in dline:
+                                engimpl = 'apptainer'
+                    elif self.cec == 'docker':
+                        helpout = subprocess.Popen(['docker', '--help'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        for hline in helpout.stdout.readlines():
+                            if 'podman' in hline.decode('utf-8'):
+                                engimpl = 'podman'
+                    return [engimpl, str(dline_ver.strip('\n'))]
+
         except subprocess.SubprocessError:
             logger.error("Error fetching %s version", self.cec)
         except OSError:
             logger.error("Could not locate %s on the system. Please check your path!", self.cec)
-        return "None"
+        return ['unknown', '0.0']
 
     def _run_benchmark(self, benchmark, mock):
 
@@ -467,6 +498,7 @@ class HEPscore():
                                   + ":/results " + gpu_flag,
                         'singularity': "singularity run -i -c -e -B " + run_dir
                                        + ":/results -B /tmp "
+                                       + self._get_unsquash_flag()
                                        + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -768,8 +800,9 @@ class HEPscore():
         sysname = ' '.join(os.uname())
         curtime = time.asctime()
 
-        ver = self.get_version()
-        exec_ver = self.cec + "_version"
+        impl,ver = self.get_version()
+        exec_ver = impl + "_version"
+        print(exec_ver)
 
         self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
 

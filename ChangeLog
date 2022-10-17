@@ -1,3 +1,18 @@
+v1.5
+----
+-Change output version key to include specific container engine
+-Call Apptainer with '--unsquash' when running unprivileged (BMK-1032)
+
+v1.4
+----
+-Rename default benchmark to HEPscoreBeta (BMK-804)
+-Disable score_per_core reporting (BMK-677)
+-Document Podman usage (BMK-808)
+-No longer contain PID namespace (MR134)
+-Ignore unicode decode errors, for example from special characters
+-Add support for oras:// and https:// registry URIs
+-Use absolute path for Singularity cache (MR140)
+
 v1.3
 ----
 -Add support for oras:// and https:// registry URIs.
