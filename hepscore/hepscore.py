@@ -94,6 +94,7 @@ class HEPscore():
     clean = False
     clean_files = False
     userns = False
+    addarch = False
 
     scache = ""
     registry = ""
@@ -131,6 +132,9 @@ class HEPscore():
         else:
             logger.warning("Container not specified on commandline or in config - assuming %s",
                            self.cec)
+
+        if 'addarch' in self.settings:
+            self.addarch = self.settings['addarch']
 
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
@@ -383,7 +387,7 @@ class HEPscore():
             for line in cmdf.stdout.readlines():
                 dline = line.decode('utf-8')
                 dline_ver = re.sub(r'^[^0-9]*', '', dline)
-                if len(dline_ver)>0 and dline_ver[0].isdigit():
+                if len(dline_ver) > 0 and dline_ver[0].isdigit():
                     if self.cec == 'singularity':
                             if 'apptainer' in dline:
                                 engimpl = 'apptainer'
@@ -392,6 +396,7 @@ class HEPscore():
                         for hline in helpout.stdout.readlines():
                             if 'podman' in hline.decode('utf-8'):
                                 engimpl = 'podman'
+                                break
                     return [engimpl, str(dline_ver.strip('\n'))]
 
         except subprocess.SubprocessError:
@@ -422,10 +427,14 @@ class HEPscore():
         successful_runs = 0
         retry_count = 0
 
+        bcver = bench_conf['version']
+        if self.addarch and self.cec == "singularity":
+            bcver = bcver + "_" + self.confobj['environment']['arch']
+
         tmp = "Executing " + str(runs) + " run"
         if runs > 1:
             tmp += 's'
-        logger.info("%s of %s", tmp, benchmark)
+        logger.info("%s of %s", tmp, benchmark + " [" + bcver + "]")
 
         if 'args' in bench_conf.keys():
             bmark_keys = bench_conf['args'].keys()
@@ -469,7 +478,7 @@ class HEPscore():
             logger.error("failure to open %s", log)
             return -1
 
-        benchmark_name = bmark_registry + '/' + benchmark + ':' + bench_conf['version']
+        benchmark_name = bmark_registry + '/' + benchmark + ':' + bcver
         benchmark_complete = benchmark_name + options_string
         self.confobj['settings']['replay'] = mock
 
@@ -708,6 +717,13 @@ class HEPscore():
                             logger.error("Configuration: '%s' configuration parameter must "
                                          "be a positive integer", subkey)
                             sys.exit(1)
+                    if subkey == 'addarch':
+                        try:
+                            bool(self.confobj[key][subkey])
+                        except ValueError:
+                            logger.error("Configuration: 'addarch' configuration parameter "
+                                         "must be a bool")
+                            sys.exit(1)
                     if subkey == 'scaling':
                         try:
                             float(self.confobj[key][subkey])
@@ -797,13 +813,15 @@ class HEPscore():
         self.confobj['app_info'] = {}
         self.confobj['app_info']['config_hash'] = conf_hash.hexdigest()
 
-        sysname = ' '.join(os.uname())
+        sysinfo = os.uname()
+        sysname = ' '.join(sysinfo)
         curtime = time.asctime()
 
         impl,ver = self.get_version()
         exec_ver = impl + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'arch': sysinfo.machine,
+                                       'start_at': curtime, exec_ver: ver}
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
