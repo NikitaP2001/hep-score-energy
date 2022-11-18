@@ -326,9 +326,9 @@ score will *not* be reported by the application, but runs of other
 sub-benchmarks will continue.  This parameter is primarily useful for
 testing and debugging purposes
 
-#### addarch
+##### addarch
 
-BOOL; default = false
+BOOL; default = false  
 Append architecture to container version tag if Singularity/Apptainer are
 being used.
 

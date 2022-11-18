@@ -427,8 +427,15 @@ class HEPscore():
         successful_runs = 0
         retry_count = 0
 
+        # Allow registry overrides in the benchmark configuration
+        if 'registry' in bench_conf.keys():
+            bmark_reg_url = bench_conf['registry']
+            bmark_registry = self._gen_reg_path(bench_conf['registry'])
+            logger.info("Overriding registry for this container: %s", bmark_reg_url)
+
         bcver = bench_conf['version']
-        if self.addarch and self.cec == "singularity":
+        if self.addarch and self.cec == "singularity" and \
+                bmark_registry.find("docker://") != 0:
             bcver = bcver + "_" + self.confobj['environment']['arch']
 
         tmp = "Executing " + str(runs) + " run"
@@ -438,12 +445,6 @@ class HEPscore():
 
         if 'args' in bench_conf.keys():
             bmark_keys = bench_conf['args'].keys()
-
-        # Allow registry overrides in the benchmark configuration
-        if 'registry' in bench_conf.keys():
-            bmark_reg_url = bench_conf['registry']
-            bmark_registry = self._gen_reg_path(bench_conf['registry'])
-            logger.info("Overriding registry for this container: %s", bmark_reg_url)
 
         if self.clean_files is True:
             options_string += " --mop all"
