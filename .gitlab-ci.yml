@@ -87,7 +87,7 @@ test_python_support:
 hello-world-x86:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads/hep-workload-builder-multiarch:latest
   tags:
-    -  hep-score-docker-runner 
+    - hep-workload-docker-builder
     # - hepspec-docker-arm-runner
   stage: test
   script:
@@ -104,7 +104,7 @@ hello-world-x86:
 kv_run_cc7:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:qa-v2.1
   tags:
-    -  hep-score-docker-runner 
+    - hep-workload-docker-builder
   stage: test
   script:
     - yum -y install bats
