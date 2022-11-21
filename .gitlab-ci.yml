@@ -88,7 +88,6 @@ hello-world-x86:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads/hep-workload-builder-multiarch:latest
   tags:
     - hep-workload-docker-builder
-    # - hepspec-docker-arm-runner
   stage: test
   script:
     - pip3 install .
@@ -100,6 +99,12 @@ hello-world-x86:
         - hep-score-test.tgz
       expire_in: 1 week
       when: always
+
+hello-world-aarch64:
+  tags:
+    - hepspec-docker-arm-runner
+  extends: hello-world-x86
+
 
 kv_run_cc7:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:qa-v2.1
