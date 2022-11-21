@@ -94,12 +94,14 @@ hello-world-x86:
      HEPSCORECONF_DOCKER: hepscoreconf_docker.yaml
   script:
     - pip3 install .
+    - echo ${HEPSCORECONF}
+    - echo ${HEPSCORECONF_DOCKER}
     - |
-      cat $HEPSCORECONF | sed -e "s@addarch: true@addarch: false@" \
+      cat ${HEPSCORECONF} | sed -e "s@addarch: true@addarch: false@" \
                               -e "s@oras://@docker://@" \ 
-                              -e "s@hep-workloads-sif@hep-workloads@" > $HEPSCORECONF_DOCKER
-    - hep-score -v -f $HEPSCORECONF $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
-    - hep-score -v -f $HEPSCORECONF_DOCKER $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+                              -e "s@hep-workloads-sif@hep-workloads@" > ${HEPSCORECONF_DOCKER}
+    - hep-score -v -f ${HEPSCORECONF} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+    - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID
   artifacts:
