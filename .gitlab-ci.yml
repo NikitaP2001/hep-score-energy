@@ -105,7 +105,8 @@ hello-world-x86:
     - hep-score -v -f ${HEPSCORECONF} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
     - cat ${HEPSCORECONF_DOCKER}
     - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
-    - sed -i ${HEPSCORECONF_DOCKER} -e "s@container_exec: singularity@container_exec: docker"
+    - | 
+      sed -i ${HEPSCORECONF_DOCKER} -e "s@container_exec: singularity@container_exec: docker"
     - cat ${HEPSCORECONF_DOCKER}
     - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
   after_script:
