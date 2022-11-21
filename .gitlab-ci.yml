@@ -94,7 +94,7 @@ hello-world-x86:
      HEPSCORECONF_DOCKER: hepscoreconf_docker.yaml
   script:
     - pip3 install .
-     - |
+    - |
       cat $HEPSCORECONF | sed -e "s@addarch: true@addarch: false@" \
                               -e "s@oras://@docker://@" \ 
                               -e "s@hep-workloads-sif@hep-workloads@" > $HEPSCORECONF_DOCKER
