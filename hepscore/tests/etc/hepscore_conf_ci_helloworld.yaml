@@ -13,7 +13,7 @@ hepscore_benchmark:
       results_file: hello-world-ma_summary.json
       version: ci-v1.0
       ref_scores:
-        sim: 1
+        gen: 1
       args:
         debug: true
 
