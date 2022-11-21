@@ -83,6 +83,24 @@ test_python_support:
     changes:
       - "**/*.py"
 
+# Test HEPscore can run on ARM and x86
+hello-world-x86:
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads/hep-workload-builder-multiarch:latest
+  tags:
+    -  hep-score-docker-runner 
+    # - hepspec-docker-arm-runner
+  stage: test
+  script:
+    - pip3 install .
+    - hep-score -v -f $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci_helloworld.yaml $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+  after_script:
+    - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID
+  artifacts:
+      paths:
+        - hep-score-test.tgz
+      expire_in: 1 week
+      when: always
+
 kv_run_cc7:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:qa-v2.1
   tags:
