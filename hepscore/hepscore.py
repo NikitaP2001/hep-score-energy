@@ -786,7 +786,7 @@ class HEPscore():
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj, sort_keys=False))
+        logger.debug("The parsed config is: \n %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
         return self.confobj
 
