@@ -100,6 +100,7 @@ hello-world-x86:
     - |
       cat ${HEPSCORECONF} | sed -e "s@addarch: true@addarch: false@" -e "s@oras://@docker://@" -e "s@hep-workloads-sif@hep-workloads@" > ${HEPSCORECONF_DOCKER}
     - hep-score -v -f ${HEPSCORECONF} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+    - cat ${HEPSCORECONF_DOCKER}
     - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
   after_script:
     - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID
