@@ -8,7 +8,7 @@ hepscore_benchmark:
     method: geometric_mean #or any other algorithm
     container_exec: singularity
   benchmarks:
-    hello-world-bmk:
+    hello-world-ma-bmk:
       results_file: hello-world-ma_summary.json
       version: ci-v1.0
       ref_scores:
