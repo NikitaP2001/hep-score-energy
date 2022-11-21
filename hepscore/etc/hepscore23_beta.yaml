@@ -58,6 +58,7 @@ hepscore_benchmark:
     name: HEPscore23Beta
     reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz"
     registry: oras://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-sif
+    addarch: true
     method: geometric_mean
     repetitions: 3
     retries: 1
