@@ -3,6 +3,7 @@ hepscore_benchmark:
     name: HEPscoreCI
     reference_machine: 'Unknown'
     registry: oras://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-sif
+    addarch: true
     scaling: 10
     repetitions: 2  #number of repetitions of the same benchmark
     method: geometric_mean #or any other algorithm
