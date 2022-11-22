@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [About](#about)  
-2. [HEPscore23Beta Benchmark](#hepscorebeta-benchmark)
+2. [HEPscore23Beta Benchmark](#hepscore23beta-benchmark)
 3. [Downloading and Installing HEPscore](#downloading-and-installing-hepscore)  
 4. [Dependencies](#dependencies)  
 5. [Configuring HEPscore](#configuring-hepscore)  
@@ -60,7 +60,7 @@ greatly reduce the amount of space needed to run.
 It is also possible to run the benchmark containers out of the
 "unpacked.cern.ch" CVMFS repo instead of the CERN gitlab Docker registry,
 by passing ```hep-score``` the
-[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore_beta-cvmfs.yaml)
+[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore-cvmfs.yaml)
 file shipped in the application's etc/ directory.  When running the
 benchmark using the unpacked images in CVMFS, the Singularity cache area
 is not utilized.
