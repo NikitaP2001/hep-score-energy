@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [About](#about)  
-2. [HEPscoreBeta Benchmark](#hepscorebeta-benchmark)
+2. [HEPscore23Beta Benchmark](#hepscore23beta-benchmark)
 3. [Downloading and Installing HEPscore](#downloading-and-installing-hepscore)  
 4. [Dependencies](#dependencies)  
 5. [Configuring HEPscore](#configuring-hepscore)  
@@ -20,31 +20,31 @@ use with containers from the [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
-output JSON schema, are potentially usable.  Both Singularity and Docker 
-are supported for container execution.  While Podman is not yet officially
-supported, tests have shown that it is functional with HEPscore and
-workloads from the HEP Workloads project as long as a "docker"
-symlink exists to the "podman" binary, and the open file descriptor
-ulimit can be set to 100k or higher (this may require administrator 
-privileges).  By default, if no configuration is passed to HEPscore, the 
-"HEPscoreBeta" benchmark is run.
+output JSON schema, are potentially usable.  Both Singularity (including
+Apptainer and SingularityCE) and Docker are supported for container execution.
+While Podman is not yet officially supported, tests have shown that it is
+functional with HEPscore and workloads from the HEP Workloads project as long
+as a "docker" symlink exists to the "podman" binary, and the open file
+descriptor ulimit can be set to 100k or higher (this may require
+administrator privileges).  By default, if no configuration is passed to
+HEPscore, the "HEPscore23Beta" benchmark is run.
 
-## HEPscoreBeta Benchmark
+## HEPscore23Beta Benchmark
 
-HEPscoreBeta is a benchmark based on containerized HEP workloads that
+HEPscore23Beta is a benchmark based on containerized HEP workloads that
 the HEPiX Benchmarking Working Group is targeting to eventually replace
 HEPSPEC06 as the standard HEPiX/WLCG benchmark.  It is currently in a
 proof of concept development state, and consists of the following workloads 
 from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
-atlas-gen-bmk  
-belle2-gen-sim-reco-bmk  
-cms-gen-sim-bmk  
-cms-digi-bmk  
-cms-reco-bmk  
-lhcb-gen-sim-bmk  
-You can view the YAML HEPscore configuration for HEPscoreBeta by
+atlas-gen_sherpa-ma-bmk
+atlas-reco_mt-ma-bmk
+cms-gen-sim-run3-ma-bmk
+cms-reco-run3-ma-bmk
+lhcb-gen-sim-2021-bmk
+belle2-gen-sim-reco-2021-bmk
+You can view the YAML HEPscore configuration for HEPscore23Beta by
 executing ```hep-score -p```.
 
 The benchmark will take 5+ hours to execute on modern hardware.
@@ -52,7 +52,7 @@ The benchmark will take 5+ hours to execute on modern hardware.
 **NOTE**: ~20 GB of free disk space in your Singularity or Docker
 cache area, and 320 MB/core of free space (e.g. 20 GB on 64 core host)
 in the specified OUTDIR output directory is necessary to run the
-HEPscoreBeta benchmark.  If passed the ```-c``` (clean images) and 
+HEPscore23Beta benchmark.  If passed the ```-c``` (clean images) and 
 ```-C``` (clean files) command line options, hep-score will clean
 the benchmark container images and output after execution, which will 
 greatly reduce the amount of space needed to run.
@@ -60,7 +60,7 @@ greatly reduce the amount of space needed to run.
 It is also possible to run the benchmark containers out of the
 "unpacked.cern.ch" CVMFS repo instead of the CERN gitlab Docker registry,
 by passing ```hep-score``` the
-[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore_beta-cvmfs.yaml)
+[hepscore-cvmfs.yaml](https://gitlab.cern.ch/hep-benchmarks/hep-score/-/raw/master/hepscore/etc/hepscore-cvmfs.yaml)
 file shipped in the application's etc/ directory.  When running the
 benchmark using the unpacked images in CVMFS, the Singularity cache area
 is not utilized.
@@ -153,7 +153,7 @@ hep-score creates a HEPscore_DATE_TIME named directory under OUTDIR which
 is used as the working directory for the sub-benchmark containers.  A detailed
 log of the run of the application is also written to this directory:
 BENCHMARK_NAME.log, where BENCHMARK_NAME is taken from the "name" parameter in
-the YAML configuration ("HEPscoreBeta.log" by default).
+the YAML configuration ("HEPscore23Beta.log" by default).
 
 The final computed score will be printed to stdout ("Final score: XYZ"), and
 also stored in a summary output JSON (or YAML, if ```-y``` is specified) file
@@ -325,6 +325,13 @@ resulting score.  If true, and this condition occurs, an overall/final
 score will *not* be reported by the application, but runs of other
 sub-benchmarks will continue.  This parameter is primarily useful for
 testing and debugging purposes
+
+##### addarch
+
+BOOL; default = false  
+Append architecture to container version tag if Singularity/Apptainer are
+being used.
+
 
 ## Feedback and Support
 Feedback, and support questions are welcome in the HEP Benchmarks Project

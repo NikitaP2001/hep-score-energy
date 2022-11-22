@@ -94,6 +94,7 @@ class HEPscore():
     clean = False
     clean_files = False
     userns = False
+    addarch = False
 
     scache = ""
     registry = ""
@@ -131,6 +132,9 @@ class HEPscore():
         else:
             logger.warning("Container not specified on commandline or in config - assuming %s",
                            self.cec)
+
+        if 'addarch' in self.settings:
+            self.addarch = self.settings['addarch']
 
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
@@ -383,7 +387,7 @@ class HEPscore():
             for line in cmdf.stdout.readlines():
                 dline = line.decode('utf-8')
                 dline_ver = re.sub(r'^[^0-9]*', '', dline)
-                if len(dline_ver)>0 and dline_ver[0].isdigit():
+                if len(dline_ver) > 0 and dline_ver[0].isdigit():
                     if self.cec == 'singularity':
                             if 'apptainer' in dline:
                                 engimpl = 'apptainer'
@@ -392,6 +396,7 @@ class HEPscore():
                         for hline in helpout.stdout.readlines():
                             if 'podman' in hline.decode('utf-8'):
                                 engimpl = 'podman'
+                                break
                     return [engimpl, str(dline_ver.strip('\n'))]
 
         except subprocess.SubprocessError:
@@ -422,19 +427,24 @@ class HEPscore():
         successful_runs = 0
         retry_count = 0
 
-        tmp = "Executing " + str(runs) + " run"
-        if runs > 1:
-            tmp += 's'
-        logger.info("%s of %s", tmp, benchmark)
-
-        if 'args' in bench_conf.keys():
-            bmark_keys = bench_conf['args'].keys()
-
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
             bmark_reg_url = bench_conf['registry']
             bmark_registry = self._gen_reg_path(bench_conf['registry'])
             logger.info("Overriding registry for this container: %s", bmark_reg_url)
+
+        bcver = bench_conf['version']
+        if self.addarch and self.cec == "singularity" and \
+                bmark_registry.find("docker://") != 0:
+            bcver = bcver + "_" + self.confobj['environment']['arch']
+
+        tmp = "Executing " + str(runs) + " run"
+        if runs > 1:
+            tmp += 's'
+        logger.info("%s of %s", tmp, benchmark + " [" + bcver + "]")
+
+        if 'args' in bench_conf.keys():
+            bmark_keys = bench_conf['args'].keys()
 
         if self.clean_files is True:
             options_string += " --mop all"
@@ -469,7 +479,7 @@ class HEPscore():
             logger.error("failure to open %s", log)
             return -1
 
-        benchmark_name = bmark_registry + '/' + benchmark + ':' + bench_conf['version']
+        benchmark_name = bmark_registry + '/' + benchmark + ':' + bcver
         benchmark_complete = benchmark_name + options_string
         self.confobj['settings']['replay'] = mock
 
@@ -708,6 +718,13 @@ class HEPscore():
                             logger.error("Configuration: '%s' configuration parameter must "
                                          "be a positive integer", subkey)
                             sys.exit(1)
+                    if subkey == 'addarch':
+                        try:
+                            bool(self.confobj[key][subkey])
+                        except ValueError:
+                            logger.error("Configuration: 'addarch' configuration parameter "
+                                         "must be a bool")
+                            sys.exit(1)
                     if subkey == 'scaling':
                         try:
                             float(self.confobj[key][subkey])
@@ -769,7 +786,7 @@ class HEPscore():
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj, sort_keys=False))
+        logger.debug("The parsed config is: \n %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
         return self.confobj
 
@@ -797,13 +814,15 @@ class HEPscore():
         self.confobj['app_info'] = {}
         self.confobj['app_info']['config_hash'] = conf_hash.hexdigest()
 
-        sysname = ' '.join(os.uname())
+        sysinfo = os.uname()
+        sysname = ' '.join(sysinfo)
         curtime = time.asctime()
 
         impl,ver = self.get_version()
         exec_ver = impl + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'arch': sysinfo.machine,
+                                       'start_at': curtime, exec_ver: ver}
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])

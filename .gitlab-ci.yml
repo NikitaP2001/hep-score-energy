@@ -83,10 +83,50 @@ test_python_support:
     changes:
       - "**/*.py"
 
+# Test HEPscore can run on ARM and x86 using
+# - native docker
+# - singularity accessing native docker
+# - singularity accessing sif images
+hello-world-x86:
+  image: gitlab-registry.cern.ch/hep-benchmarks/hep-workloads/hep-workload-builder-multiarch:latest
+  tags:
+    - hep-workload-docker-builder
+  stage: test
+  variables: 
+     HEPSCORECONF: $CI_PROJECT_DIR/hepscore/tests/etc/hepscore_conf_ci_helloworld.yaml
+     HEPSCORECONF_DOCKER: hepscoreconf_docker.yaml
+  script:
+    - pip3 install .
+    - echo ${HEPSCORECONF}
+    - echo ${HEPSCORECONF_DOCKER}
+    - cat ${HEPSCORECONF} 
+    - |
+      cat ${HEPSCORECONF} | sed -e "s@addarch: true@addarch: false@" -e "s@oras://@docker://@" -e "s@hep-workloads-sif@hep-workloads@" > ${HEPSCORECONF_DOCKER}
+    - hep-score -v -f ${HEPSCORECONF} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+    - cat ${HEPSCORECONF_DOCKER}
+    - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+    - | 
+      sed -i ${HEPSCORECONF_DOCKER} -e "s@container_exec: singularity@container_exec: docker@"
+    - cat ${HEPSCORECONF_DOCKER}
+    - hep-score -v -f ${HEPSCORECONF_DOCKER} $CI_PROJECT_DIR/hepscore/tests/data/HEPscore_ci/
+  after_script:
+    - tar -czf hep-score-test.tgz /tmp/HEPSCORE/$CI_JOB_ID
+  artifacts:
+      paths:
+        - hep-score-test.tgz
+      expire_in: 1 week
+      when: always
+
+hello-world-aarch64:
+  tags:
+    - hepspec-docker-arm-runner
+  extends: hello-world-x86
+
+
 kv_run_cc7:
   image: gitlab-registry.cern.ch/hep-benchmarks/hep-benchmark-suite/hep-benchmark-suite-cc7:qa-v2.1
   tags:
-    -  hep-score-docker-runner 
+    - hep-workload-docker-builder
   stage: test
   script:
     - yum -y install bats

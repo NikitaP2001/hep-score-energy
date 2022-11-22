@@ -20,6 +20,9 @@ logger = logging.getLogger()
 
 
 def parse_args(args):
+    config_path = '/'.join(os.path.split(__file__)[:-1]) + '/etc'
+    default_config = config_path + "/hepscore-default.yaml"
+
     """Parse passed argv list."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -42,11 +45,11 @@ def parse_args(args):
 
         Run using Singularity (default) with a custom benchmark configuration:
         $ hep-score -f /tmp/my-custom-bmk.yml /tmp
-        ''')
+
+        Included benchmark configuraton files available in:
+        ''' + config_path)
     )
 
-    default_config = '/'.join(os.path.split(__file__)[:-1]) + \
-        "/etc/hepscore-default.yaml"
     # required argument
     parser.add_argument("OUTDIR", type=str, nargs='?', help="Base output directory.")
     # optionals
