@@ -541,6 +541,7 @@ class HEPscore():
                 os.environ['SINGULARITY_CACHEDIR'] = os.environ['APPTAINER_CACHEDIR'] = self.scache
             except OSError:
                 logger.error("Failed to create Singularity cache dir %s", self.scache)
+                sys.exit(1)
 
         for i in range(runs + retries):
             if successful_runs == runs:
@@ -855,7 +856,7 @@ class HEPscore():
         # check rundir is empty
         if os.listdir(self.resultsdir) and not mock:
             logger.error("Results directory is not empty!")
-            sys.exit(2)
+            sys.exit(1)
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
@@ -896,6 +897,7 @@ class HEPscore():
                 os.environ['SINGULARITY_TMPDIR'] = os.environ['APPTAINER_TMPDIR'] = self.unpack
             except OSError:
                 logger.error("Failed to create Singularity unpack dir %s", self.unpack)
+                sys.exit(1)
 
         if mock is True:
             logging.info("NOTE: Replaying prior results")
