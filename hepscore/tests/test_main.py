@@ -55,11 +55,13 @@ class Test_main(unittest.TestCase):
                          'clean': False,
                          'cleanall': False,
                          'conffile': self.mock_bad_path,
+                         'namedconf': '',
                          'replay': False,
                          'resultsdir': False,
                          'outfile': False,
                          'yaml': False,
                          'print': False,
+                         'list': False,
                          'verbose': False}
         self.mock_parse.return_value = self.mock_args
 
