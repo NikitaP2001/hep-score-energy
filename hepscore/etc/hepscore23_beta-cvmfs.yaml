@@ -56,7 +56,7 @@ hepscore_benchmark:
         events: 50
   settings:
     name: HEPscore23Beta
-    reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz"
+    reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz - 32 cores SMT OFF"
     registry: dir:///cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     addarch: true
     method: geometric_mean
