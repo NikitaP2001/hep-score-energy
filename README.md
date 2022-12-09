@@ -111,7 +111,8 @@ when using HEPscore with earlier Singularity and Docker releases.
 
 ```sh
 usage: hep-score [-h] [-m [{singularity,docker}]] [-S] [-c] [-C]
-                 [-f [CONFFILE]] [-r] [-o [OUTFILE]] [-y] [-p] [-V] [-v]
+                 [-f [CONFFILE]] [-l] [-n [NAMEDCONF]] [-r] [-o [OUTFILE]]
+                 [-y] [-p] [-V] [-v]
                  [OUTDIR]
 
 positional arguments:
@@ -128,12 +129,15 @@ optional arguments:
                         Tar results.
   -f [CONFFILE], --conffile [CONFFILE]
                         custom config yaml to use instead of default.
+  -l, --list            list built-in benchmark configurations and exit.
+  -n [NAMEDCONF], --namedconf [NAMEDCONF]
+                        use specified named built-in benchmark configuration.
   -r, --replay          replay output using existing results directory OUTDIR.
   -o [OUTFILE], --outfile [OUTFILE]
                         specify summary output file path/name.
   -y, --yaml            create YAML summary output instead of JSON.
   -p, --print           print configuration and exit.
-  -V, --version         show program version number and exit
+  -V, --version         show program's version number and exit
   -v, --verbose         enables verbose mode. Display debug messages.
 
 

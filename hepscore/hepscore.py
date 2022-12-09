@@ -27,6 +27,56 @@ from hepscore import __version__
 
 logger = logging.getLogger(__name__)
 
+config_path = '/'.join(os.path.split(__file__)[:-1]) + "/etc"
+
+def list_named_confs():
+    """Return list of available built-in configurations
+
+    Returns:
+        list (strings): built-in configuration names
+    """
+    return([cf[:-5] for cf in os.listdir(config_path) if cf.endswith('.yaml')])
+
+
+def named_conf(name):
+    """Given a built-in configuraton name, return full path
+
+    Args:
+        name (string): configuration name
+
+    Returns:
+            string: full path of name
+    """
+    return(config_path + '/' + name + '.yaml')
+
+
+def read_yaml(file):
+    """Read a YAML file into a dict
+
+    Args:
+        file (string): path to YAML file
+
+    Returns:
+            dict: YAML data
+    """
+    # Read config yaml
+    try:
+        with open(file, 'r') as yam:
+           active_config = yaml.safe_load(yam)
+    except OSError as err:
+        logger.error("Cannot read YAML configuration file %s", file)
+        logger.error(err)
+        sys.exit(1)
+    except yaml.YAMLError as exc:
+        logger.error("Failed to parse config YAML.")
+        if hasattr(exc, 'problem_mark'):
+            logger.error("Error at line: %s column: %s",
+                         exc.problem_mark.line+1,
+                         exc.problem_mark.column+1)
+        sys.exit(1)
+
+    return(active_config)
+
 
 def median_tuple(vals):
     """Return median of vals
@@ -97,6 +147,7 @@ class HEPscore():
     addarch = False
 
     scache = ""
+    unpack = ""
     registry = ""
     confobj = {}
     results = []
@@ -139,7 +190,7 @@ class HEPscore():
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
             if self.cec == 'singularity':
-                # Set absolut path location for scache
+                # Set absolute path location for scache
                 self.scache = os.path.abspath(self.resultsdir + '/scache')
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
@@ -306,7 +357,7 @@ class HEPscore():
                 if os.path.abspath(self.scache) != '/' and \
                         self.scache.endswith("/scache") and \
                         self.scache.find(self.resultsdir) == 0:
-                    logger.info("Removing temporary singularity cache %s", self.scache)
+                    logger.debug("Removing temporary singularity cache %s", self.scache)
                     shutil.rmtree(self.scache)
                 else:
                     logger.error("Invalid cache path specified - skipping cleanup")
@@ -484,10 +535,10 @@ class HEPscore():
         self.confobj['settings']['replay'] = mock
 
         if self.cec == 'singularity' and self.scache != "":
-            logger.info("Creating singularity cache %s", self.scache)
+            logger.debug("Creating singularity cache %s", self.scache)
             try:
                 os.makedirs(self.scache)
-                os.environ['SINGULARITY_CACHEDIR'] = self.scache
+                os.environ['SINGULARITY_CACHEDIR'] = os.environ['APPTAINER_CACHEDIR'] = self.scache
             except OSError:
                 logger.error("Failed to create Singularity cache dir %s", self.scache)
 
@@ -829,12 +880,22 @@ class HEPscore():
         logger.info("HEPscore version:    %s", __version__)
         logger.info("System:              %s", sysname)
         logger.info("Container Execution: %s", self.cec)
+        logger.info("Implementation:      %s", impl)
         logger.info("Registry:            %s", self.confobj['settings']['registry'])
         logger.info("Output:              %s", self.resultsdir)
         logger.info("Date:                %s\n", curtime)
 
         self.confobj['wl-scores'] = {}
         self.confobj['app_info']['hepscore_ver'] = __version__
+
+        if self.cec == 'singularity' and not mock:
+            try:
+                self.unpack = self.resultsdir + '/unpack'
+                logger.debug("Creating singularity unpack directory %s", self.unpack)
+                os.makedirs(self.unpack)
+                os.environ['SINGULARITY_TMPDIR'] = os.environ['APPTAINER_TMPDIR'] = self.unpack
+            except OSError:
+                logger.error("Failed to create Singularity unpack dir %s", self.unpack)
 
         if mock is True:
             logging.info("NOTE: Replaying prior results")
@@ -860,6 +921,13 @@ class HEPscore():
                 bench_conf['weight'] = 1.0
 
         self.confobj['environment']['end_at'] = time.asctime()
+
+        if self.cec == 'singularity' and not mock:
+            logger.debug("Removing singularity unpack directory %s", self.unpack)
+            try:
+                os.rmdir(self.unpack)
+            except OSError:
+                logger.error("Failed to remove Singularity unpack dir %s", self.unpack)
 
         if have_failure:
             logger.error("BENCHMARK FAILURE")
