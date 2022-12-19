@@ -3,7 +3,7 @@ hepscore_benchmark:
     atlas-gen_sherpa-ma-bmk:
       results_file: atlas-gen_sherpa-ma_summary.json
       ref_scores:
-        gen: 36.08
+        gen: 38.58
       weight: 1.0
       version: v2.0
       args:
@@ -12,7 +12,7 @@ hepscore_benchmark:
     atlas-reco_mt-ma-bmk:
       results_file: atlas-reco_mt-ma_summary.json
       ref_scores:
-        reco: 7.662
+        reco: 9.062
       weight: 1.0
       version: v2.0
       args:
@@ -21,7 +21,7 @@ hepscore_benchmark:
     cms-gen-sim-run3-ma-bmk:
       results_file: cms-gen-sim-run3-ma_summary.json
       ref_scores:
-        gen-sim: 2.194
+        gen-sim: 2.665
       weight: 1.0
       version: v1.0
       args:
@@ -30,7 +30,7 @@ hepscore_benchmark:
     cms-reco-run3-ma-bmk:
       results_file: cms-reco-run3-ma_summary.json
       ref_scores:
-        reco: 4.075
+        reco: 4.814
       weight: 1.0
       version: v1.1
       args:
@@ -39,7 +39,7 @@ hepscore_benchmark:
     lhcb-gen-sim-2021-bmk:
       results_file: lhcb-gen-sim-2021_summary.json
       ref_scores:
-        sim: 757.3
+        sim: 526.7
       weight: 1.0
       version: v0.5
       args:
@@ -48,7 +48,7 @@ hepscore_benchmark:
     belle2-gen-sim-reco-2021-bmk:
       results_file: belle2-gen-sim-reco-2021_summary.json
       ref_scores:
-        gen-sim-reco: 13.09
+        gen-sim-reco: 14.82
       weight: 1.0
       version: v0.4
       args:
@@ -62,5 +62,5 @@ hepscore_benchmark:
     method: geometric_mean
     repetitions: 3
     retries: 1
-    scaling: 857
+    scaling: 1018
     container_exec: singularity
