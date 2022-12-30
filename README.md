@@ -147,6 +147,12 @@ $ hep-score -v -m docker ./testdir
 
 Run using Singularity (default) with a custom benchmark configuration:
 $ hep-score -f /tmp/my-custom-bmk.yml /tmp
+
+List built-in benchmark configurations:
+$ hep-score -l
+
+Run with a specified built-in benchmark configuration:
+$ hep-score -n hepscore_testkv /tmp
 ```
 
 Singularity will be used as the container engine for the run, unless Docker

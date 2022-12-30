@@ -44,6 +44,12 @@ def parse_args(args):
         Run using Singularity (default) with a custom benchmark configuration:
         $ hep-score -f /tmp/my-custom-bmk.yml /tmp
 
+        List built-in benchmark configurations:
+        $ hep-score -l
+
+        Run with a specified built-in benchmark configuration:
+        $ hep-score -n hepscore_testkv /tmp
+
         Included benchmark configuraton files available in:
         ''' + hepscore.config_path)
     )
