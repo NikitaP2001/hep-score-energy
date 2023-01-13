@@ -37,7 +37,7 @@ hepscore_benchmark:
         threads: 4
         events: 50
   settings:
-    name: HEPscore23ARM
+    name: HEPscore23BetaARM
     reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz - 64 cores SMT ON"
     registry: dir:///cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     addarch: true
