@@ -38,12 +38,12 @@ proof of concept development state, and consists of the following workloads
 from the
 [HEP Workloads project](
 https://gitlab.cern.ch/hep-benchmarks/hep-workloads):  
-atlas-gen_sherpa-ma-bmk
-atlas-reco_mt-ma-bmk
-cms-gen-sim-run3-ma-bmk
-cms-reco-run3-ma-bmk
-lhcb-gen-sim-2021-bmk
-belle2-gen-sim-reco-2021-bmk
+atlas-gen_sherpa-ma-bmk  
+atlas-reco_mt-ma-bmk  
+cms-gen-sim-run3-ma-bmk  
+cms-reco-run3-ma-bmk  
+lhcb-gen-sim-2021-bmk  
+belle2-gen-sim-reco-2021-bmk  
 You can view the YAML HEPscore configuration for HEPscore23Beta by
 executing ```hep-score -p```.
 
