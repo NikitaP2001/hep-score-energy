@@ -9,7 +9,7 @@ v1.5
 -Add '-n' CLI parameter to allow users to request the use of a named
 built-in configuration, and the '-l' option to list built-in configs
 -Create an 'unpack' dir in OUTDIR for Singularity/Apptainer
--Add Alice workload to HEPScore23Beta
+-Add ALICE workload to HEPScore23Beta
 -Remove old configs
 
 v1.4
