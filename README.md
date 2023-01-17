@@ -33,7 +33,7 @@ higher (this may require administrator privileges).
 By default, if no configuration is passed to HEPscore, the "HEPscore23Beta" 
 benchmark is run.
 
-## HEPscore score computation
+## HEPscore Score Computation
 
 The HEPscore value for a given configuration is computed as the geometric
 mean of the performance scores measured on a given server when running each 
@@ -49,7 +49,7 @@ The reference server for HEPscore23 is:
 The normalised scores are then averaged, using the geometric mean, and are
 rescaled to the scale value reported in the configuration settings
 (check for key “scaling”). The obtained value is the HEPscore score.
-Therefore, by definition, the scaling value is the HEPscore score of th
+Therefore, by definition, the scaling value is the HEPscore score of the
 reference server.  The scaling value for HEPscore23 is defined as the HS06 
 (32 bits) score value for the very same reference server (HS06 = 1018).
 
