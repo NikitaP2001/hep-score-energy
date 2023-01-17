@@ -14,41 +14,44 @@
 
 The HEPscore application orchestrates the execution of user-configurable
 benchmark suites based on individual benchmark containers.  
-It runs the
-specified benchmark containers in sequence, collects their results, and
-computes a final overall score.  
+It runs the specified benchmark containers in sequence, collects their 
+results, and computes a final overall score.  
 
-HEPscore is specifically designed for
-use with containers from the [HEP Workloads project](
-https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
+HEPscore is specifically designed for use with containers from the 
+[HEP Workloads project](https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
 registry, or filesystem directory, which conform to the HEP Workloads'
 output JSON schema, are potentially usable.  
 
-Both Singularity (including
-Apptainer and SingularityCE) and Docker are supported for container execution.
-While Podman is not yet officially supported, tests have shown that it is
-functional with HEPscore and workloads from the HEP Workloads project as long
-as a "docker" symlink exists to the "podman" binary, and the open file
-descriptor ulimit can be set to 100k or higher (this may require
-administrator privileges).  
+Both Singularity (including Apptainer and SingularityCE) and Docker are
+supported for container execution.  While Podman is not yet officially 
+supported, tests have shown that it is functional with HEPscore and workloads
+from the HEP Workloads project as long as a "docker" symlink exists to the 
+"podman" binary, and the open file descriptor ulimit can be set to 100k or 
+higher (this may require administrator privileges).  
 
-By default, if no configuration is passed to
-HEPscore, the "HEPscore23Beta" benchmark is run.
+By default, if no configuration is passed to HEPscore, the "HEPscore23Beta" 
+benchmark is run.
 
 ## HEPscore score computation
 
-The HEPscore value for a given configuration is computed as the geometric mean of the performance scores measured on a given server 
-when running each workload included in that configuration. (Note: the workload performance score is in general expressed as the event throughput of the workload process.)
+The HEPscore value for a given configuration is computed as the geometric
+mean of the performance scores measured on a given server when running each 
+workload included in that configuration. (Note: the workload performance score
+is in general expressed as the event throughput of the workload process.)
 
-Each workload score is normalised to the score of the reference server, in order to make it a dimensionless factor.
-The reference server model is reported in the configuration settings (check for key “reference_machine").
-The reference server for HEPscore23 is “Intel CPU Gold 6326 CPU @ 2.90GHz - 64 cores SMT ON"
+Each workload score is normalised to the score of the reference server, in
+order to make it a dimensionless factor.  The reference server model is 
+reported in the configuration settings (check for key “reference_machine").
+The reference server for HEPscore23 is: 
+“Intel CPU Gold 6326 CPU @ 2.90GHz - 64 cores SMT ON"
 
-The normalised scores are then averaged, using the geometric mean, and are rescaled to the scale value reported in the configuration settings
-(check for key “scaling”). The obtained value is the HEPscore score. Therefore, by definition, the scaling value is the HEPscore score of the reference server.
-The scaling value for HEPscore23 is defined as the HS06 (32 bits) score value for the very same reference server (HS06 = 1018).
-
+The normalised scores are then averaged, using the geometric mean, and are
+rescaled to the scale value reported in the configuration settings
+(check for key “scaling”). The obtained value is the HEPscore score.
+Therefore, by definition, the scaling value is the HEPscore score of th
+reference server.  The scaling value for HEPscore23 is defined as the HS06 
+(32 bits) score value for the very same reference server (HS06 = 1018).
 
 ## HEPscore23Beta Benchmark
 
@@ -65,6 +68,7 @@ cms-gen-sim-run3-ma-bmk
 cms-reco-run3-ma-bmk  
 lhcb-gen-sim-2021-bmk  
 belle2-gen-sim-reco-2021-bmk  
+alice-digi-reco-core-run3-bmk
 You can view the YAML HEPscore configuration for HEPscore23Beta by
 executing ```hep-score -p```.
 
@@ -86,7 +90,7 @@ file shipped in the application's etc/ directory.  When running the
 benchmark using the unpacked images in CVMFS, the Singularity cache area
 is not utilized.
 
-## Downloading  and Installing HEPscore
+## Downloading and Installing HEPscore
 
 HEPscore must be installed using pip (<https://pypi.org/project/pip/>).  
 
