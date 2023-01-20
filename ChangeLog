@@ -11,6 +11,8 @@ built-in configuration, and the '-l' option to list built-in configs
 -Create an 'unpack' dir in OUTDIR for Singularity/Apptainer
 -Add ALICE workload to HEPScore23Beta
 -Remove old configs
+-Add section on score calculation (BMK-1138)
+-Add note about "sessiondir max size" setting (BMK-953)
 
 v1.4
 ----
