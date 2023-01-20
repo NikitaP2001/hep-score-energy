@@ -132,6 +132,11 @@ in all python module dependencies.  HEPscore should be used with **Singularity
 3.5.3 and newer**, or **Docker 1.13 and newer**.  There are some known issues
 when using HEPscore with earlier Singularity and Docker releases.
 
+**NOTE**: if you are running hep-score with setuid-enabled Singularity/Apptainer
+(instead of user namespace-based execution) it may be necessary to increase the 
+"sessiondir max size" setting to "64" MB in your system singularity/apptainer 
+configuraton file on many-core hosts.
+
 ## Running HEPscore
 
 ```sh
