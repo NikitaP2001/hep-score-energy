@@ -172,6 +172,7 @@ kv_run_cc7:
 
 build_wheels:
   stage: deploy
+  image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
   tags:
     - hep-workload-docker-builder
   only:
