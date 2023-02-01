@@ -165,7 +165,7 @@ kv_run_cc7:
 build_wheels:
   stage: deploy
   tags:
-    -  hep-workload-gpu-docker-builder
+    - hep-workload-docker-builder
   only:
     - tags
   script:
