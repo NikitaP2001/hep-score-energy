@@ -1,0 +1,19 @@
+hepscore_benchmark:
+  settings:
+    name: HEPscoreCI
+    reference_machine: 'Unknown'
+    registry: oras://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-sif
+    addarch: true
+    scaling: 10
+    repetitions: 2  #number of repetitions of the same benchmark
+    method: geometric_mean #or any other algorithm
+    container_exec: singularity
+  benchmarks:
+    hello-world-ma-bmk:
+      results_file: hello-world-ma_summary.json
+      version: v1.0
+      ref_scores:
+        gen: 1
+      args:
+        debug: true
+

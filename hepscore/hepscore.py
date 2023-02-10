@@ -27,6 +27,56 @@ from hepscore import __version__
 
 logger = logging.getLogger(__name__)
 
+config_path = '/'.join(os.path.split(__file__)[:-1]) + "/etc"
+
+def list_named_confs():
+    """Return list of available built-in configurations
+
+    Returns:
+        list (strings): built-in configuration names
+    """
+    return([cf[:-5] for cf in os.listdir(config_path) if cf.endswith('.yaml')])
+
+
+def named_conf(name):
+    """Given a built-in configuraton name, return full path
+
+    Args:
+        name (string): configuration name
+
+    Returns:
+            string: full path of name
+    """
+    return(config_path + '/' + name + '.yaml')
+
+
+def read_yaml(file):
+    """Read a YAML file into a dict
+
+    Args:
+        file (string): path to YAML file
+
+    Returns:
+            dict: YAML data
+    """
+    # Read config yaml
+    try:
+        with open(file, 'r') as yam:
+           active_config = yaml.safe_load(yam)
+    except OSError as err:
+        logger.error("Cannot read YAML configuration file %s", file)
+        logger.error(err)
+        sys.exit(1)
+    except yaml.YAMLError as exc:
+        logger.error("Failed to parse config YAML.")
+        if hasattr(exc, 'problem_mark'):
+            logger.error("Error at line: %s column: %s",
+                         exc.problem_mark.line+1,
+                         exc.problem_mark.column+1)
+        sys.exit(1)
+
+    return(active_config)
+
 
 def median_tuple(vals):
     """Return median of vals
@@ -90,11 +140,14 @@ class HEPscore():
     allowed_methods = {'geometric_mean': weighted_geometric_mean}
     scorekey = 'wl-scores'
     cec = "singularity"
+    engine = ""
     clean = False
     clean_files = False
     userns = False
+    addarch = False
 
     scache = ""
+    unpack = ""
     registry = ""
     confobj = {}
     results = []
@@ -131,10 +184,13 @@ class HEPscore():
             logger.warning("Container not specified on commandline or in config - assuming %s",
                            self.cec)
 
+        if 'addarch' in self.settings:
+            self.addarch = self.settings['addarch']
+
         if 'clean' in self.confobj.get('options', {}):
             self.clean = self.confobj['options']['clean']
             if self.cec == 'singularity':
-                # Set absolut path location for scache
+                # Set absolute path location for scache
                 self.scache = os.path.abspath(self.resultsdir + '/scache')
         if 'clean_files' in self.confobj.get('options', {}):
             self.clean_files = self.confobj['options']['clean_files']
@@ -301,7 +357,7 @@ class HEPscore():
                 if os.path.abspath(self.scache) != '/' and \
                         self.scache.endswith("/scache") and \
                         self.scache.find(self.resultsdir) == 0:
-                    logger.info("Removing temporary singularity cache %s", self.scache)
+                    logger.debug("Removing temporary singularity cache %s", self.scache)
                     shutil.rmtree(self.scache)
                 else:
                     logger.error("Invalid cache path specified - skipping cleanup")
@@ -347,27 +403,58 @@ class HEPscore():
                 return "-u "
         return ""
 
+    def check_unsquash(self):
+        """Check if --unsquash is supported"""
+        if self.cec != "docker" and 'apptainer_version' in self.confobj['environment']:
+            hcmd = "singularity run --help".split()
+            hout = subprocess.Popen(hcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in hout.stdout.readlines():
+                if '--unsquash' in line.decode('utf-8'):
+                    return True
+
+            return False
+
+    def _get_unsquash_flag(self):
+        """If we're running in apptainer that supports it, pass --unsquash"""
+        if self.check_userns() and self.check_unsquash():
+            logger.debug("Enabling --unsquash flag in singularity call")
+            return "--unsquash "
+        else:
+            return ""
+
     def get_version(self):
         """Report version of containment choice.
 
         Returns:
-            str: Version as reported by containment (eg `singularity version`)
+            str: Version as reported by containment (eg `singularity --version`)
         """
-        commands = {'docker': "docker version -f {{.Server.Version}}",
-                    'singularity': "singularity version",
-                    'podman': "podman version --format {{.Server.Version}}"}
+        commands = {'docker': "docker --version",
+                    'singularity': "singularity --version"}
         command = commands[self.cec].split(' ')
 
         try:
             cmdf = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            engimpl = self.cec
             for line in cmdf.stdout.readlines():
-                if re.sub(r'[^0-9\.]', '', line.decode('utf-8'))[0].isdigit():
-                    return str(line.decode('utf-8').strip('\n'))
+                dline = line.decode('utf-8')
+                dline_ver = re.sub(r'^[^0-9]*', '', dline)
+                if len(dline_ver) > 0 and dline_ver[0].isdigit():
+                    if self.cec == 'singularity':
+                            if 'apptainer' in dline:
+                                engimpl = 'apptainer'
+                    elif self.cec == 'docker':
+                        helpout = subprocess.Popen(['docker', '--help'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        for hline in helpout.stdout.readlines():
+                            if 'podman' in hline.decode('utf-8'):
+                                engimpl = 'podman'
+                                break
+                    return [engimpl, str(dline_ver.strip('\n'))]
+
         except subprocess.SubprocessError:
             logger.error("Error fetching %s version", self.cec)
         except OSError:
             logger.error("Could not locate %s on the system. Please check your path!", self.cec)
-        return "None"
+        return ['unknown', '0.0']
 
     def _run_benchmark(self, benchmark, mock):
 
@@ -391,19 +478,24 @@ class HEPscore():
         successful_runs = 0
         retry_count = 0
 
-        tmp = "Executing " + str(runs) + " run"
-        if runs > 1:
-            tmp += 's'
-        logger.info("%s of %s", tmp, benchmark)
-
-        if 'args' in bench_conf.keys():
-            bmark_keys = bench_conf['args'].keys()
-
         # Allow registry overrides in the benchmark configuration
         if 'registry' in bench_conf.keys():
             bmark_reg_url = bench_conf['registry']
             bmark_registry = self._gen_reg_path(bench_conf['registry'])
             logger.info("Overriding registry for this container: %s", bmark_reg_url)
+
+        bcver = bench_conf['version']
+        if self.addarch and self.cec == "singularity" and \
+                bmark_registry.find("docker://") != 0:
+            bcver = bcver + "_" + self.confobj['environment']['arch']
+
+        tmp = "Executing " + str(runs) + " run"
+        if runs > 1:
+            tmp += 's'
+        logger.info("%s of %s", tmp, benchmark + " [" + bcver + "]")
+
+        if 'args' in bench_conf.keys():
+            bmark_keys = bench_conf['args'].keys()
 
         if self.clean_files is True:
             options_string += " --mop all"
@@ -438,17 +530,18 @@ class HEPscore():
             logger.error("failure to open %s", log)
             return -1
 
-        benchmark_name = bmark_registry + '/' + benchmark + ':' + bench_conf['version']
+        benchmark_name = bmark_registry + '/' + benchmark + ':' + bcver
         benchmark_complete = benchmark_name + options_string
         self.confobj['settings']['replay'] = mock
 
         if self.cec == 'singularity' and self.scache != "":
-            logger.info("Creating singularity cache %s", self.scache)
+            logger.debug("Creating singularity cache %s", self.scache)
             try:
                 os.makedirs(self.scache)
-                os.environ['SINGULARITY_CACHEDIR'] = self.scache
+                os.environ['SINGULARITY_CACHEDIR'] = os.environ['APPTAINER_CACHEDIR'] = self.scache
             except OSError:
                 logger.error("Failed to create Singularity cache dir %s", self.scache)
+                sys.exit(1)
 
         for i in range(runs + retries):
             if successful_runs == runs:
@@ -467,6 +560,7 @@ class HEPscore():
                                   + ":/results " + gpu_flag,
                         'singularity': "singularity run -i -c -e -B " + run_dir
                                        + ":/results -B /tmp "
+                                       + self._get_unsquash_flag()
                                        + self._get_usernamespace_flag() + gpu_flag}
 
             command_string = commands[self.cec] + benchmark_complete
@@ -676,6 +770,13 @@ class HEPscore():
                             logger.error("Configuration: '%s' configuration parameter must "
                                          "be a positive integer", subkey)
                             sys.exit(1)
+                    if subkey == 'addarch':
+                        try:
+                            bool(self.confobj[key][subkey])
+                        except ValueError:
+                            logger.error("Configuration: 'addarch' configuration parameter "
+                                         "must be a bool")
+                            sys.exit(1)
                     if subkey == 'scaling':
                         try:
                             float(self.confobj[key][subkey])
@@ -737,7 +838,7 @@ class HEPscore():
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
 
-        logger.debug("The parsed config is: %s", yaml.safe_dump(self.confobj, sort_keys=False))
+        logger.debug("The parsed config is: \n %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
         return self.confobj
 
@@ -755,7 +856,7 @@ class HEPscore():
         # check rundir is empty
         if os.listdir(self.resultsdir) and not mock:
             logger.error("Results directory is not empty!")
-            sys.exit(2)
+            sys.exit(1)
 
         # Creating a hash representation of the configuration object
         # to be included in the final report
@@ -765,25 +866,38 @@ class HEPscore():
         self.confobj['app_info'] = {}
         self.confobj['app_info']['config_hash'] = conf_hash.hexdigest()
 
-        sysname = ' '.join(os.uname())
+        sysinfo = os.uname()
+        sysname = ' '.join(sysinfo)
         curtime = time.asctime()
 
-        ver = self.get_version()
-        exec_ver = self.cec + "_version"
+        impl,ver = self.get_version()
+        exec_ver = impl + "_version"
 
-        self.confobj['environment'] = {'system': sysname, 'start_at': curtime, exec_ver: ver}
+        self.confobj['environment'] = {'system': sysname, 'arch': sysinfo.machine,
+                                       'start_at': curtime, exec_ver: ver}
 
         logger.info("%s Benchmark", self.confobj['settings']['name'])
         logger.info("Config Hash:         %s", self.confobj['app_info']['config_hash'])
         logger.info("HEPscore version:    %s", __version__)
         logger.info("System:              %s", sysname)
         logger.info("Container Execution: %s", self.cec)
+        logger.info("Implementation:      %s", impl)
         logger.info("Registry:            %s", self.confobj['settings']['registry'])
         logger.info("Output:              %s", self.resultsdir)
         logger.info("Date:                %s\n", curtime)
 
         self.confobj['wl-scores'] = {}
         self.confobj['app_info']['hepscore_ver'] = __version__
+
+        if self.cec == 'singularity' and not mock:
+            try:
+                self.unpack = self.resultsdir + '/unpack'
+                logger.debug("Creating singularity unpack directory %s", self.unpack)
+                os.makedirs(self.unpack)
+                os.environ['SINGULARITY_TMPDIR'] = os.environ['APPTAINER_TMPDIR'] = self.unpack
+            except OSError:
+                logger.error("Failed to create Singularity unpack dir %s", self.unpack)
+                sys.exit(1)
 
         if mock is True:
             logging.info("NOTE: Replaying prior results")
@@ -809,6 +923,13 @@ class HEPscore():
                 bench_conf['weight'] = 1.0
 
         self.confobj['environment']['end_at'] = time.asctime()
+
+        if self.cec == 'singularity' and not mock:
+            logger.debug("Removing singularity unpack directory %s", self.unpack)
+            try:
+                os.rmdir(self.unpack)
+            except OSError:
+                logger.error("Failed to remove Singularity unpack dir %s", self.unpack)
 
         if have_failure:
             logger.error("BENCHMARK FAILURE")

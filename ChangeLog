@@ -1,3 +1,29 @@
+v1.5
+----
+-Change output version key to include specific container engine
+-Call Apptainer with '--unsquash' when running unprivileged (BMK-1032)
+-Add support for multi-arch Singularity images (BMK-1092)
+-Display location of included conf directory in help output (BMK-1098)
+-Change to HEPscore23Beta benchmark default configuration
+-Add ARM benchmark configuration
+-Add '-n' CLI parameter to allow users to request the use of a named
+built-in configuration, and the '-l' option to list built-in configs
+-Create an 'unpack' dir in OUTDIR for Singularity/Apptainer
+-Add ALICE workload to HEPScore23Beta
+-Remove old configs
+-Add section on score calculation (BMK-1138)
+-Add note about "sessiondir max size" setting (BMK-953)
+
+v1.4
+----
+-Rename default benchmark to HEPscoreBeta (BMK-804)
+-Disable score_per_core reporting (BMK-677)
+-Document Podman usage (BMK-808)
+-No longer contain PID namespace (MR134)
+-Ignore unicode decode errors, for example from special characters
+-Add support for oras:// and https:// registry URIs
+-Use absolute path for Singularity cache (MR140)
+
 v1.3
 ----
 -Add support for oras:// and https:// registry URIs.
