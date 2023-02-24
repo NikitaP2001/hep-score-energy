@@ -36,15 +36,15 @@ hepscore_benchmark:
       args:
         threads: 4
         events: 50
-    .lhcb-gen-sim-2021-bmk:
-      results_file: lhcb-gen-sim-2021_summary.json
+    lhcb-sim-run3-ma-bmk:
+      results_file: lhcb-sim-run3-ma_summary.json
       ref_scores:
-        sim: 526.7
+        sim: 1950
       weight: 1.0
-      version: v0.5
+      version: v1.0
       args:
         threads: 1
-        events: 5
+        events: 10
     belle2-gen-sim-reco-ma-bmk:
       results_file: belle2-gen-sim-reco-ma_summary.json
       ref_scores:
