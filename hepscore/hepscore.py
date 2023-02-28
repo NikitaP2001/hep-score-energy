@@ -62,7 +62,7 @@ def read_yaml(file):
     # Read config yaml
     try:
         with open(file, 'r') as yam:
-           active_config = yaml.safe_load(yam)
+            active_config = yaml.safe_load(yam)
     except OSError as err:
         logger.error("Cannot read YAML configuration file %s", file)
         logger.error(err)
@@ -440,8 +440,8 @@ class HEPscore():
                 dline_ver = re.sub(r'^[^0-9]*', '', dline)
                 if len(dline_ver) > 0 and dline_ver[0].isdigit():
                     if self.cec == 'singularity':
-                            if 'apptainer' in dline:
-                                engimpl = 'apptainer'
+                        if 'apptainer' in dline:
+                            engimpl = 'apptainer'
                     elif self.cec == 'docker':
                         helpout = subprocess.Popen(['docker', '--help'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                         for hline in helpout.stdout.readlines():
