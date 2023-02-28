@@ -36,10 +36,37 @@ hepscore_benchmark:
       args:
         threads: 4
         events: 50
+    lhcb-sim-run3-ma-bmk:
+      results_file: lhcb-sim-run3-ma_summary.json
+      ref_scores:
+        sim: 1950
+      weight: 1.0
+      version: v1.0
+      args:
+        threads: 1
+        events: 10
+    belle2-gen-sim-reco-ma-bmk:
+      results_file: belle2-gen-sim-reco-ma_summary.json
+      ref_scores:
+        gen-sim-reco: 15.4
+      weight: 1.0
+      version: v2.0
+      args:
+        threads: 1
+        events: 50
+    alice-digi-reco-core-run3-ma-bmk:
+      results_file: alice-digi-reco-core-run3-ma_summary.json
+      ref_scores:
+        digi-reco: 0.762
+      weight: 1.0
+      version: v2.1
+      args:
+        threads: 4
+        events: 10
   settings:
-    name: HEPscore23BetaARM
+    name: HEPscore23Beta
     reference_machine: "E423521X1B04810-B Gold 6326 CPU @ 2.90GHz - 64 cores SMT ON"
-    registry: oras://gitlab-registry.cern.ch/hep-benchmarks/hep-workloads-sif
+    registry: dir:///cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/hep-benchmarks/hep-workloads
     addarch: true
     method: geometric_mean
     repetitions: 3
