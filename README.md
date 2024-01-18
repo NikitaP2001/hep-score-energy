@@ -17,6 +17,9 @@ benchmark suites based on individual benchmark containers.
 It runs the specified benchmark containers in sequence, collects their 
 results, and computes a final overall score.  
 
+For instructions on how to run the HEPScore23 benchmark, please refer to the [dedicated HEPiX Benchmark page](https://w3.hepix.org/benchmarking/how_to_run_HS23.html). The HEPScore23 scores for the benchmarked servers are reported in this [table](https://w3.hepix.org/benchmarking/scores_HS23.html).
+
+
 HEPscore is specifically designed for use with containers from the 
 [HEP Workloads project](https://gitlab.cern.ch/hep-benchmarks/hep-workloads).
 However, any benchmark containers stored in a Docker/Singularity
@@ -374,10 +377,8 @@ being used.
 
 
 ## Feedback and Support
-Feedback, and support questions are welcome in the HEP Benchmarks Project
+Feedback and support questions are welcome primarily through [GGUS tickets](https://w3.hepix.org/benchmarking/how_to_run_HS23.html#how-to-open-a-ggus-ticket) or in the HEP Benchmarks Project
 [Discourse Forum](https://wlcg-discourse.web.cern.ch/c/hep-benchmarks).
-You can also submit issues via 
-[Gitlab](https://gitlab.cern.ch/hep-benchmarks/user-support/-/issues).
 
 |     |     |     |
 | --- | --- | --- |
