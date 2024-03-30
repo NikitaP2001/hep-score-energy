@@ -29,6 +29,19 @@ logger = logging.getLogger(__name__)
 
 config_path = '/'.join(os.path.split(__file__)[:-1]) + "/etc"
 
+perf_result_file = 'perf_result'
+regex_perf_joules = r'(\d[\d\s,\.]*)\s*Joules'
+
+def read_energy_result(result: str):
+    with open(result) as res_file:
+        data = res_file.read()
+        match = re.search(regex_perf_joules, data)
+        if match:
+            str_joules = match.group(1).replace(" ", "").replace(",", ".")
+            return float(str_joules)
+        else:
+            return None
+
 def list_named_confs():
     """Return list of available built-in configurations
 
@@ -145,6 +158,7 @@ class HEPscore():
     clean_files = False
     userns = False
     addarch = False
+    pwr_read_noerr = True
 
     scache = ""
     unpack = ""
@@ -232,6 +246,7 @@ class HEPscore():
     def _proc_results(self, benchmark):
 
         results = {}
+        energy_total = 0
         bench_conf = self.confobj['benchmarks'][benchmark]
         runs = int(self.confobj['settings']['repetitions'])
 
@@ -282,6 +297,9 @@ class HEPscore():
             if i == 0:
                 bench_conf['app'] = jscore['app']
                 bench_conf['run_info'] = jscore['run_info']
+            
+            if self.pwr_read_noerr == True:
+                energy_total += bench_conf[runstr]['energy']
 
             sub_results = []
             for sub_bmk in bench_conf['ref_scores'].keys():
@@ -302,6 +320,9 @@ class HEPscore():
 
             results[i] = round(score, 4)
             logger.debug(results[i])
+
+        if self.pwr_read_noerr == True:
+            self.confobj['energy'] =  energy_total / (i + 1)
 
         if len(results) == 0:
             logger.warning("No results: fail")
@@ -456,6 +477,7 @@ class HEPscore():
             logger.error("Could not locate %s on the system. Please check your path!", self.cec)
         return ['unknown', '0.0']
 
+    
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
@@ -556,7 +578,9 @@ class HEPscore():
                     os.chmod(run_dir, stat.S_ISVTX | stat.S_IRWXU |
                              stat.S_IRWXG | stat.S_IRWXO)
 
-            commands = {'docker': "docker run --rm --network=host -v " + run_dir
+            perf_res_path = os.path.join(run_dir, perf_result_file)
+            perf_cmd = 'perf stat -e power/energy-pkg/ -o ' + perf_res_path + " "
+            commands = {'docker': perf_cmd + "docker run --rm --network=host -v " + run_dir
                                   + ":/results " + gpu_flag,
                         'singularity': "singularity run -i -c -e -B " + run_dir
                                        + ":/results -B /tmp "
@@ -635,6 +659,11 @@ class HEPscore():
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
+            run_energy = read_energy_result(perf_res_path)
+            if run_energy != None:
+                bench_conf[runstr]['energy'] = run_energy
+            else:
+                self.pwr_read_noerr = False
 
             if not mock and cmdf.returncode != 0:
                 logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
