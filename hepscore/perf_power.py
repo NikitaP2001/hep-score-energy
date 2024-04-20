@@ -1,6 +1,5 @@
 import os, ctypes
 import subprocess
-from msr_power import EnergyReader
 
 class c_perf_event_attr(ctypes.Structure):
 
@@ -142,10 +141,17 @@ class PerfEnergyReader:
                 print("System perf config is not supporteed by us")
             return
         
-        self.supported = True
+        self.supported = self.__check_perf_open()
 
     def is_supported(self):
         return self.supported
+    
+    def __check_perf_open(self) -> bool:
+        if self.start():
+            self.stop()
+            return True
+        return False
+
     
     @staticmethod
     def __read_perf_type():
@@ -219,7 +225,11 @@ class PerfEnergyReader:
                     print(f"opening perf event for {cfg}")
                 event_id = self.config_map[cfg].event_id()
                 cpu_id = self.pkg_dict[pkg]
-                self.event_fd_map[cfg] = self.__perf_event_open(cpu_id, event_id)
+                event_fd = self.__perf_event_open(cpu_id, event_id)
+                if event_fd < 0:
+                    return False
+                self.event_fd_map[cfg] = event_fd
+        return True
 
 
     def stop(self):
@@ -256,10 +266,7 @@ class PerfEnergyReader:
         attr = c_perf_event_attr()
         attr.type = self._event_type
         attr.config = event_id
-        fd = self.perf_open(svc_num, attr, -1, cpu_id, -1, 0)
-        if fd == 0:
-            raise OSError(f"svc {svc_num} - perf_event_open failed")
-        return fd
+        return self.perf_open(svc_num, attr, -1, cpu_id, -1, 0)
 
     @staticmethod
     def __perf_event_close(fd: int):
@@ -268,24 +275,20 @@ class PerfEnergyReader:
     
 
 def main():
-  
+    '''
+    Example of usage
+    '''
     try:
-
         command = "sleep 1" 
         command = command.split(' ')
         reader = PerfEnergyReader(1)
 
-        e = EnergyReader(0)
-
         if reader.is_supported():
             reader.start()
-            e.start()
             ret = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             ret.wait()
             reader.stop()
-            e.stop()
             print(f'{reader.get_energy():.2f}')
-            print(f'{e.get_energy():.2f}')
 
     except Exception as e:
         print(f"Error: {e}")

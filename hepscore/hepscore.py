@@ -24,23 +24,12 @@ import sys
 import time
 import yaml
 from hepscore import __version__
+from hepscore.perf_power import PerfEnergyReader
+from hepscore.msr_power import EnergyReader
 
 logger = logging.getLogger(__name__)
 
 config_path = '/'.join(os.path.split(__file__)[:-1]) + "/etc"
-
-perf_result_file = 'perf_result'
-regex_perf_joules = r'(\d[\d\s,\.]*)\s*Joules'
-
-def read_energy_result(result: str):
-    with open(result) as res_file:
-        data = res_file.read()
-        match = re.search(regex_perf_joules, data)
-        if match:
-            str_joules = match.group(1).replace(" ", "").replace(",", ".")
-            return float(str_joules)
-        else:
-            return None
 
 def list_named_confs():
     """Return list of available built-in configurations
@@ -158,7 +147,6 @@ class HEPscore():
     clean_files = False
     userns = False
     addarch = False
-    pwr_read_noerr = True
 
     scache = ""
     unpack = ""
@@ -186,6 +174,7 @@ class HEPscore():
         self.resultsdir = os.path.abspath(resultsdir)
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
+        self.pwr_read_noerr = True
 
         if 'container_exec' in self.settings:
             if self.settings['container_exec'] in (
@@ -298,7 +287,8 @@ class HEPscore():
                 bench_conf['app'] = jscore['app']
                 bench_conf['run_info'] = jscore['run_info']
             
-            if self.pwr_read_noerr == True:
+            print("pwr_read_noerr", self.pwr_read_noerr)
+            if self.pwr_read_noerr:
                 energy_total += bench_conf[runstr]['energy']
 
             sub_results = []
@@ -489,6 +479,19 @@ class HEPscore():
         result = 0
         gpu_flag = ""
         cmdf = None
+        msr_er = EnergyReader()
+        perf_er = PerfEnergyReader()
+        if perf_er.is_supported():
+            energy_reader = perf_er
+        else:
+            logger.info("rapl: perf is not accessible. You may set perf_event_paranoid=0")
+            if msr_er.is_supported():
+                energy_reader = msr_er
+            else:
+                logger.info("rapl: /dev/msr is not accessible. You may try with root")
+                logger.warning("No avaliable mathod for power capturing")
+                self.pwr_read_noerr = False # Feature will be disabled
+            
 
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
@@ -578,9 +581,7 @@ class HEPscore():
                     os.chmod(run_dir, stat.S_ISVTX | stat.S_IRWXU |
                              stat.S_IRWXG | stat.S_IRWXO)
 
-            perf_res_path = os.path.join(run_dir, perf_result_file)
-            perf_cmd = 'perf stat -e power/energy-pkg/ -o ' + perf_res_path + " "
-            commands = {'docker': perf_cmd + "docker run --rm --network=host -v " + run_dir
+            commands = {'docker': "docker run --rm --network=host -v " + run_dir
                                   + ":/results " + gpu_flag,
                         'singularity': "singularity run -i -c -e -B " + run_dir
                                        + ":/results -B /tmp "
@@ -601,6 +602,8 @@ class HEPscore():
 
             if not mock:
                 try:
+                    if self.pwr_read_noerr:
+                        energy_reader.start()
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except (subprocess.SubprocessError, OSError):
@@ -632,6 +635,8 @@ class HEPscore():
                         logger.error("Docker: No space left on device.")
 
                 cmdf.wait()
+                if self.pwr_read_noerr:
+                    energy_reader.stop()
 
                 if self.cec == 'docker':
                     os.chmod(run_dir, stat.S_IRWXU | stat.S_IRGRP |
@@ -659,11 +664,10 @@ class HEPscore():
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
-            run_energy = read_energy_result(perf_res_path)
-            if run_energy != None:
+
+            if self.pwr_read_noerr:
+                run_energy = energy_reader.get_energy()
                 bench_conf[runstr]['energy'] = run_energy
-            else:
-                self.pwr_read_noerr = False
 
             if not mock and cmdf.returncode != 0:
                 logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
