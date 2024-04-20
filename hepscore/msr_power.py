@@ -147,17 +147,20 @@ class MSRFile:
 
     MSR_FIELD_SIZE = 8
 
-    def __init__(self, core_num = 0):
+    def __init__(self, debug = 0, core_num = 0):
         """
         Opens the MSR file for the specified core 
-        Reises:
-            IOError, ValueError
         """
         self.file_path = f"/dev/cpu/{core_num}/msr"
+        self.file = None
         try:
             self.file = open(self.file_path, "rb")
-        except IOError as e:
-            raise IOError(f"Error opening MSR file: {e}")
+        except (IOError, OSError) as e:
+            if debug:
+                print(f'msr file: {e}')
+
+    def init_status(self):
+        return self.file != None
 
     def read_msr(self, offset: int):
         """
@@ -180,7 +183,8 @@ class MSRFile:
         """
         Closes the MSR file upon object deletion.
         """
-        self.file.close()
+        if self.file != None:
+            self.file.close()
     
 class EnergyReader:
 
@@ -199,21 +203,32 @@ class EnergyReader:
         Raises:
             ValueError
         '''
+        self.supported = False
+        self.last_result = None
         self.debug = debug
-        self.file = MSRFile()
+        self.file = MSRFile(debug = True)
+        if not self.file.init_status():
+            if self.debug:
+                print('Failed to access msr file')
+            return
         
         self.cpu_info = self.__detect_cpu()
         if (self.cpu_info == None):
-            raise ValueError("Unexpected data met in cpu info")
+            if self.debug:
+                print("Unexpected data met in cpu info")
+            return
 
         if not self.__is_supported():
-            raise Exception("CPU is supported")
+            if self.debug:
+                print("CPU is not supported")
+            return
 
         self.rapl_props = RaplProps(self.cpu_info["model"])
         self.__read_units()
         self.__init_max_energy()
         self.__print_energy_units()
         self.lock = threading.Lock()
+        self.supported = True
     
     def __init_max_energy(self):
         self.max_energy_cpu = self.cpu_energy_units * self.ENERGY_STATUS_MAX 
@@ -221,6 +236,9 @@ class EnergyReader:
         if self.debug:
             print(f'max E cpu {self.max_energy_cpu}')
             print(f'max E dram {self.max_energy_dram}')
+
+    def is_supported(self):
+        return self.supported
 
     def get_energy(self):
         '''
@@ -418,8 +436,10 @@ def main():
   
     try:
         e = EnergyReader(1)
-
-        command = "sleep 60" 
+        if not e.is_supported():
+            print('Method is unsupported. May run with sudo')
+            return
+        command = "sleep 2" 
         command = command.split(' ')
 
         e.start()
