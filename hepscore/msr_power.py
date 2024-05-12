@@ -258,7 +258,7 @@ class EnergyReader:
     # high cpu consumption, and may be longer (see intel sdm 14.10.3)
     # It is a big question, what minimal timeout will be enough 
     # to guarantee we will have at least one read per wraparound.
-    MEASURE_TMOUT = 10
+    MEASURE_TMOUT = 30
     ENERGY_STATUS_MAX = 0xffffffff
 
     def __init__(self, debug = 0):
@@ -374,7 +374,6 @@ class EnergyReader:
     def __measure_psys(self, curr):
         psys_last = self.last_result['energy-psys']
         psys_curr = curr['energy-psys']
-        # TODO: we must find a value we overflowed on
         if psys_curr < psys_last:
             delta = self.max_energy_cpu - psys_last
             energy = psys_curr + delta
@@ -502,7 +501,7 @@ def main():
         if not e.is_supported():
             print('Method is unsupported. May run with sudo')
             return
-        command = "sleep 2" 
+        command = "sleep 1" 
         command = command.split(' ')
 
         e.start()
