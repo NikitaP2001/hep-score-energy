@@ -249,7 +249,7 @@ class MSRFile:
         if self.file != None:
             self.file.close()
     
-class EnergyReader:
+class MsrEnergyReader:
 
     CPUINFO_PATH = "/proc/cpuinfo"
     VENDOR_ID = "GenuineIntel"
@@ -344,7 +344,7 @@ class EnergyReader:
             return
         print('RAPL readings result:')
         for key in res:
-            print(key, res[key])
+            print("\t", key, res[key])
 
     
     def __read(self):
@@ -417,7 +417,7 @@ class EnergyReader:
         self.last_result = curr
 
     def __create_timer(self):
-        tmout = EnergyReader.MEASURE_TMOUT
+        tmout = MsrEnergyReader.MEASURE_TMOUT
         return threading.Timer(tmout, self.__tmr_cback)
     
     def __is_run(self):
@@ -497,7 +497,7 @@ class EnergyReader:
 def main():
   
     try:
-        e = EnergyReader(1)
+        e = MsrEnergyReader(1)
         if not e.is_supported():
             print('Method is unsupported. May run with sudo')
             return

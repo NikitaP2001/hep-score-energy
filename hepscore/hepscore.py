@@ -24,8 +24,7 @@ import sys
 import time
 import yaml
 from hepscore import __version__
-from hepscore.perf_power import PerfEnergyReader
-from hepscore.msr_power import EnergyReader
+from hepscore.EnergyMeasurement import EnergyMeasurement
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +174,29 @@ class HEPscore():
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
         self.pwr_read_noerr = True
+        self.energy_measurement = None
+        
+        # Set up energy measurement based on settings.power configuration
+        power_debug = False
+        power_enable = True
+        power_method = None
+        if 'power' in self.settings:
+            power_config = self.settings['power']
+            power_enable = power_config.get('enable', True)
+            power_method = power_config.get('prefer_method')
+            power_debug = 1 if power_config.get('debug', False) else 0
+            
+        # Initialize energy measurement with appropriate configuration
+        self.energy_measurement = EnergyMeasurement(
+            debug=power_debug,
+            preferred_method=power_method,
+            force_enabled=power_enable
+        )
+        
+        # Check if energy measurement is supported
+        self.pwr_read_noerr = self.energy_measurement.is_supported()
+        if not self.pwr_read_noerr and power_enable:
+            logger.warning("Energy measurement requested but not available")
 
         if 'container_exec' in self.settings:
             if self.settings['container_exec'] in (
@@ -287,8 +309,7 @@ class HEPscore():
                 bench_conf['app'] = jscore['app']
                 bench_conf['run_info'] = jscore['run_info']
             
-            print("pwr_read_noerr", self.pwr_read_noerr)
-            if self.pwr_read_noerr:
+            if self.energy_measurement.is_supported():
                 energy_total += bench_conf[runstr]['energy']
 
             sub_results = []
@@ -479,20 +500,10 @@ class HEPscore():
         result = 0
         gpu_flag = ""
         cmdf = None
-        msr_er = EnergyReader()
-        perf_er = PerfEnergyReader()
-        if perf_er.is_supported():
-            energy_reader = perf_er
-        else:
-            logger.info("rapl: perf is not accessible. You may set perf_event_paranoid=0")
-            if msr_er.is_supported():
-                energy_reader = msr_er
-            else:
-                logger.info("rapl: /dev/msr is not accessible. You may try with root")
-                logger.warning("No avaliable mathod for power capturing")
-                self.pwr_read_noerr = False # Feature will be disabled
-            
-
+        
+        # Use the configured energy measurement if available
+        energy_reader = self.energy_measurement
+        
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
 
@@ -602,8 +613,7 @@ class HEPscore():
 
             if not mock:
                 try:
-                    if self.pwr_read_noerr:
-                        energy_reader.start()
+                    energy_reader.start()
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except (subprocess.SubprocessError, OSError):
@@ -635,8 +645,7 @@ class HEPscore():
                         logger.error("Docker: No space left on device.")
 
                 cmdf.wait()
-                if self.pwr_read_noerr:
-                    energy_reader.stop()
+                energy_reader.stop()
 
                 if self.cec == 'docker':
                     os.chmod(run_dir, stat.S_IRWXU | stat.S_IRGRP |
@@ -665,8 +674,8 @@ class HEPscore():
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
 
-            if self.pwr_read_noerr:
-                run_energy = energy_reader.get_energy()
+            run_energy = energy_reader.get_energy()
+            if run_energy is not None:
                 bench_conf[runstr]['energy'] = run_energy
 
             if not mock and cmdf.returncode != 0:
@@ -870,6 +879,27 @@ class HEPscore():
         if bcount == 0:
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
+
+        # Add validation for power section in settings
+        if 'settings' in self.confobj and 'power' in self.confobj['settings']:
+            power_config = self.confobj['settings']['power']
+            
+            # Validate enable field
+            if 'enable' in power_config and not isinstance(power_config['enable'], bool):
+                logger.error("Configuration: 'settings.power.enable' must be a boolean")
+                sys.exit(1)
+            
+            # Validate force_method field
+            if 'force_method' in power_config:
+                valid_methods = ['perf', 'msr', 'pcap']
+                if power_config['prefer_method'] not in valid_methods:
+                    logger.error(f"Configuration: 'settings.power.force_method' must be one of {valid_methods}")
+                    sys.exit(1)
+                    
+            # Validate debug field
+            if 'debug' in power_config and not isinstance(power_config['debug'], bool):
+                logger.error("Configuration: 'settings.power.debug' must be a boolean")
+                sys.exit(1)
 
         logger.debug("The parsed config is: \n %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
