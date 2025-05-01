@@ -332,7 +332,7 @@ class HEPscore():
             results[i] = round(score, 4)
             logger.debug(results[i])
 
-        if self.pwr_read_noerr == True:
+        if self.pwr_read_noerr == True and i >= 0:
             self.confobj['energy'] =  energy_total / (i + 1)
 
         if len(results) == 0:
