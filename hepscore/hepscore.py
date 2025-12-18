@@ -24,6 +24,7 @@ import sys
 import time
 import yaml
 from hepscore import __version__
+from hepscore.EnergyMeasurement import EnergyMeasurement
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,30 @@ class HEPscore():
         self.resultsdir = os.path.abspath(resultsdir)
         self.confobj = config['hepscore_benchmark']
         self.settings = self.confobj['settings']
+        self.pwr_read_noerr = True
+        self.energy_measurement = None
+        
+        # Set up energy measurement based on settings.power configuration
+        power_debug = False
+        power_enable = True
+        power_method = None
+        if 'power' in self.settings:
+            power_config = self.settings['power']
+            power_enable = power_config.get('enable', True)
+            power_method = power_config.get('prefer_method')
+            power_debug = 1 if power_config.get('debug', False) else 0
+            
+        # Initialize energy measurement with appropriate configuration
+        self.energy_measurement = EnergyMeasurement(
+            debug=power_debug,
+            preferred_method=power_method,
+            force_enabled=power_enable
+        )
+        
+        # Check if energy measurement is supported
+        self.pwr_read_noerr = self.energy_measurement.is_supported()
+        if not self.pwr_read_noerr and power_enable:
+            logger.warning("Energy measurement requested but not available")
 
         if 'container_exec' in self.settings:
             if self.settings['container_exec'] in (
@@ -232,6 +257,7 @@ class HEPscore():
     def _proc_results(self, benchmark):
 
         results = {}
+        energy_total = 0
         bench_conf = self.confobj['benchmarks'][benchmark]
         runs = int(self.confobj['settings']['repetitions'])
 
@@ -282,6 +308,9 @@ class HEPscore():
             if i == 0:
                 bench_conf['app'] = jscore['app']
                 bench_conf['run_info'] = jscore['run_info']
+            
+            if self.energy_measurement.is_supported():
+                energy_total += bench_conf[runstr]['energy']
 
             sub_results = []
             for sub_bmk in bench_conf['ref_scores'].keys():
@@ -302,6 +331,9 @@ class HEPscore():
 
             results[i] = round(score, 4)
             logger.debug(results[i])
+
+        if self.pwr_read_noerr == True and i >= 0:
+            self.confobj['energy'] =  energy_total / (i + 1)
 
         if len(results) == 0:
             logger.warning("No results: fail")
@@ -456,6 +488,7 @@ class HEPscore():
             logger.error("Could not locate %s on the system. Please check your path!", self.cec)
         return ['unknown', '0.0']
 
+    
     def _run_benchmark(self, benchmark, mock):
 
         bench_conf = self.confobj['benchmarks'][benchmark]
@@ -467,7 +500,10 @@ class HEPscore():
         result = 0
         gpu_flag = ""
         cmdf = None
-
+        
+        # Use the configured energy measurement if available
+        energy_reader = self.energy_measurement
+        
         runs = int(self.confobj['settings']['repetitions'])
         log = self.resultsdir + "/" + self.confobj['settings']['name'] + ".log"
 
@@ -577,6 +613,7 @@ class HEPscore():
 
             if not mock:
                 try:
+                    energy_reader.start()
                     cmdf = subprocess.Popen(command, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
                 except (subprocess.SubprocessError, OSError):
@@ -608,6 +645,7 @@ class HEPscore():
                         logger.error("Docker: No space left on device.")
 
                 cmdf.wait()
+                energy_reader.stop()
 
                 if self.cec == 'docker':
                     os.chmod(run_dir, stat.S_IRWXU | stat.S_IRGRP |
@@ -635,6 +673,10 @@ class HEPscore():
             endtime = time.time()
             bench_conf[runstr]['end_at'] = time.ctime(endtime)
             bench_conf[runstr]['duration'] = math.floor(endtime) - math.floor(starttime)
+
+            run_energy = energy_reader.get_energy()
+            if run_energy is not None:
+                bench_conf[runstr]['energy'] = run_energy
 
             if not mock and cmdf.returncode != 0:
                 logger.error("running %s failed.  Exit status %s", benchmark, cmdf.returncode)
@@ -837,6 +879,27 @@ class HEPscore():
         if bcount == 0:
             logger.error("Configuration: no benchmarks specified")
             sys.exit(1)
+
+        # Add validation for power section in settings
+        if 'settings' in self.confobj and 'power' in self.confobj['settings']:
+            power_config = self.confobj['settings']['power']
+            
+            # Validate enable field
+            if 'enable' in power_config and not isinstance(power_config['enable'], bool):
+                logger.error("Configuration: 'settings.power.enable' must be a boolean")
+                sys.exit(1)
+            
+            # Validate force_method field
+            if 'force_method' in power_config:
+                valid_methods = ['perf', 'msr', 'pcap']
+                if power_config['prefer_method'] not in valid_methods:
+                    logger.error(f"Configuration: 'settings.power.force_method' must be one of {valid_methods}")
+                    sys.exit(1)
+                    
+            # Validate debug field
+            if 'debug' in power_config and not isinstance(power_config['debug'], bool):
+                logger.error("Configuration: 'settings.power.debug' must be a boolean")
+                sys.exit(1)
 
         logger.debug("The parsed config is: \n %s", yaml.safe_dump(self.confobj, sort_keys=False))
 
